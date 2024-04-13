@@ -1,0 +1,35 @@
+NODE_NETWORK=preview
+NODE_VERSION=8.7.3
+NODE_HOME="/home/mark/Node"
+NODE_TYPE=producer
+NODE_PORT=6000
+NODE_HOSTADDR=0.0.0.0
+NODE_USER=mark
+
+NETWORK_PATH=${NODE_HOME}/networks/${NODE_NETWORK}
+NETWORK_DB_PATH=${NETWORK_PATH}/db
+NETWORK_SOCKET_PATH=${NETWORK_PATH}/db/socket
+
+PAYMENT_ADDR=${NETWORK_PATH}/keys/payment.addr
+STAKE_ADDR=${NETWORK_PATH}/keys/stake.addr
+POOL_CERT=${NETWORK_PATH}/keys/pool.cert
+DELE_CERT=${NETWORK_PATH}/keys/deleg.cert
+NODE_CERT=${NETWORK_PATH}/keys/node.cert
+STAKE_CERT=${NETWORK_PATH}/keys/stake.cert
+PAYMENT_KEY=${NETWORK_PATH}/keys/payment.skey
+STAKE_KEY=${NETWORK_PATH}/keys/stake.skey
+NODE_KEY=${NETWORK_PATH}/keys/node.skey
+KES_KEY=${NETWORK_PATH}/keys/kes.skey
+VRF_KEY=${NETWORK_PATH}/keys/vrf.skey
+PAYMENT_VKEY=${NETWORK_PATH}/keys/payment.vkey
+STAKE_VKEY=${NETWORK_PATH}/keys/stake.vkey
+
+case $NODE_NETWORK in 
+    "mainnet") NETWORK_ARG="--mainnet";;
+    "preprod") NETWORK_ARG="--testnet-magic 1";; 
+    "preview") NETWORK_ARG="--testnet-magic 2";;
+    "sanchonet") NETWORK_ARG="--testnet-magic 4";;
+esac
+
+CNCLI=/home/${NODE_USER}/.local/bin/cardano-node
+export CARDANO_NODE_SOCKET_PATH="$NETWORK_PATH/db/socket"

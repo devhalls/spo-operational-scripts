@@ -1,0 +1,16 @@
+[Unit]
+Description       = Pooltool Send Tip
+After             = multi-user.target
+
+[Service]
+User              = cardano
+Type              = simple
+ExecStart         = "/home/cardano/cardano-node/scripts/sendtip.sh"
+StandardOutput    = journal
+StandardError     = journal
+SyslogIdentifier  = sendmytip
+Restart           = on-failure
+RestartSec        = 15s
+
+[Install]
+WantedBy          = multi-user.target

@@ -1,0 +1,20 @@
+[Unit]
+Description       = Cardano Node Service (SERVICE_NAME)
+Wants             = network-online.target
+After             = network-online.target
+
+[Service]
+User              = NODE_USER
+Type              = simple
+WorkingDirectory  = NODE_HOME
+ExecStart         = /bin/bash -c 'NODE_HOME/scripts/start.sh NODE_NETWORK'
+KillSignal        = SIGINT
+RestartKillSignal = SIGINT
+TimeoutStopSec    = 300
+LimitNOFILE       = 32768
+Restart           = always
+RestartSec        = 5
+SyslogIdentifier  = SERVICE_NAME
+
+[Install]
+WantedBy          = multi-user.target
