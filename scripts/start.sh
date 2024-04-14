@@ -2,7 +2,7 @@
 
 # Info : Launch a cardano node as a producer or relay.
 #      : Assumes all node configs and keys are present at NODE_HOME.
-#      : Expects env with set varibles.
+#      : Expects env with set variables.
 # Use  : cd $NODE_HOME
 #      : scripts/start.sh <sanchonet | preview | preprod | mainnet>
 

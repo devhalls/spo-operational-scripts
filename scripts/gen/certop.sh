@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Info : Generate a op node.cert certificate using counter and keys.
-#      : Expects env with set varibles.
+#      : Expects env with set variables.
 # Use  : cd $NODE_HOME
 #      : scripts/gen/certop.sh <START_KES>
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Info : Query uxto for address defaults to payment.addr address.
-#      : Expects env with set varibles.
+#      : Expects env with set variables.
 # Use  : cd $NODE_HOME
 #      : scripts/genquery/uxto.sh <ADDR> <sanchonet | preview | preprod | mainnet>
 

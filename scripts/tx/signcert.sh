@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Info : Signs a raw transaction file with the node and stake keys.
-#      : Expects env with set varibles.
+#      : Expects env with set variables.
 # Use  : cd $NODE_HOME
 #      : scripts/tx/signcold.sh <sanchonet | preview | preprod | mainnet>
 

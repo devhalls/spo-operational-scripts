@@ -1,11 +1,5 @@
 #!/bin/bash
 
-# Info : Download and install a Cardano node and dependencies.
-#      : Loads network configs and starts node with systemctl.
-#      : Expects env with set varibles.
-# Use  : cd $NODE_HOME
-#      : scripts/install.sh
-
 source "env"
 BIN_PATH=$HOME/.local/bin
 SERVICE_NAME=cardano-node-$NODE_NETWORK.service
@@ -35,7 +29,7 @@ sudo apt install jq bc tcptraceroute supervisor -y
 # Create directories.
 mkdir -p downloads temp $NETWORK_PATH $NETWORK_PATH/keys $NETWORK_PATH/scripts
 
-# Downlad and extract cardano node packages.
+# Download and extract cardano node packages.
 wget -O $NODE_DOWNLOAD $NODE_REMOTE 
 tar -xvzf $NODE_DOWNLOAD -C downloads
 
@@ -78,7 +72,7 @@ sudo systemctl daemon-reload
 sudo systemctl enable $SERVICE_NAME
 sudo systemctl start $SERVICE_NAME
 
-# Complete.
+# Complete and sidplay versions.
 cardano-node --version
 cardano-cli --version
 echo "[DONE] Node installed and started as $NODE_TYPE"

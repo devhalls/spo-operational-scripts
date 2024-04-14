@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Info : Create a pool registration certificate.
-#      : Expects env with set varibles.
+#      : Expects env with set variables.
 # Use  : cd $NODE_HOME
 #      : scripts/gen/certpool.sh <PLEDGE> <COST> <MARGIN> <RELAY_ADDR> <RELAY_IP> <META_URL> <META_HASH>
 #      : scripts/gen/certpool.sh 5400000000 170000000 0.01 172.111.179.82 6000 https://upstream.org.uk/assets/poolMetaData.json

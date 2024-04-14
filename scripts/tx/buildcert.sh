@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Info : Builds a raw transaction file top submit pool certificate.
-#      : Expects env with set varibles.
+#      : Expects env with set variables.
 # Use  : cd $NODE_HOME
 #      : scripts/tx/buildcert.sh <sanchonet | preview | preprod | mainnet>
 

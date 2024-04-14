@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Info : Build transaction to register a stake address.
-#      : Expects env with set varibles.
+#      : Expects env with set variables.
 # Use  : cd $NODE_HOME
 #      : scripts/gen/addrstake.sh <sanchonet | preview | preprod | mainnet>
 

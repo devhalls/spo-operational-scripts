@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Info : Query and outout the networks protocol params.
-#      : Expects env with set varibles.
+#      : Expects env with set variables.
 # Use  : cd $NODE_HOME
 #      : scripts/params.sh <OUTPUT_FILE>
 

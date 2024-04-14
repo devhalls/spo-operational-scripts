@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Info : Builds a raw transaction file.
-#      : Expects env with set varibles.
+#      : Expects env with set variables.
 # Use  : cd $NODE_HOME
 #      : scripts/tx/build.sh <LOVELACE> <ADDR> <sanchonet | preview | preprod | mainnet>
 

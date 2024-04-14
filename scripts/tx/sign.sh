@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Info : Signs a raw transaction file then delete it.
-#      : Expects env with set varibles.
+#      : Expects env with set variables.
 # Use  : cd $NODE_HOME
 #      : scripts/tx/sign.sh <sanchonet | preview | preprod | mainnet>
 

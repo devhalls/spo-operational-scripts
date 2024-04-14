@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Info : Generate vrf key pair.
-#      : Expects env with set varibles.
+#      : Expects env with set variables.
 # Use  : cd $NODE_HOME
 #      : scripts/gen/keyvrf.sh
 

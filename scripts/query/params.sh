@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Info : Query params.json for passed FIELD value.
-#      : Expects env with set varibles.
+#      : Expects env with set variables.
 # Use  : cd $NODE_HOME
 #      : scripts/query/params.sh <FIELD> <sanchonet | preview | preprod | mainnet>
 

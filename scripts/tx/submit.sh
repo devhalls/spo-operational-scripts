@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Info : Submit a signed transaction file.
-#      : Expects env with set varibles.
+#      : Expects env with set variables.
 # Use  : cd $NODE_HOME
 #      : scripts/tx/submit.sh <sanchonet | preview | preprod | mainnet>
 

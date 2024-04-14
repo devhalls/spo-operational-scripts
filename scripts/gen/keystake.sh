@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Info : Generate payment and stake key pairs.
-#      : Expects env with set varibles.
+#      : Expects env with set variables.
 # Use  : cd $NODE_HOME
 #      : scripts/gen/keystake.sh
 

@@ -2,7 +2,7 @@
 
 # Info : Generate a payment and stake address.
 #      : An address consists of two parts: the PAYMENT_ADDR and the STAKE_ADDR.
-#      : Expects env with set varibles.
+#      : Expects env with set variables.
 # Use  : cd $NODE_HOME
 #      : scripts/gen/addr.sh <sanchonet | preview | preprod | mainnet>
 

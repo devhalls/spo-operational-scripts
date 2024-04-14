@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Info : Generate node key pair and node counter.
-#      : Expects env with set varibles.
+#      : Expects env with set variables.
 # Use  : cd $NODE_HOME
 #      : scripts/gen/keynode.sh
 
