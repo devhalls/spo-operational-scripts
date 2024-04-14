@@ -1,11 +1,7 @@
 #!/bin/bash
 
-# Info : Restart the cardano node service.
-# Use  : cd $NODE_HOME
-#      : scripts/restart.sh <sanchonet | preview | preprod | mainnet>
+bash scripts/help.sh 2 1 ${@} || exit
+source "$(dirname "$0")/../networks/${2}/env"
 
-network="${1:-"preview"}"
-
-sudo systemctl restart cardano-node-"${network}"
-
-echo "Node service cardano-node-${network} re-started"
+systemctl restart "${NETWORK_SERVICE}"
+echo "[RESTART] Node service ${NODE_NETWORK} restarted"

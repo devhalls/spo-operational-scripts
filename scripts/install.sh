@@ -1,6 +1,8 @@
 #!/bin/bash
 
-source "env"
+bash scripts/help.sh 0 0 ${@} || exit
+source "$(dirname "$0")/../env"
+
 BIN_PATH=$HOME/.local/bin
 SERVICE_NAME=cardano-node-$NODE_NETWORK.service
 SERVICE_PATH=/etc/systemd/system/$SERVICE_NAME
@@ -24,7 +26,7 @@ GUILD_SCRIPT_DOWNLOADS=(
 )
 
 # Install dependencies.
-sudo apt install jq bc tcptraceroute supervisor -y
+apt install jq bc tcptraceroute supervisor -y
 
 # Create directories.
 mkdir -p downloads temp $NETWORK_PATH $NETWORK_PATH/keys $NETWORK_PATH/scripts
@@ -44,9 +46,9 @@ if [ ! -f "$NETWORK_PATH/env" ]; then
     for C in ${CONFIG_DOWNLOADS[@]}; do
         wget -O $NETWORK_PATH/$C $CONFIG_REMOTE/$C
     done
-    echo "[DONE] Downloaded configs for $NODE_NETWORK"
+    echo "[INSTALL] Downloaded configs for $NODE_NETWORK"
 else
-    echo "[SKIP] Downloading configs for $NODE_NETWORK"
+    echo "[INSTALL] Skipped downloading configs for $NODE_NETWORK"
 fi
 
 # Download guild helper scripts (gLiveView).
@@ -59,20 +61,20 @@ sed -i $NETWORK_PATH/scripts/env \
     -e "s|\#SOCKET=\"\${CNODE_HOME}\/sockets\/node.socket\"|SOCKET=\"${NETWORK_PATH}\/db\/socket\"|g"
     
 # Format supervisor service files.
-sudo cp -p services/cardano-node.service $SERVICE_PATH
-sudo chmod 644 $SERVICE_PATH
-sudo sed -i $SERVICE_PATH \
+cp -p services/cardano-node.service $SERVICE_PATH
+chmod 644 $SERVICE_PATH
+sed -i $SERVICE_PATH \
     -e "s|NODE_NETWORK|$NODE_NETWORK|g" \
     -e "s|NODE_HOME|$NODE_HOME|g" \
     -e "s|NODE_USER|$NODE_USER|g" \
     -e "s|SERVICE_NAME|$SERVICE_NAME|g"
 
 # Start the service
-sudo systemctl daemon-reload
-sudo systemctl enable $SERVICE_NAME
-sudo systemctl start $SERVICE_NAME
+systemctl daemon-reload
+systemctl enable $SERVICE_NAME
+systemctl start $SERVICE_NAME
 
 # Complete and sidplay versions.
 cardano-node --version
 cardano-cli --version
-echo "[DONE] Node installed and started as $NODE_TYPE"
+echo "[INSTALL] Node installed and started as $NODE_TYPE"

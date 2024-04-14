@@ -1,12 +1,7 @@
 #!/bin/bash
 
-# Info : Launch a cardano node as a producer or relay.
-#      : Assumes all node configs and keys are present at NODE_HOME.
-#      : Expects env with set variables.
-# Use  : cd $NODE_HOME
-#      : scripts/start.sh <sanchonet | preview | preprod | mainnet>
-
-source "$(dirname "$0")/../networks/${2:-"preview"}/env"
+bash scripts/help.sh 3 1 ${@} || exit
+source "$(dirname "$0")/../networks/${2}/env"
 
 typology=${NETWORK_PATH}/topology.json
 config=${NETWORK_PATH}/config.json

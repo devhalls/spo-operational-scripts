@@ -1,0 +1,5 @@
+scripts/help.sh [CONTENT_KEY] [ARG_COUNT] -h $@
+scripts/install.sh
+scripts/restart.sh [sanchonet | preview | preprod | mainnet]
+scripts/start.sh [sanchonet | preview | preprod | mainnet]
+scripts/watch.sh [sanchonet | preview | preprod | mainnet]
