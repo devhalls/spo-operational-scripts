@@ -1,5 +1,5 @@
 [Unit]
-Description       = Cardano Node Service (SERVICE_NAME)
+Description       = Cardano Node Service (NETWORK_SERVICE)
 Wants             = network-online.target
 After             = network-online.target
 
@@ -14,7 +14,7 @@ TimeoutStopSec    = 300
 LimitNOFILE       = 32768
 Restart           = always
 RestartSec        = 5
-SyslogIdentifier  = SERVICE_NAME
+SyslogIdentifier  = NETWORK_SERVICE
 
 [Install]
 WantedBy          = multi-user.target

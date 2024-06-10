@@ -1,4 +1,6 @@
-Help script to check params and display info:\n- Should be placed at the top of each script.\n- Info is displayed if an error occurs or -h is passed as ${3}.
+Help and validation script, displays help and usage info:\n- Placed at the top of each script to validate params and display usage.\n- Loads usage text based on keys passed to params ${1} (contentKey) and ${2} (argCount).\n- Info is displayed if an error occurs or -h is passed as ${3}.
+Build the Cardano node from source:\n- Installs and configures the Haskell environment.\n- Configures and runs the build process.\n- Builds network version based on env configuration.
+Clean network script:\n- Stops and removes the $NETWORK_SERVICE.\n- Removes network folder at networks/$NODE_NETWORK.
 Cardano node installation script:\n- Downloads and installs a Cardano node and dependencies.\n- Loads network configs and starts the node with systemctl.
 Node restart script:\n - Restart the cardano node service.
 Node start script:\n- Launch a cardano node as a producer or relay.\n- Assumes all node configs and keys are present at NODE_HOME.

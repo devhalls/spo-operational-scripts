@@ -1,7 +1,7 @@
 #!/bin/bash
 
-bash scripts/help.sh 2 1 ${@} || exit
-source "$(dirname "$0")/../networks/${2}/env"
+bash scripts/help.sh 4 1 ${@} || exit
+source "$(dirname "$0")/../networks/${1}/env"
 
-systemctl restart "${NETWORK_SERVICE}"
-echo "[RESTART] Node service ${NODE_NETWORK} restarted"
+sudo systemctl restart "${NETWORK_SERVICE}"
+echo "[RESTART] Node service ${NETWORK_SERVICE} restarted"

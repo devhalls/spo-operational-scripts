@@ -1,44 +1,29 @@
 #!/bin/bash
 
-bash scripts/help.sh 0 0 ${@} || exit
+bash scripts/help.sh 3 0 ${@} || exit
 source "$(dirname "$0")/../env"
 
-BIN_PATH=$HOME/.local/bin
-SERVICE_NAME=cardano-node-$NODE_NETWORK.service
-SERVICE_PATH=/etc/systemd/system/$SERVICE_NAME
-NODE_DOWNLOAD=cardano-node-$NODE_VERSION-linux.tar.gz 
-NODE_REMOTE=https://github.com/IntersectMBO/cardano-node/releases/download/$NODE_VERSION/$NODE_DOWNLOAD
-CONFIG_REMOTE=https://book.play.dev.cardano.org/environments/$NODE_NETWORK
-CONFIG_DOWNLOADS=(
-    "conway-genesis.json" 
-    "alonzo-genesis.json" 
-    "shelley-genesis.json" 
-    "byron-genesis.json" 
-    "topology.json" 
-    "submit-api-config.json" 
-    "db-sync-config.json" 
-    "config.json"
-)
-GUILD_REMOTE=https://raw.githubusercontent.com/cardano-community/guild-operators/master/scripts/cnode-helper-scripts
-GUILD_SCRIPT_DOWNLOADS=(
-    "gLiveView.sh"
-    "env"
-)
-
 # Install dependencies.
-apt install jq bc tcptraceroute supervisor -y
+sudo $PACKAGER install jq bc tcptraceroute supervisor wget -y
 
 # Create directories.
-mkdir -p downloads temp $NETWORK_PATH $NETWORK_PATH/keys $NETWORK_PATH/scripts
+mkdir -p temp $NETWORK_PATH $NETWORK_PATH/keys $NETWORK_PATH/scripts $BIN_PATH
 
 # Download and extract cardano node packages.
-wget -O $NODE_DOWNLOAD $NODE_REMOTE 
-tar -xvzf $NODE_DOWNLOAD -C downloads
+if [[ $NODE_BUILD < 1 ]]; then
+  echo "[INSTALL] Downloading node binaries"
+  mkdir -p downloads
+  wget -O downloads/$NODE_DOWNLOAD $NODE_REMOTE
+  tar -xvzf downloads/$NODE_DOWNLOAD -C downloads
+  rm downloads/$NODE_DOWNLOAD
+  cp -a downloads/. $BIN_PATH/
+  rm -R downloads
 
-# Copy node and cli to local bin.
-cp -p downloads/cardano-node $BIN_PATH/cardano-node
-cp -p downloads/cardano-cli $BIN_PATH/cardano-cli
-rm -R downloads $NODE_DOWNLOAD
+# Or run the build script.
+else
+  echo "[INSTALL] Building node binaries"
+  # bash scripts/build.sh
+fi
 
 # Download config files and copy env file.
 if [ ! -f "$NETWORK_PATH/env" ]; then
@@ -55,26 +40,27 @@ fi
 for G in ${GUILD_SCRIPT_DOWNLOADS[@]}; do
     wget -O $NETWORK_PATH/scripts/$G $GUILD_REMOTE/$G
 done
-chmod 755 $NETWORK_PATH/scripts/gLiveView.sh
+chmod +x $NETWORK_PATH/scripts/gLiveView.sh
 sed -i $NETWORK_PATH/scripts/env \
     -e "s|\#CONFIG=\"\${CNODE_HOME}\/files\/config.json\"|CONFIG=\"${NETWORK_PATH}\/config.json\"|g" \
     -e "s|\#SOCKET=\"\${CNODE_HOME}\/sockets\/node.socket\"|SOCKET=\"${NETWORK_PATH}\/db\/socket\"|g"
-    
+
 # Format supervisor service files.
-cp -p services/cardano-node.service $SERVICE_PATH
-chmod 644 $SERVICE_PATH
-sed -i $SERVICE_PATH \
+cp -p services/cardano-node.service services/$NETWORK_SERVICE.temp
+sed -i services/$NETWORK_SERVICE.temp \
     -e "s|NODE_NETWORK|$NODE_NETWORK|g" \
     -e "s|NODE_HOME|$NODE_HOME|g" \
     -e "s|NODE_USER|$NODE_USER|g" \
-    -e "s|SERVICE_NAME|$SERVICE_NAME|g"
+    -e "s|NETWORK_SERVICE|$NETWORK_SERVICE|g"
+sudo cp -p services/$NETWORK_SERVICE.temp $SERVICE_PATH/$NETWORK_SERVICE
+rm services/$NETWORK_SERVICE.temp
 
 # Start the service
-systemctl daemon-reload
-systemctl enable $SERVICE_NAME
-systemctl start $SERVICE_NAME
+sudo systemctl daemon-reload
+sudo systemctl enable $NETWORK_SERVICE
+sudo systemctl start $NETWORK_SERVICE
 
-# Complete and sidplay versions.
-cardano-node --version
-cardano-cli --version
+# Complete and display versions.
+$CNNODE --version
+$CNCLI --version
 echo "[INSTALL] Node installed and started as $NODE_TYPE"

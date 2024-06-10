@@ -1,36 +1,72 @@
 NODE_NETWORK=preview
-NODE_VERSION=8.7.3
-NODE_HOME="/home/mark/Node"
-NODE_TYPE=producer
-NODE_PORT=6000
+NODE_VERSION=8.9.2
+NODE_HOME="/home/cardano/Node"
+NODE_TYPE=relay
+NODE_PORT=7000
 NODE_HOSTADDR=0.0.0.0
-NODE_USER=mark
+NODE_USER=cardano
+NODE_PLATFORM=linux
+NODE_BUILD=1
 
-NETWORK_PATH=${NODE_HOME}/networks/${NODE_NETWORK}
-NETWORK_DB_PATH=${NETWORK_PATH}/db
-NETWORK_SOCKET_PATH=${NETWORK_PATH}/db/socket
-NETWORK_SERVICE=cardano-node-"${NODE_NETWORK}
+NODE_NAME=cardano-node
+NODE_CLI_NAME=cardano-cli
+NODE_DOWNLOAD=cardano-node-$NODE_VERSION-$NODE_PLATFORM.tar.gz
+NODE_REMOTE=https://github.com/IntersectMBO/cardano-node/releases/download/$NODE_VERSION/$NODE_DOWNLOAD
 
-PAYMENT_ADDR=${NETWORK_PATH}/keys/payment.addr
-STAKE_ADDR=${NETWORK_PATH}/keys/stake.addr
-POOL_CERT=${NETWORK_PATH}/keys/pool.cert
-DELE_CERT=${NETWORK_PATH}/keys/deleg.cert
-NODE_CERT=${NETWORK_PATH}/keys/node.cert
-STAKE_CERT=${NETWORK_PATH}/keys/stake.cert
-PAYMENT_KEY=${NETWORK_PATH}/keys/payment.skey
-STAKE_KEY=${NETWORK_PATH}/keys/stake.skey
-NODE_KEY=${NETWORK_PATH}/keys/node.skey
-KES_KEY=${NETWORK_PATH}/keys/kes.skey
-VRF_KEY=${NETWORK_PATH}/keys/vrf.skey
-PAYMENT_VKEY=${NETWORK_PATH}/keys/payment.vkey
-STAKE_VKEY=${NETWORK_PATH}/keys/stake.vkey
+CONFIG_REMOTE=https://book.play.dev.cardano.org/environments/$NODE_NETWORK
+CONFIG_DOWNLOADS=(
+    "conway-genesis.json"
+    "alonzo-genesis.json"
+    "shelley-genesis.json"
+    "byron-genesis.json"
+    "topology.json"
+    "submit-api-config.json"
+    "db-sync-config.json"
+    "config.json"
+    "config-bp.json"
+)
 
-case $NODE_NETWORK in 
+GUILD_REMOTE=https://raw.githubusercontent.com/cardano-community/guild-operators/master/scripts/cnode-helper-scripts
+GUILD_SCRIPT_DOWNLOADS=(
+    "gLiveView.sh"
+    "env"
+)
+
+NETWORK_PATH=$NODE_HOME/networks/$NODE_NETWORK
+NETWORK_DB_PATH=$NETWORK_PATH/db
+NETWORK_SOCKET_PATH=$NETWORK_PATH/db/socket
+NETWORK_SERVICE=$NODE_NAME.$NODE_NETWORK.service
+NETWORK_ARG=
+case $NODE_NETWORK in
     "mainnet") NETWORK_ARG="--mainnet";;
-    "preprod") NETWORK_ARG="--testnet-magic 1";; 
+    "preprod") NETWORK_ARG="--testnet-magic 1";;
     "preview") NETWORK_ARG="--testnet-magic 2";;
     "sanchonet") NETWORK_ARG="--testnet-magic 4";;
 esac
 
-CNCLI=/home/${NODE_USER}/.local/bin/cardano-node
-export CARDANO_NODE_SOCKET_PATH="$NETWORK_PATH/db/socket"
+PAYMENT_ADDR=$NETWORK_PATH/keys/payment.addr
+STAKE_ADDR=$NETWORK_PATH/keys/stake.addr
+POOL_CERT=$NETWORK_PATH/keys/pool.cert
+DELE_CERT=$NETWORK_PATH/keys/deleg.cert
+NODE_CERT=$NETWORK_PATH/keys/node.cert
+STAKE_CERT=$NETWORK_PATH/keys/stake.cert
+PAYMENT_KEY=$NETWORK_PATH/keys/payment.skey
+STAKE_KEY=$NETWORK_PATH/keys/stake.skey
+NODE_KEY=$NETWORK_PATH/keys/node.skey
+KES_KEY=$NETWORK_PATH/keys/kes.skey
+VRF_KEY=$NETWORK_PATH/keys/vrf.skey
+PAYMENT_VKEY=$NETWORK_PATH/keys/payment.vkey
+STAKE_VKEY=$NETWORK_PATH/keys/stake.vkey
+
+BIN_PATH=$HOME/local/bin
+PACKAGER=apt-get
+SERVICE_PATH=/etc/systemd/system
+
+CNNODE=$BIN_PATH/$NODE_NAME
+CNCLI=$BIN_PATH/$NODE_CLI_NAME
+CARDANO_NODE_SOCKET_PATH=$NETWORK_SOCKET_PATH
+
+GHC_VERSION=8.10.7
+CABAL_VERSION=3.8.1.0
+LD_LIBRARY_PATH="/usr/local/lib:$LD_LIBRARY_PATH"
+PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH"

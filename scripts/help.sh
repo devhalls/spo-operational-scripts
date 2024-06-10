@@ -5,6 +5,7 @@ argCount=${2:-0}
 actualCount=$((argCount+2))
 blue='\033[0;34m'
 orange='\033[0;33m'
+red='\033[0;31m'
 nc='\033[0m'
 
 help_arr=()
@@ -23,27 +24,28 @@ done < $argPath
 
 # Echo the help content.
 display_help() {
-  echo -e "$orange\nHelp:$nc"
-  echo -e "${help_arr[$contentKey]}"
+  echo -e "$blue\nHelp:$nc"
+  echo -e "$orange${help_arr[$contentKey]}$nc"
 }
 
 # Echo the usage content.
 display_usage() {
-  echo -e "$orange\nUsage:$blue" '\ncd $NODE_HOME'
-  echo -e "${argDir[$contentKey]}$nc"
+  echo -e "$blue\nUsage:$nc"
+  echo -e "${orange}cd \$NODE_HOME"
+  echo -e "$orange${argDir[$contentKey]}$nc"
 }
 
 # If requesting help, just display help content
 if [[ ( ${3} == "--help") ||  ${3} == "-h" || ( ${1} == "--help") ||  ${1} == "-h" ]]; then
   display_help
   display_usage
-  echo -e "\n"
+  echo -e ""
   exit 1
 else
   if [  $# != $actualCount ]; then
-    echo "\nUnexpected args count!"
+    echo -e "$red\nUnexpected args count!"
     display_usage
-    echo -e "\n"
+    echo -e ""
     exit 1
   fi
 fi
