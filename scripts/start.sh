@@ -1,8 +1,8 @@
 #!/bin/bash
 
-bash scripts/help.sh 5 1 ${@} || exit
 source "$(dirname "$0")/../networks/${1}/env"
-echo $LD_LIBRARY_PATH
+source "$(dirname "$0")/common/common.sh"
+help 5 1 ${@} || exit
 
 typology=${NETWORK_PATH}/topology.json
 config=${NETWORK_PATH}/config.json

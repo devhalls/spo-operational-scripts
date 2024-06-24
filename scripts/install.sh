@@ -1,7 +1,8 @@
 #!/bin/bash
 
-bash scripts/help.sh 3 0 ${@} || exit
 source "$(dirname "$0")/../env"
+source "$(dirname "$0")/common/common.sh"
+help 3 0 ${@} || exit
 
 # Install dependencies.
 sudo $PACKAGER install jq bc tcptraceroute supervisor wget -y
@@ -11,7 +12,7 @@ mkdir -p temp $NETWORK_PATH $NETWORK_PATH/keys $NETWORK_PATH/scripts $BIN_PATH
 
 # Download and extract cardano node packages.
 if [[ $NODE_BUILD < 1 ]]; then
-  echo "[INSTALL] Downloading node binaries"
+  print 'INSTALL' 'Downloading node binaries'
   mkdir -p downloads
   wget -O downloads/$NODE_DOWNLOAD $NODE_REMOTE
   tar -xvzf downloads/$NODE_DOWNLOAD -C downloads
@@ -21,8 +22,8 @@ if [[ $NODE_BUILD < 1 ]]; then
 
 # Or run the build script.
 else
-  echo "[INSTALL] Building node binaries"
-  # bash scripts/build.sh
+  print 'INSTALL' 'Building node binaries'
+  bash scripts/build.sh
 fi
 
 # Download config files and copy env file.
@@ -31,9 +32,9 @@ if [ ! -f "$NETWORK_PATH/env" ]; then
     for C in ${CONFIG_DOWNLOADS[@]}; do
         wget -O $NETWORK_PATH/$C $CONFIG_REMOTE/$C
     done
-    echo "[INSTALL] Downloaded configs for $NODE_NETWORK"
+    print 'INSTALL' "Downloaded configs for $NODE_NETWORK"
 else
-    echo "[INSTALL] Skipped downloading configs for $NODE_NETWORK"
+    print 'INSTALL' "Skipped downloading configs for $NODE_NETWORK"
 fi
 
 # Download guild helper scripts (gLiveView).
@@ -63,4 +64,4 @@ sudo systemctl start $NETWORK_SERVICE
 # Complete and display versions.
 $CNNODE --version
 $CNCLI --version
-echo "[INSTALL] Node installed and started as $NODE_TYPE"
+print 'INSTALL' "Node installed and started as $NODE_TYPE"
