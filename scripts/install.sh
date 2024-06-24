@@ -5,9 +5,11 @@ source "$(dirname "$0")/common/common.sh"
 help 3 0 ${@} || exit
 
 # Install dependencies.
+print 'INSTALL' 'Install dependencies'
 sudo $PACKAGER install jq bc tcptraceroute supervisor wget -y
 
 # Create directories.
+print 'INSTALL' 'Create directories'
 mkdir -p temp $NETWORK_PATH $NETWORK_PATH/keys $NETWORK_PATH/scripts $BIN_PATH
 
 # Download and extract cardano node packages.

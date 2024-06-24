@@ -7,8 +7,6 @@ help 1 0 ${@} || exit
 # Install dependencies.
 print 'BUILD' 'Install dependencies'
 
-exit 1
-
 cd ~
 sudo $PACKAGER update -y
 sudo $PACKAGER install autoconf \
