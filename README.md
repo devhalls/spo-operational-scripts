@@ -1,73 +1,56 @@
-Cardano SPO scripts
+#Cardano Stake Pool Operator (SPO) scripts
 
-Developed by @devhalls
+A collection of scripts and procedures for operating a stake pool on the various Cardano networks.
 
-A collection of scripts and procedures for operating nodes on the avaibale CArdano networks.
-Linux - Ubuntu
+Developed by Upstream SPO [UPSTR](https://upstream.org.uk)
 
-Assumptions
+---
 
-1. Your user is configured to your environments needs 
+### Assumptions
 
-Setup
-1. Edit the env replacing
+1. Your OS, network and user are configured
+2. Tested on Linux - Ubuntu
+3. You are comfortable with cardano-node / cardano-cli and SPO requirements 
+4. You are comfortable with Linux and managing networks and servers
 
-# Configure your VPN connection
+---
 
-https://airvpn.org/linux/eddie/
+### Setup
 
-```
-curl -fsSL https://eddie.website/repository/keys/eddie_maintainer_gpg.key | sudo tee /usr/share/keyrings/eddie.website-keyring.asc > /dev/null
-
-echo "deb [signed-by=/usr/share/keyrings/eddie.website-keyring.asc] http://eddie.website/repository/apt stable main" | sudo tee /etc/apt/sources.list.d/eddie.website.list
-
-sudo apt update
-
-sudo apt install eddie-cli
+Create a directory, pull this repo and configure the env file.
 
 ```
+mkdir Node && cd Node
+git clone https://github.com/devhalls/spo-operational-scripts.git . 
+cp -p env.example > env
+nano env
+```
 
-
-
-# Create fixed IP address on LAN network
+Run the installation script
 
 ```
-# Install dependencies
-sudo apt-get install net-tools
-
-# Note the current network adapter name e.g. eth0 | wlo1
-ip a
-
-# Note the subnet mask (netmask) and host IP range
-ifconfig -a
-// Producer > 192.168.1.180 > 192.168.1.254 >>>> 255.255.255.0
-// Relay > 192.168.1.243 > 192.168.1.254 >>>> 255.255.255.0
-
-# Edit the network configs
-cd /etc/netplan
-sudo nano 50-cloud-init.yaml
-
-network:
-    ethernets:
-        enp86s0:
-            dhcp4: true
-    version: 2
-    wifis:
-        wlo1:
-            access-points:
-                EE-56C2WP:
-                    password: pabrf6T6EGmYLu
-            dhcp4: false
-            addresses:
-                - 192.168.1.180/24
-            routes:
-                - to: default
-                  via: 192.168.1.254
-            nameservers:
-                addresses:
-                  - 8.8.8.8
-                  - 8.8.4.4
-
-# Test the restart and apply if you have no errors
-sudo netplan try
+scripts/install.sh
 ```
+
+Edit your typology
+
+```
+nano networks/mainnet/topology.json
+```
+
+Start your node
+
+```
+sudo systemctl start $NETWORK_SERVICE
+```
+
+---
+
+### Road map
+
+1. Update scripts at /gen, /mythril, /query and /tx implementation.
+2. Detail notes for installation and build steps, you can read the scripts in the meantime to gain an understanding of the procedures.
+3. Test multiple networks on single machine.
+4. Detail OS dependencies.
+5. Add useful networking / tunnel examples.
+6. Add docker compose deployment.

@@ -35,7 +35,13 @@ sudo $PACKAGER install autoconf \
 
 # Installing the Haskell environment.
 print 'BUILD' 'Installing Haskell with options P N N:'
-curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh || print 'ERROR' 'Cannot download Haskell installation' | exit 1
+curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
+
+# Exit if the Haskell installation failed to generate the ghcup env
+if [ ! -f "$NODE_HOME/../.ghcup/env" ]; then
+    print 'BUILD ERROR' "Could not configure ghcup env, retry installation" $red
+    exit 1
+fi
 
 source ~/.bashrc
 source $NODE_HOME/../.ghcup/env
@@ -149,6 +155,6 @@ sed -i '$ a\export PATH="$PATH:$HOME/local/bin/"' ~/.bashrc
 source ~/.bashrc
 
 # Test versions.
-print 'BUILD' 'Complete building cardano-cli cardano-node'
 cardano-cli --version
 cardano-node --version
+print 'BUILD COMPLETE' 'Complete building cardano-cli cardano-node' $green

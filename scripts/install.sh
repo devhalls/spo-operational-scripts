@@ -46,7 +46,11 @@ done
 chmod +x $NETWORK_PATH/scripts/gLiveView.sh
 sed -i $NETWORK_PATH/scripts/env \
     -e "s|\#CONFIG=\"\${CNODE_HOME}\/files\/config.json\"|CONFIG=\"${NETWORK_PATH}\/config.json\"|g" \
-    -e "s|\#SOCKET=\"\${CNODE_HOME}\/sockets\/node.socket\"|SOCKET=\"${NETWORK_PATH}\/db\/socket\"|g"
+    -e "s|\#SOCKET=\"\${CNODE_HOME}\/sockets\/node.socket\"|SOCKET=\"${NETWORK_PATH}\/db\/socket\"|g" \
+    -e "s|\#CNODE_PORT=6000|CNODE_PORT=\"${NODE_PORT}\"|g" \
+    -e "s|\#CNODEBIN=\"\${HOME}\/.local\/bin\/cardano-node\"|CNODEBIN=\"\${HOME}\/local\/bin\/cardano-node\"|g" \
+    -e "s|\#CCLI=\"\${HOME}\/.local\/bin\/cardano-cli\"|CCLI=\"\${HOME}\/local\/bin\/cardano-cli\"|g" \
+makdir $NETWORK_PATH/logs
 
 # Format supervisor service files.
 cp -p services/cardano-node.service services/$NETWORK_SERVICE.temp
@@ -58,12 +62,13 @@ sed -i services/$NETWORK_SERVICE.temp \
 sudo cp -p services/$NETWORK_SERVICE.temp $SERVICE_PATH/$NETWORK_SERVICE
 rm services/$NETWORK_SERVICE.temp
 
-# Start the service
+# Enable the service
 sudo systemctl daemon-reload
 sudo systemctl enable $NETWORK_SERVICE
-sudo systemctl start $NETWORK_SERVICE
 
 # Complete and display versions.
+print 'INSTALL' "Node installed as $NODE_TYPE"
 $CNNODE --version
 $CNCLI --version
-print 'INSTALL' "Node installed and started as $NODE_TYPE"
+print 'INSTALL COMPLETE' "Edit your topology config at $NETWORK_PATH/typology.json" $green
+print 'INSTALL COMPLETE' "then start the node service: sudo systemctl start $NETWORK_SERVICE" $green
