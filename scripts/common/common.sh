@@ -25,8 +25,8 @@ confirm() {
 print() {
   label=${1:-'LABEL'}
   message=${2:-'Message'}
-  color=${3:-orange}
-  echo -e "$orange[$label] $message$nc"
+  color=${3:-$orange}
+  echo -e "$color[$label] $message$nc"
 }
 
 
@@ -50,8 +50,8 @@ help() {
 
   help_arr=()
   argDir=()
-  helpPath="$(dirname "$0")/../metadata/help.txt"
-  argPath="$(dirname "$0")/../metadata/args.txt"
+  helpPath="metadata/help.txt"
+  argPath="metadata/args.txt"
 
   # Build arrays from the help files.
   while IFS= read -r line || [[ "$line" ]]; do

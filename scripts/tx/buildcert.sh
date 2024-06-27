@@ -1,18 +1,15 @@
 #!/bin/bash
 
-# Info : Builds a raw transaction file top submit pool certificate.
-#      : Expects env with set variables.
-# Use  : cd $NODE_HOME
-#      : scripts/tx/buildcert.sh <sanchonet | preview | preprod | mainnet>
-
-source "$(dirname "$0")/../../networks/${3:-"preview"}/env"
+source "$(dirname "$0")/../common/common.sh"
+help 9 1 ${@} || exit
+source "$(dirname "$0")/../../networks/${1}/env"
 
 paymentAddr=$(cat "${PAYMENT_ADDR}")
 outputPath=${NODE_HOME}/temp
-currentSlot=$(cardano-cli query tip $NETWORK_ARG | jq -r '.slot')
+currentSlot=$(cardano-cli query tip $NETWORK_ARG --socket-path $NETWORK_SOCKET_PATH | jq -r '.slot')
 
 echo list UXTO: 
-cardano-cli query utxo --address $paymentAddr $NETWORK_ARG > $outputPath/fullUtxo.out
+cardano-cli query utxo --socket-path $NETWORK_SOCKET_PATH --address $paymentAddr $NETWORK_ARG > $outputPath/fullUtxo.out
 tail -n +3 $outputPath/fullUtxo.out | sort -k3 -nr > $outputPath/balance.out
 cat $outputPath/balance.out
 txIn=""

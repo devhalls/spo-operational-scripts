@@ -1,8 +1,8 @@
 #!/bin/bash
 
-source "$(dirname "$0")/../networks/${1}/env"
 source "$(dirname "$0")/common/common.sh"
 help 5 1 ${@} || exit
+source "$(dirname "$0")/../networks/${1}/env"
 
 typology=${NETWORK_PATH}/topology.json
 config=${NETWORK_PATH}/config.json

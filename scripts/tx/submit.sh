@@ -1,16 +1,14 @@
 #!/bin/bash
 
-# Info : Submit a signed transaction file.
-#      : Expects env with set variables.
-# Use  : cd $NODE_HOME
-#      : scripts/tx/submit.sh <sanchonet | preview | preprod | mainnet>
-
-source "$(dirname "$0")/../../networks/${1:-"preview"}/env"
+source "$(dirname "$0")/../common/common.sh"
+help 12 1 ${@} || exit
+source "$(dirname "$0")/../../networks/${1}/env"
 
 outputPath=${NODE_HOME}/temp
 
 cardano-cli transaction submit \
     --tx-file $outputPath/tx.signed \
+    --socket-path $NETWORK_SOCKET_PATH \
     $NETWORK_ARG
 
 rm $outputPath/tx.signed

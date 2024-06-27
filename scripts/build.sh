@@ -1,8 +1,8 @@
 #!/bin/bash
 
-source "$(dirname "$0")/../env"
 source "$(dirname "$0")/common/common.sh"
 help 1 0 ${@} || exit
+source "$(dirname "$0")/../env"
 
 # Install dependencies.
 print 'BUILD' 'Install dependencies'

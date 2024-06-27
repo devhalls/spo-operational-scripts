@@ -1,8 +1,14 @@
 #!/bin/bash
 
-source "$(dirname "$0")/../env"
 source "$(dirname "$0")/common/common.sh"
 help 3 0 ${@} || exit
+source "$(dirname "$0")/../env"
+
+# Check the env has been created
+if [ ! -f "$NETWORK_PATH/env" ]; then
+  print 'INSTALL ERROR' 'No env file found, please review README.md' $red
+  exit 1
+fi
 
 # Install dependencies.
 print 'INSTALL' 'Install dependencies'
