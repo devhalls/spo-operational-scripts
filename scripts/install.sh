@@ -2,12 +2,12 @@
 
 source "$(dirname "$0")/../env"
 source "$(dirname "$0")/common/common.sh"
-help 3 0 ${@} || exit
+help 3 0 ${@} || exit 1
 
 # Check the env has been created
-if [ ! -f "$NODE_HOME/env" ]; then
+if [ ! -f "$(dirname "$0")/../env" ]; then
   print 'INSTALL ERROR' 'No env file found, please review README.md' $red
-  exit
+  exit 1
 fi
 
 # Install dependencies.

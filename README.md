@@ -17,12 +17,12 @@ Developed by Upstream SPO [UPSTR](https://upstream.org.uk)
 
 ### Setup
 
-Create a directory, pull this repo and configure the env file.
+Create a directory, pull this repo and edit the env file.
 
 ```
 mkdir Node && cd Node
 git clone https://github.com/devhalls/spo-operational-scripts.git . 
-cp -p env.example > env
+cp -p env.example env
 nano env
 ```
 

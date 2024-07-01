@@ -34,8 +34,8 @@ sudo $PACKAGER install autoconf \
                zlib1g-dev -y
 
 # Installing the Haskell environment.
-print 'BUILD' 'Installing Haskell with options P N N:'
-echo "P N N" | curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
+print 'BUILD' 'Installing Haskell with appropriate options:'
+curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | BOOTSTRAP_HASKELL_NONINTERACTIVE=1 sh
 
 # Exit if the Haskell installation failed to generate the ghcup env
 if [ ! -f "$NODE_HOME/../.ghcup/env" ]; then
@@ -64,7 +64,7 @@ echo -e "$orange[BUILD] BLST_VERSION: $BLST_VERSION$nc"
 
 # Confirm continue build?
 if [[ ! confirm ]]; then
-  exit
+  exit 1
 fi
 
 # Create directories.
