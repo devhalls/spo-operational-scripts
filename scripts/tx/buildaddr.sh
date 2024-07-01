@@ -1,19 +1,16 @@
 #!/bin/bash
 
-# Info : Build transaction to register a stake address.
-#      : Expects env with set variables.
-# Use  : cd $NODE_HOME
-#      : scripts/gen/addrstake.sh <sanchonet | preview | preprod | mainnet>
-
-source "$(dirname "$0")/../../networks/${3:-"preview"}/env"
+source "$(dirname "$0")/../common/common.sh"
+help 15 1 ${@} || exit
+source "$(dirname "$0")/../../networks/${1}/env"
 
 stakeAddressDeposit=$(cat $NETWORK_PATH/params.json | jq -r '.stakeAddressDeposit')
 addrFrom=$(cat "${PAYMENT_ADDR}")
 outputPath=${NODE_HOME}/temp
-currentSlot=$(cardano-cli query tip $NETWORK_ARG | jq -r '.slot')
+currentSlot=$(cardano-cli query tip $NETWORK_ARG --socket-path $NETWORK_SOCKET_PATH | jq -r '.slot')
 
-echo list UXTO: 
-cardano-cli query utxo --address $addrFrom $NETWORK_ARG > $outputPath/fullUtxo.out
+print 'TX' 'list UXTOs:'
+cardano-cli query utxo --socket-path $NETWORK_SOCKET_PATH --address $addrFrom $NETWORK_ARG > $outputPath/fullUtxo.out
 tail -n +3 $outputPath/fullUtxo.out | sort -k3 -nr > $outputPath/balance.out
 cat $outputPath/balance.out
 txIn=""
@@ -62,10 +59,10 @@ rm $outputPath/fullUtxo.out
 rm $outputPath/balance.out
 rm $outputPath/tx.tmp
 
-echo Stake address deposit: ${stakeAddressDeposit}
-echo Current slot: ${currentSlot}
-echo Available balance: ${totalBalance}
-echo Num of UTXOs: ${txCount}
-echo Fee: ${fee}
-echo Change output: ${txOut}
-echo File output: ${outputPath}/tx.raw
+print 'TX' "Stake address deposit: ${stakeAddressDeposit}"
+print 'TX' "Current slot: ${currentSlot}"
+print 'TX' "Available balance: ${totalBalance}"
+print 'TX' "Num of UTXOs: ${txCount}"
+print 'TX' "Fee: ${fee}"
+print 'TX' "Change output: ${txOut}"
+print 'TX' "File output: ${outputPath}/tx.raw" $green

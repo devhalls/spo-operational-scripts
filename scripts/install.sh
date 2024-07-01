@@ -1,13 +1,13 @@
 #!/bin/bash
 
+source "$(dirname "$0")/../env"
 source "$(dirname "$0")/common/common.sh"
 help 3 0 ${@} || exit
-source "$(dirname "$0")/../env"
 
 # Check the env has been created
-if [ ! -f "$NETWORK_PATH/env" ]; then
+if [ ! -f "$NODE_HOME/env" ]; then
   print 'INSTALL ERROR' 'No env file found, please review README.md' $red
-  exit 1
+  exit
 fi
 
 # Install dependencies.
@@ -34,16 +34,12 @@ else
   bash scripts/build.sh
 fi
 
-# Download config files and copy env file.
-if [ ! -f "$NETWORK_PATH/env" ]; then
-    cp -p env $NETWORK_PATH/env
-    for C in ${CONFIG_DOWNLOADS[@]}; do
-        wget -O $NETWORK_PATH/$C $CONFIG_REMOTE/$C
-    done
-    print 'INSTALL' "Downloaded configs for $NODE_NETWORK"
-else
-    print 'INSTALL' "Skipped downloading configs for $NODE_NETWORK"
-fi
+# Copy the env and download config files.
+cp -p env $NETWORK_PATH/env
+ for C in ${CONFIG_DOWNLOADS[@]}; do
+    wget -O $NETWORK_PATH/$C $CONFIG_REMOTE/$C
+done
+print 'INSTALL' "Downloaded configs for $NODE_NETWORK"
 
 # Download guild helper scripts (gLiveView).
 for G in ${GUILD_SCRIPT_DOWNLOADS[@]}; do
@@ -77,4 +73,4 @@ print 'INSTALL' "Node installed as $NODE_TYPE"
 $CNNODE --version
 $CNCLI --version
 print 'INSTALL COMPLETE' "Edit your topology config at $NETWORK_PATH/typology.json" $green
-print 'INSTALL COMPLETE' "then start the node service: sudo systemctl start $NETWORK_SERVICE" $green
+print 'INSTALL COMPLETE' "Then start the node service: sudo systemctl start $NETWORK_SERVICE" $green

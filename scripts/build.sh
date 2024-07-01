@@ -1,8 +1,8 @@
 #!/bin/bash
 
+source "$(dirname "$0")/../env"
 source "$(dirname "$0")/common/common.sh"
 help 1 0 ${@} || exit
-source "$(dirname "$0")/../env"
 
 # Install dependencies.
 print 'BUILD' 'Install dependencies'
@@ -35,7 +35,7 @@ sudo $PACKAGER install autoconf \
 
 # Installing the Haskell environment.
 print 'BUILD' 'Installing Haskell with options P N N:'
-curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
+echo "P N N" | curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
 
 # Exit if the Haskell installation failed to generate the ghcup env
 if [ ! -f "$NODE_HOME/../.ghcup/env" ]; then
@@ -63,7 +63,9 @@ echo -e "$orange[BUILD] SECP256K1_VERSION: $SECP256K1_VERSION$nc"
 echo -e "$orange[BUILD] BLST_VERSION: $BLST_VERSION$nc"
 
 # Confirm continue build?
-confirm
+if [[ ! confirm ]]; then
+  exit
+fi
 
 # Create directories.
 print 'BUILD' 'Create directories'
@@ -84,9 +86,14 @@ git checkout $SODIUM_VERSION
 make
 make check
 sudo make install
-sed -i '$ a\export LD_LIBRARY_PATH="/usr/local/lib:$LD_LIBRARY_PATH"' ~/.bashrc
-sed -i '$ a\export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH"' ~/.bashrc
-source ~/.bashrc
+
+if [[ ! $LD_LIBRARY_PATH ]]; then
+  print 'BUILD' "Set LD_LIBRARY_PATH and PKG_CONFIG_PATH"
+  source ~/.bashrc
+  sed -i '$ a\export LD_LIBRARY_PATH="/usr/local/lib:$LD_LIBRARY_PATH"' ~/.bashrc
+  sed -i '$ a\export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH"' ~/.bashrc
+  source ~/.bashrc
+fi
 
 # Install secp256k1.
 print 'BUILD' 'Installing secp256k1'
@@ -151,7 +158,9 @@ cabal build cardano-cli
 # Copy files to the bin and add to $PATH.
 cp -p "$(./scripts/bin-path.sh cardano-node)" ~/local/bin/
 cp -p "$(./scripts/bin-path.sh cardano-cli)" ~/local/bin/
-sed -i '$ a\export PATH="$PATH:$HOME/local/bin/"' ~/.bashrc
+if [[ "$PATH" != *"$HOME/local/bin/"* ]]; then
+  sed -i '$ a\export PATH="$PATH:$HOME/local/bin/"' ~/.bashrc
+fi
 source ~/.bashrc
 
 # Test versions.

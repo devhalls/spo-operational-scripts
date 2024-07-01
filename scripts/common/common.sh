@@ -2,13 +2,23 @@
 
 # Variable definitions
 
+networkEnv=$(dirname "$0")/../networks/${1}/env
 blue='\033[0;34m'
 orange='\033[0;33m'
 green='\032[0;31m'
 red='\033[0;31m'
 nc='\033[0m'
 
-# Function definitions
+display_help() {
+  echo -e "$blue\nHelp:$nc"
+  echo -e "$orange${help_arr[$contentKey]}$nc"
+}
+
+display_usage() {
+  echo -e "$blue\nUsage:$nc"
+  echo -e "${orange}cd \$NODE_HOME"
+  echo -e "$orange${argDir[$contentKey]}$nc"
+}
 
 confirm() {
   message=${1:-'Do you want to continue?'}
@@ -27,20 +37,6 @@ print() {
   message=${2:-'Message'}
   color=${3:-$orange}
   echo -e "$color[$label] $message$nc"
-}
-
-
-# Echo the help content.
-display_help() {
-  echo -e "$blue\nHelp:$nc"
-  echo -e "$orange${help_arr[$contentKey]}$nc"
-}
-
-# Echo the usage content.
-display_usage() {
-  echo -e "$blue\nUsage:$nc"
-  echo -e "${orange}cd \$NODE_HOME"
-  echo -e "$orange${argDir[$contentKey]}$nc"
 }
 
 help() {
