@@ -31,7 +31,7 @@ if [[ $NODE_BUILD < 1 ]]; then
 # Or run the build script.
 else
   print 'INSTALL' 'Building node binaries'
-  bash scripts/build.sh
+  bash scripts/build.sh || exit 1
 fi
 
 # Copy the env and download config files.
@@ -53,6 +53,7 @@ sed -i $NETWORK_PATH/scripts/env \
     -e "s|\#CNODEBIN=\"\${HOME}\/.local\/bin\/cardano-node\"|CNODEBIN=\"\${HOME}\/local\/bin\/cardano-node\"|g" \
     -e "s|\#CCLI=\"\${HOME}\/.local\/bin\/cardano-cli\"|CCLI=\"\${HOME}\/local\/bin\/cardano-cli\"|g" \
 makdir $NETWORK_PATH/logs
+print 'INSTALL' "Downloaded guild scripts"
 
 # Format supervisor service files.
 cp -p services/cardano-node.service services/$NETWORK_SERVICE.temp
@@ -72,5 +73,5 @@ sudo systemctl enable $NETWORK_SERVICE
 print 'INSTALL' "Node installed as $NODE_TYPE"
 $CNNODE --version
 $CNCLI --version
-print 'INSTALL COMPLETE' "Edit your topology config at $NETWORK_PATH/typology.json" $green
+print 'INSTALL COMPLETE' "Edit your topology config at $NETWORK_PATH/topology.json" $green
 print 'INSTALL COMPLETE' "Then start the node service: sudo systemctl start $NETWORK_SERVICE" $green

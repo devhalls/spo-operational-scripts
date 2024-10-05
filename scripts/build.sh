@@ -35,7 +35,7 @@ sudo $PACKAGER install autoconf \
 
 # Installing the Haskell environment.
 print 'BUILD' 'Installing Haskell with appropriate options:'
-curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | BOOTSTRAP_HASKELL_NONINTERACTIVE=1 sh
+curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
 
 # Exit if the Haskell installation failed to generate the ghcup env
 if [ ! -f "$NODE_HOME/../.ghcup/env" ]; then

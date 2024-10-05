@@ -5,7 +5,7 @@
 networkEnv=$(dirname "$0")/../networks/${1}/env
 blue='\033[0;34m'
 orange='\033[0;33m'
-green='\032[0;31m'
+green='\032[0;32m'
 red='\033[0;31m'
 nc='\033[0m'
 

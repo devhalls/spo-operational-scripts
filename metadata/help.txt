@@ -14,3 +14,5 @@ Submit a signed transaction file\n- No output, deletes the tx.signed file.
 Signs a raw transaction file with the node, stake and payment keys:\n- Outputs tx.signed file.
 Builds a raw transaction file:\n- Accepts to address and amount of lovelace to send.\n- Outputs the tx.raw ready to sign.
 Build transaction to register a stake address.\n- Outputs the tx.raw ready to sign.
+Node stop script:\n - Stops the cardano node service.
+Query the KES params needed to rotate pool keys:\n- Outputs values to screen.
