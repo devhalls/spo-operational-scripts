@@ -33,7 +33,7 @@ mkdir Node && cd Node
 git clone https://github.com/devhalls/spo-operational-scripts.git . 
 cp -p env.example env
 
-# Edit the env file (see table below for env descriptions)
+# Edit the env file (see table below for env descriptions and configure based on your intentions)
 nano env
 
 # Run the installation script
@@ -160,15 +160,19 @@ sudo systemctl start $NETWORK_SERVICE
     </tbody>
 </table>
 
+---
+
 ## Mithril db sync
 
 ```
 # Run the mithril download script
-scripts/mithril/install/download.sh
+scripts/mithril/download.sh
 
 # Sync the DB with mithril-client (takes some time)
-scripts/mithril/install/sync.sh
+scripts/mithril/sync.sh
 ```
+
+---
 
 ## Node update
 

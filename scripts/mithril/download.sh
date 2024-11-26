@@ -3,7 +3,7 @@
 #
 # Info:
 #
-#   - Install the Mithril client
+#   - Download the Mithril client, signer and relay
 
 source "$(dirname "$0")/../../../env"
 source "$(dirname "$0")/../../common.sh"
