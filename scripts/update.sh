@@ -1,16 +1,23 @@
 #!/bin/bash
+# Usage: scripts/update.sh
+#
+# Info:
+#
+#   - Cardano node update script.
 
-source "$(dirname "$0")/../networks/${1}/env"
-source "$(dirname "$0")/common/common.sh"
-# help 1 0 ${@} || exit
+source "$(dirname "$0")/../env"
+source "$(dirname "$0")/common.sh"
 
-nodeVersion=${2}
+bash scripts/stop.sh
 
-print 'UPDATE' 'Updating env NODE_VERSION'
-sed -i $NETWORK_PATH/env \
-      -e "s|\NODE_VERSION=\"\${NODE_VERSION}\"|NODE_VERSION=\"${nodeVersion}\"|g"
+if [[ $NODE_BUILD == 1 ]]; then
+  bash scripts/install/download.sh || exit 1
+elif [[ $NODE_BUILD == 2 ]]; then
+  bash scripts/install/build.sh || exit 1
+fi
 
-cp $NETWORK_PATH/env env
+bash scripts/restart.sh
 
-print 'UPDATE' 'Building node binaries'
-bash scripts/build.sh || exit 1
+$CNNODE --version
+$CNCLI --version
+print 'UPDATE' "Node updated and restarted" $green

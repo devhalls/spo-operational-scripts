@@ -1,23 +1,18 @@
 #!/bin/bash
+# Usage: scripts/query/leader.sh
+#
+# Info:
+#
+#   - Runs the pool leader slot check and creates file 'epoch.txt'
 
-# Run leader slot checks for the current epoch.
-# Check script status: ps aux | grep leaderScheduleCheck.sh to see if script is running
-# Usage:
-# ./leader.sh <STAKE_POOL_ID> <network:mainnet|testnet>
+source "$(dirname "$0")/../../env"
+source "$(dirname "$0")/../common.sh"
 
-source "$(dirname "$0")/../../networks/${1}/env"
-source "$(dirname "$0")/../common/common.sh"
-
-# Set runtime variables and logs
-STAKE_POOL_ID="${2:-"b67b0635ab2b26df9e44ba14fac3560720ca0902446d68fe282d4b97"}"
+# Set runtime variables
 network="${1:-"mainnet"}"
-TESTNET="testnet"
-MAINNET="mainnet"
-MAGICNUMBER="1"
-DIRECTORY=$NODE_HOME
-SOCKET_PATH=${NETWORK_SOCKET_PATH}
-if [[ ! -d "$DIRECTORY/logs" ]]; then mkdir $DIRECTORY/logs; fi
-echo $$ > "$DIRECTORY/logs/leaderScheduleCheck.pid";
+network_magic=$NETWORK_ARG
+if [[ ! -d "$NETWORK_PATH/logs" ]]; then mkdir $NETWORK_PATH/logs; fi
+echo $$ > "$NETWORK_PATH/logs/leaderScheduleCheck.pid";
 
 # check for vrf.skey presence
 if [[ ! -f "$VRF_KEY" ]]; then echo "vrf.skey not found"; exit 127; fi
@@ -31,30 +26,19 @@ if [[ -z $JQ ]]; then echo "jq command cannot be found, exiting..."; exit 127; f
 read -ra BYRON_GENESIS <<< "$(jq -r '[ .startTime, .protocolConsts.k, .blockVersionData.slotDuration ] |@tsv' < $NETWORK_PATH/byron-genesis.json)"
 if [[ -z $BYRON_GENESIS ]]; then echo "BYRON GENESIS config file not loaded correctly"; exit 127; fi
 
-network_magic=""
-if [ $network = $TESTNET ]; then
-    network_magic="--testnet-magic $MAGICNUMBER"
-elif [ $network = $MAINNET ]; then
-    network_magic="--mainnet"
-else
-    echo "Incorrect network selected, please use $TESTNET or $MAINNET network type"; exit 1
-fi
-
 # Check that node is synced
 function isSynced(){
     isSynced=false
-
-    sync_progress=$($CCLI query tip $network_magic --socket-path $SOCKET_PATH | jq -r ".syncProgress")
+    sync_progress=$($CCLI query tip $network_magic --socket-path $NETWORK_SOCKET_PATH | jq -r ".syncProgress")
     if [[ $sync_progress == "100.00" ]]; then
         isSynced=true
     fi
-
     echo $isSynced
 }
 
 # Get current epoch
 function getCurrentEpoch(){
-    echo $($CCLI query tip $network_magic --socket-path $SOCKET_PATH | jq -r ".epoch")
+    echo $($CCLI query tip $network_magic --socket-path $NETWORK_SOCKET_PATH | jq -r ".epoch")
 }
 
 # Get epoch start time based on current one
@@ -63,13 +47,12 @@ function getEpochStartTime(){
     byron_k=${BYRON_GENESIS[1]}
     byron_epoch_length=$(( 10 * byron_k ))
     byron_slot_length=${BYRON_GENESIS[2]}
-
     echo $(( $byron_genesis_start_time + (($(getCurrentEpoch) * $byron_epoch_length * $byron_slot_length) / 1000) ))
 }
 
 # Get epoch end time based on the current one
 function getEpochEndTime(){
-    #calculate currentEpoch Start time + 5 days of epoch duration - 10 minutes(600s) to not overlap with next epoch
+    # calculate currentEpoch Start time + 5 days of epoch duration - 10 minutes(600s) to not overlap with next epoch
     echo $(( $(getEpochStartTime)+(5*86400)-(600) ))
 }
 
@@ -105,28 +88,29 @@ function sleepUntil(){
     fi
 }
 
-# Check leaderschedule of next epoch
+# Check leader schedule of next epoch
 function checkLeadershipSchedule(){
     next_epoch=$(( $(getCurrentEpoch)+1 ))
     currentTime=$(getCurrentTime)
 
     echo "Check is running at: $(timestampToUTC $currentTime) for epoch: $next_epoch"
-    $CCLI query leadership-schedule --socket-path $SOCKET_PATH $network_magic --genesis "$NETWORK_PATH/shelley-genesis.json" --stake-pool-id $STAKE_POOL_ID --vrf-signing-key-file "$VRF_KEY" --next > "$NODE_HOME/logs/leaderSchedule_$next_epoch.txt"
+    $CCLI query leadership-schedule --socket-path $NETWORK_SOCKET_PATH $network_magic --genesis "$NETWORK_PATH/shelley-genesis.json" --stake-pool-id $(cat $STAKE_POOL_ID) --vrf-signing-key-file "$VRF_KEY" --next > "$NETWORK_PATH/logs/leaderSchedule_$next_epoch.txt"
 
-    #Removing first two lines
-    echo "$(tail -n +3 $NODE_HOME/logs/leaderSchedule_$next_epoch.txt)" > $NODE_HOME/logs/leadership_temp.txt
+    # Removing first two lines
+    echo "$(tail -n +3 $NETWORK_PATH/logs/leaderSchedule_$next_epoch.txt)" > $NETWORK_PATH/logs/leadership_temp.txt
 
-    #Writing in Grafana CSV format
-    awk '{print $2,$3","$1","NR}' $NODE_HOME/logs/leadership_temp.txt > $NODE_HOME/logs/slot.csv
-    sed -i '1 i\Time,Slot,No' $NODE_HOME/logs/slot.csv
+    # Writing in Grafana CSV format
+    awk '{print $2,$3","$1","NR}' $NETWORK_PATH/logs/leadership_temp.txt > $NETWORK_PATH/logs/slot.csv
+    sed -i '1 i\Time,Slot,No' $NETWORK_PATH/logs/slot.csv
 
-    #Cleanup
-    rm $NODE_HOME/logs/leadership_temp.txt
+    # Cleanup
+    rm $NETWORK_PATH/logs/leadership_temp.txt
 
-    #Show Result
-    cat $NODE_HOME/logs/slot.csv
+    # Show Result
+    cat $NETWORK_PATH/logs/slot.csv
 }
 
+# Run current epoch check
 if [ isSynced ];then
     echo "Current epoch: $(getCurrentEpoch)"
 
@@ -143,19 +127,19 @@ if [ isSynced ];then
     echo "Next check time: $(timestampToUTC $timestampCheckLeaders)"
 
     timeDifference=$(( $timestampCheckLeaders-$currentTime ))
-    if [ -f "$NODE_HOME/logs/leaderSchedule_$(( $(getCurrentEpoch)+1 )).txt" ]; then
-                echo "Check already done, check logs for results"; exit 1
+    if [ -f "$NETWORK_PATH/logs/leaderSchedule_$(( $(getCurrentEpoch)+1 )).txt" ]; then
+        echo "Check already done, check logs for results"; exit 1
     elif [[ $timeDifference -gt 86400 ]]; then
-                echo "Too early to run the script, wait for next cron scheduled job"; exit 1
+        echo "Too early to run the script, wait for next cron scheduled job"; exit 1
     elif [[ $timeDifference -gt 0 ]] && [[ $timeDifference -le 86400 ]]; then
         sleepUntil $timeDifference
         echo "Check is starting on $(timestampToUTC $(getCurrentTime))"
-            checkLeadershipSchedule
+        checkLeadershipSchedule
         echo "Script ended, schedule logged inside file: leaderSchedule_$(( $(getCurrentEpoch)+1 )).txt"
-    elif [[ $timeDifference -lt 0 ]] && [ ! -f "$NODE_HOME/logs/leaderSchedule_$(( $(getCurrentEpoch)+1 )).txt" ]; then
-                echo "Check is starting on $(timestampToUTC $(getCurrentTime))"
-                checkLeadershipSchedule
-                echo "Script ended, schedule logged inside file: leaderSchedule_$(( $(getCurrentEpoch)+1 )).txt"
+    elif [[ $timeDifference -lt 0 ]] && [ ! -f "$NETWORK_PATH/logs/leaderSchedule_$(( $(getCurrentEpoch)+1 )).txt" ]; then
+        echo "Check is starting on $(timestampToUTC $(getCurrentTime))"
+        checkLeadershipSchedule
+        echo "Script ended, schedule logged inside file: leaderSchedule_$(( $(getCurrentEpoch)+1 )).txt"
     else
         echo "There were problems on running the script, check that everything is working fine"; exit 1
     fi

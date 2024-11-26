@@ -1,13 +1,19 @@
 #!/bin/bash
+# Usage: scripts/query/kes.sh
+#
+# Info:
+#
+#   - Query the KES info for the node certificate
+#   - Shows the tests results for the current certificate and json response
 
-source "$(dirname "$0")/../../networks/${1}/env"
-source "$(dirname "$0")/../common/common.sh"
-help 17 1 ${@} || exit
+source "$(dirname "$0")/../../env"
+source "$(dirname "$0")/../common.sh"
 
-slotsPerKESPeriod=$(cat $NETWORK_PATH/shelley-genesis.json | jq -r '.slotsPerKESPeriod')
-slotNo=$(cardano-cli query tip $NETWORK_ARG --socket-path $NETWORK_SOCKET_PATH | jq -r '.slot')
-kesPeriod=$((${slotNo} / ${slotsPerKESPeriod}))
+print 'KES' "Current KES state:" $green
 
-print 'KES' "Slots per period: ${slotsPerKESPeriod}"
-print 'KES' "Current slot: ${slotNo}"
-print 'KES' "Start period: ${kesPeriod}"
+$CNCLI conway query kes-period-info $NETWORK_ARG \
+  --socket-path $NETWORK_SOCKET_PATH \
+  --op-cert-file $NODE_CERT
+
+print 'KES' "Current node counter: " $green
+cat $NODE_COUNTER

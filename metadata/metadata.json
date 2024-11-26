@@ -1,7 +1,7 @@
 {
   "name": "Upstream",
-  "description": "Upstream is an independent ADA Stake Pool Operator. Hosts of the London Cardano Social and the 2022/2023 Cardano Summits, we provide community driven events and educational content. Actively supporting decentralisation, sustainability and SPO alliances.",
+  "description": "Upstream is an independent ADA Stake Pool Operator. Hosts of the London Cardano Social and the 2022/2023/2024 Cardano Summits, we provide community driven events and workshops. Actively supporting decentralisation, sustainability and SPO alliances.",
   "ticker": "UPSTR",
   "homepage": "https://upstream.org.uk",
-  "extended": "https://upstream.org.uk/assets/extendedPoolMetaData.json"
+  "extended": "https://upstream.org.uk/assets/extended.json"
 }

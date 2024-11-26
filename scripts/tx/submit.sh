@@ -1,14 +1,18 @@
 #!/bin/bash
+# Usage: scripts/tx/submit.sh
+#
+# Info:
+#
+#   - Submit a signed transaction
 
-source "$(dirname "$0")/../common/common.sh"
-help 12 1 ${@} || exit
-source "$(dirname "$0")/../../networks/${1}/env"
+source "$(dirname "$0")/../../env"
+source "$(dirname "$0")/../common.sh"
+file=${1:-'tx.signed'}
+outputPath=$NETWORK_PATH/temp
 
-outputPath=${NODE_HOME}/temp
-
-cardano-cli transaction submit \
-    --tx-file $outputPath/tx.signed \
+$CNCLI conway transaction submit \
+    --tx-file $outputPath/$file \
     --socket-path $NETWORK_SOCKET_PATH \
     $NETWORK_ARG
 
-rm $outputPath/tx.signed
+rm $outputPath/$file

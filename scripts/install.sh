@@ -1,61 +1,40 @@
 #!/bin/bash
+# Usage: scripts/install.sh
+#
+# Info:
+#
+#   - Cardano node installation script.
+#   - Checks the env file has been created.
+#   - Installs OS package dependencies.
+#   - Created node directories.
+#   - Build cardano packages based on $NODE_BUILD option.
+#   - Download config files and gLiveView monitor.
+#   - Format supervisor files and prepare services.
 
 source "$(dirname "$0")/../env"
-source "$(dirname "$0")/common/common.sh"
-help 3 0 ${@} || exit 1
+source "$(dirname "$0")/common.sh"
 
-# Check the env has been created
 if [ ! -f "$(dirname "$0")/../env" ]; then
   print 'INSTALL ERROR' 'No env file found, please review README.md' $red
   exit 1
 fi
 
-# Install dependencies.
-print 'INSTALL' 'Install dependencies'
+print 'INSTALL' 'Installing dependencies'
 sudo $PACKAGER install jq bc tcptraceroute supervisor wget -y
 
-# Create directories.
-print 'INSTALL' 'Create directories'
-mkdir -p temp $NETWORK_PATH $NETWORK_PATH/keys $NETWORK_PATH/scripts $BIN_PATH
+print 'INSTALL' 'Create node directories'
+mkdir -p $NETWORK_PATH $NETWORK_PATH/temp $NETWORK_PATH/keys $NETWORK_PATH/scripts $NETWORK_PATH/logs $BIN_PATH
 
-# Download and extract cardano node packages.
-if [[ $NODE_BUILD < 1 ]]; then
-  print 'INSTALL' 'Downloading node binaries'
-  mkdir -p downloads
-  wget -O downloads/$NODE_DOWNLOAD $NODE_REMOTE
-  tar -xvzf downloads/$NODE_DOWNLOAD -C downloads
-  rm downloads/$NODE_DOWNLOAD
-  cp -a downloads/. $BIN_PATH/
-  rm -R downloads
-
-# Or run the build script.
-else
-  print 'INSTALL' 'Building node binaries'
-  bash scripts/build.sh || exit 1
+if [[ $NODE_BUILD == 1 ]]; then
+  bash scripts/install/download.sh || exit 1
+elif [[ $NODE_BUILD == 2 ]]; then
+  bash scripts/install/build.sh || exit 1
 fi
 
-# Copy the env and download config files.
-cp -p env $NETWORK_PATH/env
- for C in ${CONFIG_DOWNLOADS[@]}; do
-    wget -O $NETWORK_PATH/$C $CONFIG_REMOTE/$C
-done
-print 'INSTALL' "Downloaded configs for $NODE_NETWORK"
+bash scripts/install/configs.sh || exit 1
 
-# Download guild helper scripts (gLiveView).
-for G in ${GUILD_SCRIPT_DOWNLOADS[@]}; do
-    wget -O $NETWORK_PATH/scripts/$G $GUILD_REMOTE/$G
-done
-chmod +x $NETWORK_PATH/scripts/gLiveView.sh
-sed -i $NETWORK_PATH/scripts/env \
-    -e "s|\#CONFIG=\"\${CNODE_HOME}\/files\/config.json\"|CONFIG=\"${NETWORK_PATH}\/config.json\"|g" \
-    -e "s|\#SOCKET=\"\${CNODE_HOME}\/sockets\/node.socket\"|SOCKET=\"${NETWORK_PATH}\/db\/socket\"|g" \
-    -e "s|\#CNODE_PORT=6000|CNODE_PORT=\"${NODE_PORT}\"|g" \
-    -e "s|\#CNODEBIN=\"\${HOME}\/.local\/bin\/cardano-node\"|CNODEBIN=\"\${HOME}\/local\/bin\/cardano-node\"|g" \
-    -e "s|\#CCLI=\"\${HOME}\/.local\/bin\/cardano-cli\"|CCLI=\"\${HOME}\/local\/bin\/cardano-cli\"|g" \
-makdir $NETWORK_PATH/logs
-print 'INSTALL' "Downloaded guild scripts"
+bash scripts/install/guild.sh || exit 1
 
-# Format supervisor service files.
 cp -p services/cardano-node.service services/$NETWORK_SERVICE.temp
 sed -i services/$NETWORK_SERVICE.temp \
     -e "s|NODE_NETWORK|$NODE_NETWORK|g" \
@@ -65,13 +44,11 @@ sed -i services/$NETWORK_SERVICE.temp \
 sudo cp -p services/$NETWORK_SERVICE.temp $SERVICE_PATH/$NETWORK_SERVICE
 rm services/$NETWORK_SERVICE.temp
 
-# Enable the service
 sudo systemctl daemon-reload
 sudo systemctl enable $NETWORK_SERVICE
 
-# Complete and display versions.
-print 'INSTALL' "Node installed as $NODE_TYPE"
 $CNNODE --version
 $CNCLI --version
+print 'INSTALL' "Node installed" $green
 print 'INSTALL COMPLETE' "Edit your topology config at $NETWORK_PATH/topology.json" $green
 print 'INSTALL COMPLETE' "Then start the node service: sudo systemctl start $NETWORK_SERVICE" $green

@@ -1,12 +1,12 @@
 #!/bin/bash
+# Usage: scripts/query/uxto.sh
+#
+# Info:
+#
+#   - Query uxto for address defaults to payment.addr address
 
-# Info : Query uxto for address defaults to payment.addr address.
-#      : Expects env with set variables.
-# Use  : cd $NODE_HOME
-#      : scripts/genquery/uxto.sh <ADDR> <sanchonet | preview | preprod | mainnet>
+source "$(dirname "$0")/../../env"
+source "$(dirname "$0")/../common.sh"
+address=${1:-"$PAYMENT_ADDR"}
 
-source "$(dirname "$0")/../../networks/${2:-"preview"}/env"
-
-addr=${1:-"$NETWORK_PATH/keys/payment.addr"}
-
-cardano-cli query utxo --address $(cat $addr) $NETWORK_ARG
+$CNCLI conway query utxo --address $(cat $address) $NETWORK_ARG --socket-path $NETWORK_SOCKET_PATH
