@@ -4,7 +4,7 @@
 # Info:
 #
 #   - Generate vrf key pair
-#   - Sets appropriate permissions on the skey
+#   - Sets appropriate permissions on the node.skey
 
 source "$(dirname "$0")/../../env"
 source "$(dirname "$0")/../common.sh"

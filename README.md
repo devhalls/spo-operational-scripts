@@ -1,16 +1,44 @@
 # Cardano Stake Pool Operator (SPO) scripts
 
-A collection of scripts and procedures for operating a stake pool on Cardano.
+A collection of scripts and procedures for operating a Stake Pool, DRep or a simple node on Cardano. Developed by:Upstream SPO [UPSTR](https://upstream.org.uk).
 
-Developed by Upstream SPO [UPSTR](https://upstream.org.uk)
+```
+tree --filesfirst -L 2
+.
+├── README.md
+├── env.example
+├── metadata
+│   ├── drep.json
+│   └── metadata.json
+├── scripts
+│   ├── common.sh
+│   ├── install.sh
+│   ├── restart.sh
+│   ├── start.sh
+│   ├── stop.sh
+│   ├── update.sh
+│   ├── watch.sh
+│   ├── govern
+│   ├── install
+│   ├── mithril
+│   ├── pool
+│   ├── query
+│   ├── router
+│   └── tx
+└── services
+    ├── cardano-node.service
+    ├── mithril.service
+    └── ngrok.service
+```
 
 ### Assumptions
 
-1. Your OS, LAN network, ports and user are configured
-2. You are comfortable with cardano-node / cardano-cli and SPO requirements 
-3. You are comfortable with Linux and managing networks and servers
+1. Your OS, LAN network, ports and user are already configured. 
+2. The Ngrok script requires you to know how to set up your own ngrok account and endpoints.
+3. You are comfortable with cardano-node / cardano-cli and SPO requirements 
+4. You are comfortable with Linux and managing networks and servers
 
-### Firewall
+### Firewall (basic setup)
 
 ```
 # Allow SSH
@@ -25,23 +53,9 @@ sudo ufw enable
 
 ---
 
-## Node install
+## Node setup
 
-```
-# Create a directory and pull this repo
-mkdir Node && cd Node
-git clone https://github.com/devhalls/spo-operational-scripts.git . 
-cp -p env.example env
-
-# Edit the env file (see table below for env descriptions and configure based on your intentions)
-nano env
-
-# Run the installation script
-scripts/install.sh
-
-# Start your node
-sudo systemctl start $NETWORK_SERVICE
-```
+To install a Cardano node run the following commands, editing your env file to suit your intentions. This table describes the env variables and their available options.
 
 <table>
     <tbody>
@@ -160,9 +174,25 @@ sudo systemctl start $NETWORK_SERVICE
     </tbody>
 </table>
 
----
+### Node install
 
-## Mithril db sync
+```
+# Create a directory and pull this repo
+mkdir Node && cd Node
+git clone https://github.com/devhalls/spo-operational-scripts.git . 
+cp -p env.example env
+
+# Edit the env file (see table below for env descriptions and configure based on your intentions)
+nano env
+
+# Run the installation script
+scripts/install.sh
+
+# Start your node
+sudo systemctl start $NETWORK_SERVICE
+```
+
+### Mithril db sync
 
 ```
 # Run the mithril download script
@@ -172,9 +202,7 @@ scripts/mithril/download.sh
 scripts/mithril/sync.sh
 ```
 
----
-
-## Node update
+### Node update
 
 ```
 # Edit the env with your new NODE_VERSION
@@ -188,7 +216,7 @@ scripts/update.sh
 
 ## Register a Stake Pool
 
-To register a stake pool you must have a running fully synced relay node. We can then generate the following assets:
+To register a stake pool you must have a running **fully synced** node. We can then generate the following assets:
 
 <table>
     <tbody>
@@ -326,86 +354,96 @@ To register a stake pool you must have a running fully synced relay node. We can
 ### Generate stake pool keys and certificates
 
 ```
-# Producer node
+# COLD: Genreate KES keys
 scripts/pool/keykes.sh
 
-# Cold node
+# COLD: Generate node keys
 scripts/pool/keynode.sh
 
-# Producer node, take note of the 'Start period'
+# PRODUCER: Take note of the 'Start period'
 scripts/query/tip.sh
 
-# Copy kes.vkey to your cold node
-# Cold node
+# COLD: Genreate node operationsal certificate
 scripts/pool/certop.sh <kesPeriod>
 
-# Copy node.cert to your producer node
-# Producer node
+# COPY: node.cert to your producer node
+# PRODUCER: Generate your node vrf key
 scripts/pool/keyvrf.sh
 ```
 
 ### Generate payment and stake keys
 
 ```
-# Producer node
+# PRODUCER: Fetch the chain paramaters
 scripts/query/params.sh
 
-# Cold node
+# COLD: Generate payment and stake keys
 scripts/pool/keypayment.sh
 scripts/pool/keystake.sh
 scripts/pool/addr.sh
 
-# Copy payment.addr to your hot environment
-# Fund your payment address (see faucet link at the bottom)
-# Producer node
+# COPY: The payment.addr to producer node
+# EXTERNAL: Fund your payment address (see faucet link at the bottom of this readme)
+# PRODUCER: Query the address uxto to ensure funds arrived in your payment.addr
 scripts/query/uxto.sh
 ```
 
 ### Registering your stake address
 
 ```
-# Cold node
+# COLD: Generate a stake certificate
 scripts/pool/certstake.sh <lovelace>
 
-# Copy stake.cert to your producer node and build tx
+# COPY: stake.cert to your producer node
+# PRODUCER: build stake registration tx  
 scripts/tx/buildstakeaddr.sh
 
-# Copy tx.raw to your cold node and sign
+# COPY: tx.raw to your cold node 
+# COLD: Sign the stage registration transaction tx.raw
 scripts/tx/signstakeaddr.sh
 
-# Copy tx.signed to your producer node and submit
+# COPY: tx.signed to your producer node and submit
+# PRODUCER: Submit the signed transaction. 
 scripts/tx/submit.sh
 ```
 
 ### Registering your stake pool
 
 ```
-# Producer node, take note of your metadataHash.txt
+# PRODUCER: Take note of your metadata hash
 scripts/pool/metadata.sh
 
-# Producer node, take note of the min pool cost
+# PRODUCER: Take note of the min pool cost
 scripts/query/params.sh minPoolCost
 
-# Cold node
+# COLD: Gerenate pool registration certificate
 scripts/pool/certpool.sh <pledge>, <cost>, <margin>, <relayAddr>, <relayPort>, <metaUrl>, <metaHash>
+
+# COLD: Gerenate pool delegate certificate
 scripts/pool/certdeleg.sh 
 
-# Copy pool.cert to your producer node
-# Copy deleg.cert to your producer node
+# COPY: pool.cert to your producer node
+# COPY: deleg.cert to your producer node
+# PRODUCER: build you pool cert raw transaction
 scripts/tx/buildpoolcert.sh
 
-# Copy tx.raw to your cold node and sign
+# COPY: tx.raw to your cold node 
+# COLD: Sign the pool certificate transaction tx.raw
 scripts/tx/signpoolcert.sh
 
-# Copy tx.signed to your producer node and submit
+# COPY: tx.signed to your producer node and submit
+# PRODUCER: Submit the signed transaction 
 scripts/tx/submit.sh
 ```
 
 ### Edit your topology
 
 ```
-# Edit your typology
+# PRODUCER: Edit your typology
 nano node/topology.json
+
+# PRODUCER: Restart the node
+scripts/restart.sh
 ```
 
 ---
@@ -413,16 +451,17 @@ nano node/topology.json
 ## Rotate your KES certificate
 
 ```
-# Check the current status and node counter
+# PRODUCER: Check the current status and node counter
 scripts/query/kes.sh
 
-# Rotate the node
+# COLD: Rotate the node
 scripts/pool/rotate.sh <startPeriod>
 
-# Restart the node
+# COPY: new kes to producer node
+# PRODUCER: Restart the node
 scripts/restart.sh
 
-# Check the updates applied
+# PRODUCER: Check the updates applied
 scripts/query/kes.sh
 ```
 

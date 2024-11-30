@@ -14,17 +14,24 @@ if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
   exit 1
 fi
 
-confirm() {
-  read -p "$1 ([y]es or [N]o): "
-  case $(echo $REPLY | tr '[A-Z]' '[a-z]') in
-    y|yes) echo "yes" ;;
-    *)     echo "no" ;;
-  esac
-}
-
 print() {
   label=${1:-'LABEL'}
   message=${2:-'Message'}
   color=${3:-$orange}
   echo -e "$color[$label] $message$nc"
+}
+
+exitIfDeclined() {
+  read -p "$1 ([y]es or [N]o): "
+  case $(echo $REPLY | tr '[A-Z]' '[a-z]') in
+    y|yes) echo "yes" ;;
+    *)     exit 1 ;;
+  esac
+}
+
+exitIfNotCold() {
+  if [[ $NODE_TYPE != 'cold' && $NODE_NETWORK == 'mainnet' ]]; then
+    print "ERROR" "this command can only be run on a cold device" $red
+    exit 1;
+  fi;
 }

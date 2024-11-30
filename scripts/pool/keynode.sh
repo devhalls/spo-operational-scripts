@@ -7,6 +7,7 @@
 
 source "$(dirname "$0")/../../env"
 source "$(dirname "$0")/../common.sh"
+exitIfNotCold
 
 $CNCLI conway node key-gen \
     --cold-verification-key-file $NODE_VKEY \

@@ -61,9 +61,8 @@ echo -e "$orange[BUILD] SODIUM_VERSION: $SODIUM_VERSION$nc"
 echo -e "$orange[BUILD] IOHKNIX_VERSION: $IOHKNIX_VERSION$nc"
 echo -e "$orange[BUILD] SECP256K1_VERSION: $SECP256K1_VERSION$nc"
 echo -e "$orange[BUILD] BLST_VERSION: $BLST_VERSION$nc"
-if [[ "no" == $(confirm 'Confirm versions') ]]; then
-  exit 1
-fi
+
+exitIfDeclined 'Confirm versions'
 
 print 'BUILD' 'Create directories'
 mkdir -p ~/src
