@@ -3,7 +3,6 @@ node
 networks
 downloads
 env
-cardano-db-sync
 metadata/drep.json
 metadata/metadata.json
 
