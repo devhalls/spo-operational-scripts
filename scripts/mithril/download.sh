@@ -5,8 +5,8 @@
 #
 #   - Download the Mithril client, signer and relay
 
-source "$(dirname "$0")/../../../env"
-source "$(dirname "$0")/../../common.sh"
+source "$(dirname "$0")/../../env"
+source "$(dirname "$0")/../common.sh"
 
 mkdir -p downloads
 wget -O downloads/$MITHRIL_REMOTE_NAME $MITHRIL_REMOTE

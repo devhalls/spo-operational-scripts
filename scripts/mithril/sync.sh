@@ -7,8 +7,8 @@
 #   - You must stop your node and delete the db folder
 #   - Doe not currently support 'sanchonet'
 
-source "$(dirname "$0")/../../../env"
-source "$(dirname "$0")/../../common.sh"
+source "$(dirname "$0")/../../env"
+source "$(dirname "$0")/../common.sh"
 
 if [[ $NODE_NETWORK === 'sanchonet' ]]; then
   print "MITHRIL" "Error: $NODE_NETWORK is not supported by mithril sync"
