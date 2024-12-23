@@ -1,5 +1,5 @@
 #!/bin/bash
-# Usage: scripts/dbsync/install/ownload.sh
+# Usage: scripts/dbsync/install.sh
 #
 # Info:
 #
@@ -10,8 +10,11 @@
 source "$(dirname "$0")/../../env"
 source "$(dirname "$0")/../common.sh"
 
+print 'INSTALL' 'Creating db-sync directory and downloading binaries'
+mkdir -p $DB_SYNC_PATH
 bash download.sh
 
+print 'INSTALL' 'Creating db-sync service'
 cp -p services/cardano-db-sync.service services/$DB_SYNC_SERVICE.temp
 sed -i services/$NETWORK_SERVICE.temp \
     -e "s|NODE_HOME|$NODE_HOME|g" \
@@ -22,3 +25,4 @@ rm services/$DB_SYNC_SERVICE.temp
 
 sudo systemctl daemon-reload
 sudo systemctl enable $DB_SYNC_SERVICE
+print 'INSTALL' "DB-sync installed" $green
