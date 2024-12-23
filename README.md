@@ -453,6 +453,7 @@ scripts/restart.sh
 ```
 # PRODUCER: Check the current status and node counter
 scripts/query/kes.sh
+scripts/query/tip.sh
 
 # COLD: Rotate the node
 scripts/pool/rotate.sh <startPeriod>
