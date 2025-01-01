@@ -3,7 +3,7 @@
 A collection of scripts and procedures for operating a Stake Pool, DRep or a simple node on Cardano. Developed by Upstream SPO [UPSTR](https://upstream.org.uk).
 
 ```
-tree --filesfirst -L 2
+tree --filesfirst -L 3
 .
 ├── README.md
 ├── env.example
@@ -20,8 +20,17 @@ tree --filesfirst -L 2
 │   ├── query.sh
 │   ├── tx.sh
 │   ├── dbsync
+│   │   ├── download.sh
+│   │   ├── install.sh
+│   │   └── start.sh
 │   ├── node
+│   │   ├── build.sh
+│   │   ├── download.sh
+│   │   ├── install.sh
+│   │   ├── mithril.sh
+│   │   └── update.sh
 │   └── query
+│       └── leader.sh
 └── services
     ├── cardano-db-sync.service
     ├── cardano-node.service
@@ -30,6 +39,7 @@ tree --filesfirst -L 2
     ├── mithril.service
     ├── ngrok.service
     └── prometheus.yml
+
 ```
 
 ## Assumptions
@@ -598,7 +608,12 @@ Running a Stake Pool requires participation in Cardano governance. From _time to
 ```
 # PRODUCER: Query the govern action id then build the vote
 scripts/govern.sh action <govActionId>
+
+# COLD: cast your vote on your cold machine
 scripts/govern.sh vote <govActionId> <govActionIndex> <'yes' | 'no' | 'abstain'>
+
+# COPY: vote.raw to your producer node
+# PRODUCER: build the raw transaction with vote.raw as input 
 scripts/tx.sh vote_raw
 
 # COPY: tx.raw to your cold node 
@@ -609,6 +624,8 @@ scripts/tx.sh vote_sign
 # PRODUCER: Submit the signed transaction 
 scripts/tx.sh submit
 ```
+
+---
 
 ## Registering a DRep
 
@@ -682,7 +699,12 @@ Being a DRep requires participation in Cardano governance. From _time to time_ y
 ```
 # PRODUCER: Query the govern action id then build the vote
 scripts/govern.sh action <govActionId>
-scripts/govern.sh vote <govActionId> <govActionIndex> <'yes' | 'no' | 'abstain'> <drep>
+
+# COLD: cast your vote on your cold machine - to vote as a DRep ensure you pass the last param: 'drep'
+scripts/govern.sh vote <govActionId> <govActionIndex> <'yes' | 'no' | 'abstain'> drep
+
+# COPY: vote.raw to your producer node
+# PRODUCER: build the raw transaction with vote.raw as input 
 scripts/tx.sh vote_raw
 
 # COPY: tx.raw to your cold node 
@@ -696,11 +718,11 @@ scripts/tx.sh submit
 
 ---
 
-## Links
+---
 
-- [Cardano testnet faucet](https://docs.cardano.org/cardano-testnets/tools/faucet/)
+## Code examples
 
-## Examples
+Some useful commands and code examples.
 
 ```
 # Register a stake poool certificate
@@ -710,4 +732,38 @@ scripts/pool/certpool.sh 12500000000 170000000 0.01 8.tcp.eu.ngrok.io 24241 http
 curl -s 127.0.0.1:12798/metrics | sort
 curl -s 127.0.0.1:12798/metrics | grep "cardano_node_metrics_txsInMempool_int"
 ```
+
+---
+
+## Repository info
+
+### Contributors
+
+* Upstream SPO - @upstream_ada
+* Devhalls - @devhalls
+* Grafana dashboards initially used from https://github.com/sanskys/SNSKY
+
+### Contributing
+
+Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are greatly appreciated.
+
+If you have a suggestion that would make this plugin better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement". Don't forget to give the project a star! Thanks again!
+
+1. Fork the Project
+2. Create your Feature Branch (git checkout -b feature/AmazingFeature)
+3. Commit your Changes (git commit -m 'Add some AmazingFeature')
+4. Push to the Branch (git push origin feature/AmazingFeature)
+5. Open a Pull Request
+
+[#BuildingTogether](https://x.com/search?q=buildingtogether)
+
+### License
+
+Distributed under the GPL-3.0 License. See LICENSE.txt for more information.
+
+### Links
+
+- [Cardano testnet faucet](https://docs.cardano.org/cardano-testnets/tools/faucet/)
+- [Upstream SPO](https://upstream.org.uk)
+- [Twitter](https://x.com/Upstream_ada)
 

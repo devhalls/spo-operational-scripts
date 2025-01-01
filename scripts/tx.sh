@@ -7,22 +7,22 @@
 #   drep_reg_raw |
 #   drep_reg_sign |
 #   vote_raw |
-#   vote_sign |
+#   vote_sign [?voteKey] |
 #   submit |
 #   help [?-h]
 # ]
 #
 # Info:
 #
-#   - stake_reg_raw)
-#   - stake_reg_sign)
-#   - pool_reg_raw)
-#   - pool_reg_sign)
-#   - drep_reg_raw)
-#   - drep_reg_sign)
-#   - vote_raw)
-#   - vote_sign)
-#   - submit)
+#   - stake_reg_raw) Build raw tx for stake address registration with the stakeAddressDeposit and $STAKE_CERT.
+#   - stake_reg_sign) Sign a tx.raw with the $PAYMENT_KEY and $STAKE_KEY (witness-count = 2).
+#   - pool_reg_raw) Build raw tx for pool registration with the stakePoolDeposit (or passed value) and $POOL_CERT + $DELE_CERT. Optionally pass in stakePoolDeposit to overwrite.
+#   - pool_reg_sign) Sign a tx.raw with the $PAYMENT_KEY and $STAKE_KEY and $NODE_KEY (witness-count = 3).
+#   - drep_reg_raw) Build raw tx for drep registration with the $DREP_CERT.
+#   - drep_reg_sign) Sign a tx.raw with the $PAYMENT_KEY and $DREP_KEY (witness-count = 2).
+#   - vote_raw) Build raw tx from a vote.raw file (vote.raw is generated using govern.sh functions).
+#   - vote_sign) Sign a tx.raw vote transaction with the vote.raw and $PAYMENT_KEY (witness-count = 2).
+#   - submit) Submit a tx.signed to chain.
 #   - help) View this files help. Default value if no option is passed.
 
 source "$(dirname "$0")/../env"
@@ -196,7 +196,8 @@ tx_drep_reg_raw() {
   outputPath=$NETWORK_PATH/temp
 
   $CNCLI conway transaction build \
-    $NETWORK_ARG --socket-path $NETWORK_SOCKET_PATH \
+    $NETWORK_ARG \
+    --socket-path $NETWORK_SOCKET_PATH \
     --tx-in $($CNCLI query utxo --address $(< $PAYMENT_ADDR) $NETWORK_ARG --socket-path $NETWORK_SOCKET_PATH --output-json | jq -r 'keys[0]') \
     --change-address $(< $PAYMENT_ADDR) \
     --certificate-file $DREP_CERT  \
@@ -235,6 +236,7 @@ tx_vote_raw() {
     --witness-override 2 \
     --out-file $NETWORK_PATH/temp/tx.raw
 
+  rm $votePath
   print 'TX' "File output: $NETWORK_PATH/temp/tx.raw" $green
 }
 
@@ -242,11 +244,13 @@ tx_vote_sign() {
   exit_if_not_cold
   keyFile=${1}
   tempPath=$NETWORK_PATH/temp
+  votePath=$NETWORK_PATH/temp/vote.raw
 
-  $CNCLI conway transaction sign --tx-body-file $tempPath/tx.raw \
-     --signing-key-file $NETWORK_PATH/keys/$keyFile \
-     --signing-key-file $PAYMENT_KEY \
-     --out-file $tempPath/tx.signed
+  $CNCLI conway transaction sign \
+    --tx-body-file $tempPath/tx.raw \
+    --signing-key-file $votePath \
+    --signing-key-file $PAYMENT_KEY \
+    --out-file $tempPath/tx.signed
 
   rm $tempPath/tx.raw
   print 'TX' "File output: $tempPath/tx.signed" $green

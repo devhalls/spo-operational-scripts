@@ -1,10 +1,5 @@
 #!/bin/bash
 
-# Perform global checks
-
-if [[ -z $CNCLI ]]; then echo "cardano-cli command cannot be found, exiting..."; exit 127; fi
-if [[ -z $(which jq) ]]; then echo "jq command cannot be found, exiting..."; exit 127; fi
-
 # Define global variables
 
 blue='\033[0;34m'
@@ -70,6 +65,12 @@ update_or_append() {
   else
     echo "$line" | sudo tee -a $file > /dev/null
   fi
+}
+
+exit_if_invalid() {
+  # Perform global checks
+  if [[ -z $CNCLI ]]; then echo "cardano-cli command cannot be found, exiting..."; exit 127; fi
+  if [[ -z $(which jq) ]]; then echo "jq command cannot be found, exiting..."; exit 127; fi
 }
 
 exit_if_cold() {
