@@ -19,7 +19,7 @@
 #   - kes_period) Query the kes period params. Useful when generating pool certificates.
 #   - kes_state) Query the current $NODE_CERT on chain kes state.
 #   - uxto) Query the uxto for an address. Defaults to $PAYMENT_ADDR if non is passed.
-#   - leader) Run the pool leader slot query. Pass the period to choose which epoch to query ['next' | 'current'].
+#   - leader) Run the pool leader slot query. Pass the period to choose which epoch to query ['next' | 'current' | 'previous' ].
 #   - help) View this files help. Default value if no option is passed.
 
 source "$(dirname "$0")/../env"
@@ -94,7 +94,34 @@ query_uxto() {
 }
 
 query_leader() {
-  bash "$(dirname "$0")/query/leader.sh" "$@"
+  period=${1:-"next"}
+  targetEpoch=$(query_tip epoch)
+  if [ $period != 'next' ] | [ $period != 'previous' ] | [ $period != 'current' ]; then
+      print 'ERROR' "Leadership schedule incorrect period value: $period"
+      exit 0
+  fi
+  if [ $period == 'next' ]; then targetEpoch=$targetEpoch + 1; fi
+  if [ $period == 'previous' ]; then targetEpoch=$targetEpoch - 1; fi
+  outputPath=$NETWORK_PATH/logs/leader/$targetEpoch # filename path excludes extension
+
+  print 'QUERY' "Leadership schedule starting"
+  cardano-cli query leadership-schedule \
+    --mainnet \
+    --stake-pool-id $POOL_ID \
+    --vrf-signing-key-file $NODE_HOME/vrf.skey \
+    --genesis $NODE_HOME/shelley-genesis.json \
+    --$period > $outputPath.txt
+
+  if [ -f $outputPath.txt ]; then
+    echo "$(tail -n +3 $outputPath.txt)" > $outputPath.txt
+    awk '{print $2,$3","$1","NR}' $outputPath.txt > $outputPath.csv
+    sed -i '1 i\Time,Slot,No' $outputPath.csv
+    rm $outputPath.txt
+    print 'QUERY' "Leader slot results:\n $(cat $outputPath.csv)"
+  else
+    print 'ERROR' "Leadership schedule failed"
+    exit 0
+  fi
 }
 
 case $1 in

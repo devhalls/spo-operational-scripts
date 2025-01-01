@@ -718,8 +718,6 @@ scripts/tx.sh submit
 
 ---
 
----
-
 ## Code examples
 
 Some useful commands and code examples.
@@ -741,7 +739,7 @@ curl -s 127.0.0.1:12798/metrics | grep "cardano_node_metrics_txsInMempool_int"
 
 * Upstream SPO - @upstream_ada
 * Devhalls - @devhalls
-* Grafana dashboards initially used from https://github.com/sanskys/SNSKY
+* Grafana dashboard and leader slot query initially used from https://github.com/sanskys/SNSKY
 
 ### Contributing
 
