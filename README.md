@@ -605,6 +605,49 @@ scripts/tx.sh pool_reg_sign
 scripts/tx.sh submit
 ```
 
+### Delegating your voting power
+
+In order to withdraw your SPO rewards you will need to participate in Cardano Governance by delegating your voting power. You have 4 possibilities when choosing how you wish to participate, listed below. Along with these you can also register your stake address as a DRep and participate in Governance directly as your own representative.
+
+1. delegate to a DRep who can vote on your behalf
+1. delegate to a DRep script who can vote on your behalf
+2. delegate your voting power to auto abstain
+3. delegate your voting power to a vote of on-confidence
+
+```
+# COLD: Generate your vote delegation certificate using one of the 3 options:
+scripts/address.sh generate_stake_vote_cert drep <drepId>
+scripts/address.sh generate_stake_vote_cert script <scriptHash>
+scripts/address.sh generate_stake_vote_cert abstain
+scripts/address.sh generate_stake_vote_cert no-confidence
+
+# PRODUCER: Build the tx.raw with the $DELE_VOTE_CERT
+scripts/tx.sh stake_vote_reg_raw
+
+# COPY: tx.raw to your cold node 
+# COLD: Sign the withdraw transaction tx.raw
+scripts/tx.sh stake_reg_sign
+
+# COPY: tx.signed to your producer node
+# PRODUCER: Submit the signed transaction 
+scripts/tx.sh submit
+```
+
+### Withdrawing stake pool rewards
+
+```
+# PRODUCER: build you pool cert raw transaction
+scripts/tx.sh pool_withdraw_raw
+
+# COPY: tx.raw to your cold node 
+# COLD: Sign the withdraw transaction tx.raw
+scripts/tx.sh stake_reg_sign
+
+# COPY: tx.signed to your producer node
+# PRODUCER: Submit the signed transaction 
+scripts/tx.sh submit
+```
+
 ### Vote on a governance action as a SPO
 
 Running a Stake Pool requires participation in Cardano governance. From _time to time_ you will need to cast your SPO vote for various governance actions.

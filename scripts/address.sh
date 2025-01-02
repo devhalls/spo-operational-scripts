@@ -6,6 +6,7 @@
 #   generate_stake_address |
 #   generate_stake_reg_cert [deposit] |
 #   generate_stake_del_cert |
+#   generate_stake_vote_cert [?delegateTo] [?drepId | ?scriptHash] |
 #   help [?-h]
 # ]
 #
@@ -17,6 +18,7 @@
 #   - generate_stake_address) Generate a stake address from a stake key.
 #   - generate_stake_reg_cert) Generate a stake registration certificate. Requires the deposit param in lovelace.
 #   - generate_stake_del_cert) Generate a stake delegation certificate.
+#   - generate_stake_vote_cert) Generate a vote delegation certificate delegating your voting power. Can be 'drep <drepId>' | 'script <scriptHash>' | 'abstain' | 'no-confidence'.
 #   - help) View this files help. Default value if no option is passed.
 
 source "$(dirname "$0")/../env"
@@ -93,6 +95,26 @@ address_generate_stake_del_cert() {
   print 'ADDRESS' "Stake delegation certificate created at $DELE_CERT" $green
 }
 
+address_generate_stake_vote_cert() {
+  exit_if_not_cold
+  if [ -f $DELE_VOTE_CERT ]; then
+    confirm "Certificate already exists! 'yes' to overwrite, 'no' to cancel"
+  fi
+  param=
+  case $1 in
+    drep) param="--drep-key-hash $2" ;;
+    script) param="--drep-script-hash $2" ;;
+    abstain) param="--always-abstain" ;;
+    no-confidence) param="--always-no-confidence" ;;
+    *) exit 1
+  esac
+  $CNCLI conway stake-address vote-delegation-certificate \
+    --stake-verification-key-file $STAKE_VKEY \
+    $param \
+    --out-file $DELE_VOTE_CERT
+  print 'ADDRESS' "You have delegated using: $@" $green
+}
+
 case $1 in
   generate_payment_keys) address_generate_payment_keys ;;
   generate_payment_address) address_generate_payment_address ;;
@@ -100,6 +122,7 @@ case $1 in
   generate_stake_address) address_generate_stake_address ;;
   generate_stake_reg_cert) address_generate_stake_reg_cert "${@:2}" ;;
   generate_stake_del_cert) address_generate_stake_del_cert ;;
+  generate_stake_vote_cert) address_generate_stake_vote_cert "${@:2}" ;;
   help) help "${2:-"--help"}" ;;
   *) help "${1:-"--help"}" ;;
 esac

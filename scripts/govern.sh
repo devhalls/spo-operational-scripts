@@ -11,7 +11,7 @@
 # Info:
 #
 #   - action) Query the blockchain for a gov action info. Expects a govActionId param.
-#   - vote) Cast a vote for the passed params. keyFile defaults to 'node' assuming a pool vote. Can be 'node' | 'drep' | 'cc'
+#   - vote) Cast a vote for the passed params. keyFile defaults to 'node' assuming a pool vote. Can be 'node' | 'drep' | 'cc'.
 #   - drep_id) Retrieve the dreps id. Optionally pass the format, defaults to bech32.
 #   - drep_keys) Generate DRep keys.
 #   - drep_cert) Generate DRep certificate expecting the passed url for the drep metadata json.
@@ -28,8 +28,7 @@ govern_action() {
 }
 
 govern_vote() {
-  exit_if_not_producer
-
+  exit_if_not_cold
   govActionId=${1}
   govActionIndex=${2}
   decision=${3}
