@@ -500,6 +500,10 @@ scripts/query.sh tip
 scripts/query.sh tip epoch
 scripts/query.sh params
 scripts/query.sh params treasuryCut
+
+# Query node prometheus metrics
+scripts/query.sh metrics
+scripts/query.sh metrics cardano_node_metrics_peerSelection_warm
 ```
 
 ### Monitoring with Grafana
@@ -720,15 +724,11 @@ scripts/tx.sh submit
 
 ## Code examples
 
-Some useful commands and code examples.
+Some useful examples.
 
 ```
 # Register a stake poool certificate
-scripts/pool/certpool.sh 12500000000 170000000 0.01 8.tcp.eu.ngrok.io 24241 https://upstream.org.uk/assets/metadata.json $(cat metadata/metadataHash.txt)
-
-# View metrics
-curl -s 127.0.0.1:12798/metrics | sort
-curl -s 127.0.0.1:12798/metrics | grep "cardano_node_metrics_txsInMempool_int"
+scripts/pool/certpool.sh 5000000000 170000000 0.01 8.tcp.eu.ngrok.io 22222 https://upstream.org.uk/assets/metadata.json $(cat metadata/metadataHash.txt)
 ```
 
 ---

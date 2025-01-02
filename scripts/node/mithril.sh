@@ -10,6 +10,7 @@
 #   restart |
 #   watch |
 #   verify_registration |
+#   verify_signature |
 #   help [?-h]
 # ]
 #
@@ -25,6 +26,7 @@
 #   - restart) Restarts the mithril signer service.
 #   - watch) Watch mithril signer service logs.
 #   - verify_registration) Verify that your signer is registered.
+#   - verify_signature) Verify that your signer contributes with individual signatures.
 #   - help) View this files help.
 
 source "$(dirname "$0")/../../env"
@@ -106,6 +108,8 @@ mithril_install_signer_env() {
 
   wget -O $MITHRIL_PATH/verify_signer_registration.sh https://mithril.network/doc/scripts/verify_signer_registration.sh
   chmod +x $MITHRIL_PATH/verify_signer_registration.sh
+  wget -O $MITHRIL_PATH/verify_signer_signature.sh https://mithril.network/doc/scripts/verify_signer_signature.sh
+  chmod +x $MITHRIL_PATH/verify_signer_signature.sh
 
   printf "KES_SECRET_KEY_PATH=$KES_KEY
 OPERATIONAL_CERTIFICATE_PATH=$NODE_CERT
@@ -243,9 +247,15 @@ mithril_watch() {
 }
 
 mithril_verify_signer_registration() {
-  export PARTY_ID=$POOL_ID
+  export PARTY_ID=$(bash "$(dirname "$0")/../pool.sh" get_pool_id bech32)
   export AGGREGATOR_ENDPOINT=$MITHRIL_AGGREGATOR_ENDPOINT
   bash $MITHRIL_PATH/verify_signer_registration.sh
+}
+
+mithril_verify_signer_signature() {
+  export PARTY_ID=$(bash "$(dirname "$0")/../pool.sh" get_pool_id bech32)
+  export AGGREGATOR_ENDPOINT=$MITHRIL_AGGREGATOR_ENDPOINT
+  bash $MITHRIL_PATH/verify_signer_signature.sh
 }
 
 case $1 in
@@ -259,6 +269,7 @@ case $1 in
   restart) mithril_restart ;;
   watch) mithril_watch ;;
   verify_registration) mithril_verify_signer_registration ;;
+  verify_signature) mithril_verify_signer_signature ;;
   help) help "${2:-"--help"}" ;;
   *) sync ;;
 esac

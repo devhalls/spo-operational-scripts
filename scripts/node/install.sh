@@ -145,15 +145,19 @@ install_grafana() {
 
   source ~/.bashrc
   sudo grafana-cli plugins install grafana-clock-panel
+  sudo grafana-cli plugins install marcusolsson-csv-datasource
 
   # Adjust the prometheus service command
   serviceDir="$(dirname "$0")/../../services"
   sudo cp -p $serviceDir/prometheus.yml /etc/prometheus/prometheus.yml
-  sudo sed -i /lib/systemd/system/prometheus-node-exporter.service \
-        -e "s|ExecStart=/usr/bin/prometheus-node-exporter|ExecStart=/usr/bin/prometheus-node-exporter --collector.textfile.directory=$NETWORK_PATH/stats --collector.textfile|g" \
+  sudo sed -i "/^ExecStart=/c\\ExecStart=/usr/bin/prometheus-node-exporter --collector.textfile.directory=$NETWORK_PATH/stats --collector.textfile" /lib/systemd/system/prometheus-node-exporter.service
 
   # Edit grafana ini
   sudo sed -i "/# disable user signup \/ registration/{n;s/.*/allow_sign_up = false/}" "/etc/grafana/grafana.ini"
+  if ! sudo grep -q "plugin.marcusolsson-csv-datasource" /etc/grafana/grafana.ini; then
+    echo "[plugin.marcusolsson-csv-datasource]" | sudo tee -a /etc/grafana/grafana.ini > /dev/null
+    echo "allow_local_mode = true" | sudo tee -a /etc/grafana/grafana.ini > /dev/null
+  fi
 
   # Enable and restart the services
   sudo systemctl enable grafana-server.service

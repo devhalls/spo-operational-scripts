@@ -123,7 +123,7 @@ pool_get_pool_id() {
   exit_if_not_producer
   format="${1:-hex}"
   $CNCLI conway stake-pool id --cold-verification-key-file $NODE_VKEY --output-format $format > $POOL_ID
-  print "POOL" "ID: $(cat $POOL_ID)"
+  echo "$(cat $POOL_ID)"
 }
 
 pool_get_stats() {

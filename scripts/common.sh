@@ -73,6 +73,13 @@ exit_if_invalid() {
   if [[ -z $(which jq) ]]; then echo "jq command cannot be found, exiting..."; exit 127; fi
 }
 
+exit_if_file_missing() {
+  if [ ! -f $1 ]; then
+    print 'ERROR' "File $1 does not exist" $red
+    exit 1
+  fi
+}
+
 exit_if_cold() {
   if [[ $NODE_TYPE == 'cold' && $NODE_NETWORK == 'mainnet' ]]; then
     print "ERROR" "this command can not be run on a cold device" $red
