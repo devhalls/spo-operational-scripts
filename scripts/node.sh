@@ -9,8 +9,11 @@
 #   restart |
 #   watch |
 #   view |
-#   restart_prometheus |
-#   watch_prometheus |
+#   restart_prom |
+#   watch_prom |
+#   watch_prom_ex |
+#   restart_grafana |
+#   watch_grafana |
 #   help [?-h]
 # ]
 #
@@ -25,8 +28,11 @@
 #   - restart) Restart the node systemctl service.
 #   - watch) Watch the node service logs.
 #   - view) View the node using gLiveView script.
-#   - restart_prometheus) Restart the prometheus and grafana services.
-#   - watch_prometheus) Watch the prometheus service logs.
+#   - restart_prom) Restart the prometheus services.
+#   - watch_prom) Watch the prometheus service logs.
+#   - watch_prom_ex) Watch the prometheus exporter service logs.
+#   - restart_grafana) Restart the grafana server services.
+#   - watch_grafana) Watch the grafana server service logs.
 #   - help) View this files help. Default value if no option is passed.
 
 source "$(dirname "$0")/../env"
@@ -85,17 +91,32 @@ node_view() {
   bash $NETWORK_PATH/scripts/gLiveView.sh "$@"
 }
 
-node_restart_prometheus() {
+node_restart_prom() {
   exit_if_cold
-  sudo systemctl restart grafana-server.service
   sudo systemctl restart prometheus.service
   sudo systemctl restart prometheus-node-exporter.service
   print 'NODE' "Prometheus services restarted" $green
 }
 
-node_watch_prometheus() {
+node_watch_prom() {
+  exit_if_cold
+  journalctl --system -u prometheus.service --follow
+}
+
+node_watch_prom_ex() {
   exit_if_cold
   journalctl --system -u prometheus-node-exporter.service --follow
+}
+
+node_restart_grafana() {
+  exit_if_cold
+  sudo systemctl restart grafana-server.service
+  print 'NODE' "Grafana service restarted" $green
+}
+
+node_watch_grafana() {
+  exit_if_cold
+  journalctl --system -u grafana-server.service --follow
 }
 
 case $1 in
@@ -108,8 +129,11 @@ case $1 in
   restart) node_restart ;;
   watch) node_watch ;;
   view) node_view "${@:2}" ;;
-  restart_prometheus) node_restart_prometheus ;;
-  watch_prometheus) node_watch_prometheus ;;
+  restart_prom) node_restart_prom ;;
+  watch_prom) node_watch_prom ;;
+  watch_prom_ex) node_watch_prom_ex ;;
+  restart_grafana) node_restart_grafana ;;
+  watch_grafana) node_watch_grafana ;;
   help) help "${2:-"--help"}" ;;
   *) help "${1:-"--help"}" ;;
 esac

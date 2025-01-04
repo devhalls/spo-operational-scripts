@@ -136,7 +136,7 @@ pool_get_stats() {
     > $NETWORK_PATH/stats/data-pool.prom
 
   chmod +r $NETWORK_PATH/stats/data-pool.prom
-  print 'POOL' "Cardano scan stats:\n$(cat $NETWORK_PATH/stats/data-pool.prom)"
+  sed 's/ /: /g' $(cat $NETWORK_PATH/stats/data-pool.prom)
 }
 
 pool_rotate_kes() {

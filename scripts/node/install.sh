@@ -122,7 +122,7 @@ install_prometheus_explorer() {
   sed -i $CONFIG_PATH -e "s/127.0.0.1/0.0.0.0/g"
   sudo systemctl restart prometheus-node-exporter.service
 
-  if [ $NODE_TYPE == 'producer' ] | [ $NODE_NETWORK == 'mainnet' ]; then
+  if [ $NODE_TYPE == 'producer' ] && [ $NODE_NETWORK == 'mainnet' ]; then
     if [ ! $monitoringIp ]; then
       print 'ERROR' 'Please supply your monitoring node IP address' $red
       exit 1

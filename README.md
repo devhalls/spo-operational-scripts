@@ -515,32 +515,46 @@ Password: admin (change your password after first login)
 
 ```
 # ALL NODES: Install prometheus explorer on all nodes
-scripts/install.sh prometheus_explorer
+scripts/node.sh install prometheus_explorer
 
-# RELAY: Install grafana on the monitoring node only
-scripts/install.sh grafana
+# MONITOR: Install grafana on the monitoring node only
+scripts/node.sh install grafana
 
-# You may need to add the prometheus user to the folders group to avoid permission issues
-sudo usermod -a -G <folderGroup> prometheus
+# ALL NODES: Check the service status
+scripts/node.sh watch_prometheus_ex
 
-# Check prometheus status
+# MONITOR: Check the service status
 scripts/node.sh watch_prometheus
+scripts/node.sh watch_grafana
 
-# Restart the prometheus and grafana services
+# ALL NODES: Restart the prometheus services
+scripts/node.sh restart_prometheus
+
+# MONITOR: Restart the grafana services
+scripts/node.sh restart_grafana
+
+# MONITOR: You may need to add the prometheus user to the folders group to avoid permission issues
+sudo usermod -a -G upstream prometheus
+
+# MONITOR: Edit your prometheus config to collect data from all your replays, then restart
+sudo nano /etc/prometheus/prometheus.yml
 scripts/node.sh restart_prometheus
 ```
 
 To enable metrics from Cardanoscan API, set the env API key in NODE_CARDANOSCAN_API, then run the following commands:
 
 ```
-# Check you can retrieve stats, and check if theres no error in the response
+# MONITOR: create the pool.id file and paste in your 'Pool ID' which you can get from https://cardanoscan.io (or generate it on your cold device)
+nano cardano-node/keys/pool.id
+
+# MONITOR: Check you can retrieve stats, and check if theres no error in the response
 scripts/pool.sh get_stats
 
-# If successful setup a crontab to fetch data periodically
+# If successful (you see stats output) setup a crontab to fetch data periodically
 crontab -e
 
-# Get data from Cardanoscan every day at 06:00
-* * * * * /home/upstream/Cardano/scripts/pool.sh get_stats
+# Get data from Cardanoscan every hour at 5 past the hour
+5 * * * * /home/upstream/Cardano/scripts/pool.sh get_stats
 ```
 
 ### Backing up your pool
