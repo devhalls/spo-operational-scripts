@@ -23,7 +23,7 @@
 #   - kes) Query the current $NODE_CERT on chain kes state.
 #   - kes_period) Query the kes period params. Useful when generating pool certificates.
 #   - uxto) Query the uxto for an address. Defaults to $PAYMENT_ADDR if non is passed.
-#   - leader) Run the pool leader slot query. Pass the period to choose which epoch to query ['next' | 'current' | 'previous' ].
+#   - leader) Run the pool leader slot query. Pass the period to choose which epoch to query ['next' | 'current' ].
 #   - rewards) Query stake address info. Optionally pass a param name to view only this value.
 #   - help) View this files help. Default value if no option is passed.
 
@@ -100,7 +100,6 @@ query_leader() {
       exit 0
   fi
   if [ $period == '--next' ]; then targetEpoch=$(($targetEpoch+1)); fi
-  if [ $period == '--previous' ]; then targetEpoch=$(($targetEpoch-1)); fi
 
   # Set file paths and get the poolId
   outputPath=$NETWORK_PATH/logs
