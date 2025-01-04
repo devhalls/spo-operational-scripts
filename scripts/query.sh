@@ -80,9 +80,9 @@ query_kes_period() {
   slotsPerKESPeriod=$(cat $NETWORK_PATH/shelley-genesis.json | jq -r '.slotsPerKESPeriod')
   slotNo=$(query_tip slot)
   kesPeriod=$(($slotNo / $slotsPerKESPeriod))
-  echo "slotsPerKESPeriod $slotsPerKESPeriod"
-  echo "currentSlot $slotNo"
-  echo "kesPeriod $kesPeriod"
+  echo "slotsPerKESPeriod: $slotsPerKESPeriod"
+  echo "currentSlot: $slotNo"
+  echo "kesPeriod: $kesPeriod"
 }
 
 query_uxto() {
