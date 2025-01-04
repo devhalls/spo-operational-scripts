@@ -56,6 +56,28 @@ platform_arm() {
   fi
 }
 
+get_param() {
+  echo "$1" | grep "^$2" | awk '{for(i=2; i<=NF; i++) printf "%s ", $i; print ""}'
+}
+
+get_option() {
+  local option_name="$1"
+  local option_value=""
+  shift
+  while [[ $# -gt 1 ]]; do
+    case "$1" in
+      "$option_name")
+        option_value="$option_value $1 $2"
+        shift 2 # move past the option and its value
+        ;;
+      *)
+        shift  # unknown option
+        ;;
+    esac
+  done
+  echo "$option_value"
+}
+
 update_or_append() {
   file=${1}
   check=${2}
