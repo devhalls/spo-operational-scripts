@@ -206,10 +206,10 @@ mithril_configure_squid() {
   sudo cp /etc/squid/squid.conf /etc/squid/squid.conf.bak
   printf "
 # Listening port (port 3132 is recommended)
-http_port **YOUR_RELAY_LISTENING_PORT**
+http_port 3132
 
 # ACL for internal IP of your block producer node
-acl block_producer_internal_ip src **YOUR_BLOCK_PRODUCER_INTERNAL_IP**
+acl block_producer_internal_ip src $ipAddress
 
 # ACL for aggregator endpoint
 acl aggregator_domain dstdomain .mithril.network
@@ -261,7 +261,7 @@ http_access deny all
   sudo systemctl daemon-reload
   sudo systemctl start squid
   sudo systemctl enable squid
-  
+
   print 'MITHRIL' 'Squid service started' $green
 }
 
