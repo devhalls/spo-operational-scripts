@@ -25,7 +25,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 7,
+  "id": 1,
   "links": [
     {
       "icon": "external link",
@@ -648,7 +648,7 @@
           },
           "editorMode": "code",
           "exemplar": true,
-          "expr": "round(data_liveStake{alias=\"block-producer-node\"}/1000000)",
+          "expr": "round(data_liveStake{alias=\"relay-node-1\"}/1000000)",
           "interval": "",
           "legendFormat": "",
           "range": true,
@@ -855,7 +855,7 @@
       "datasource": {
         "type": "prometheus"
       },
-      "description": "Connected peers to/from Core Node",
+      "description": "Connected incoming peers to Core Node",
       "fieldConfig": {
         "defaults": {
           "decimals": 0,
@@ -874,16 +874,20 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "dark-green",
+                "color": "red",
                 "value": null
               },
               {
-                "color": "semi-dark-yellow",
+                "color": "orange",
                 "value": 12
               },
               {
-                "color": "#FA6400",
+                "color": "yellow",
                 "value": 15
+              },
+              {
+                "color": "green",
+                "value": 20
               }
             ]
           },
@@ -920,8 +924,9 @@
       "pluginVersion": "11.4.0",
       "targets": [
         {
+          "editorMode": "code",
           "exemplar": true,
-          "expr": "cardano_node_metrics_peers_connectedPeers_int{alias=\"block-producer-node\"}",
+          "expr": "cardano_node_metrics_connectionManager_incomingConns{alias=\"block-producer-node\"}",
           "format": "time_series",
           "instant": false,
           "interval": "",
@@ -1000,6 +1005,7 @@
       "pluginVersion": "11.4.0",
       "targets": [
         {
+          "editorMode": "code",
           "expr": "cardano_node_metrics_txsProcessedNum_int{alias=\"block-producer-node\"}",
           "hide": false,
           "instant": true,
@@ -1154,7 +1160,7 @@
           },
           "editorMode": "code",
           "exemplar": true,
-          "expr": "data_activePledge{alias=\"block-producer-node\"}/1000000",
+          "expr": "data_activePledge{alias=\"relay-node-1\"}/1000000",
           "interval": "",
           "legendFormat": "",
           "range": true,
@@ -1225,7 +1231,7 @@
           },
           "editorMode": "code",
           "exemplar": true,
-          "expr": "data_currentEpochBlocks{alias=\"block-producer-node\"}",
+          "expr": "data_currentEpochBlocks{alias=\"relay-node-1\"}",
           "interval": "",
           "legendFormat": "",
           "range": true,
@@ -1431,7 +1437,7 @@
       "datasource": {
         "type": "prometheus"
       },
-      "description": "Connected peers to/from Relay 1",
+      "description": "Connected peers to Relay 1",
       "fieldConfig": {
         "defaults": {
           "decimals": 0,
@@ -1450,16 +1456,20 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "dark-red",
+                "color": "red",
                 "value": null
               },
               {
-                "color": "semi-dark-yellow",
+                "color": "orange",
                 "value": 12
               },
               {
-                "color": "semi-dark-green",
+                "color": "yellow",
                 "value": 15
+              },
+              {
+                "color": "green",
+                "value": 20
               }
             ]
           },
@@ -1496,8 +1506,9 @@
       "pluginVersion": "11.4.0",
       "targets": [
         {
+          "editorMode": "code",
           "exemplar": true,
-          "expr": "cardano_node_metrics_peers_connectedPeers_int{alias=\"relay-node-1\"}",
+          "expr": "cardano_node_metrics_connectionManager_incomingConns{alias=\"relay-node-1\"}",
           "format": "time_series",
           "instant": false,
           "interval": "",
@@ -1799,7 +1810,7 @@
           },
           "editorMode": "code",
           "exemplar": true,
-          "expr": "data_saturationLevel{alias=\"block-producer-node\"}",
+          "expr": "data_saturationLevel{alias=\"relay-node-1\"}",
           "interval": "",
           "legendFormat": "",
           "range": true,
@@ -1870,7 +1881,7 @@
           },
           "editorMode": "code",
           "exemplar": true,
-          "expr": "data_lifetimeBlocks{alias=\"block-producer-node\"}",
+          "expr": "data_lifetimeBlocks{alias=\"relay-node-1\"}",
           "interval": "",
           "legendFormat": "",
           "range": true,
@@ -1942,7 +1953,7 @@
           },
           "editorMode": "code",
           "exemplar": true,
-          "expr": "data_interest{alias=\"block-producer-node\"}",
+          "expr": "data_interest{alias=\"relay-node-1\"}",
           "interval": "",
           "legendFormat": "",
           "range": true,
@@ -2022,7 +2033,7 @@
           },
           "editorMode": "code",
           "exemplar": true,
-          "expr": "data_position{alias=\"block-producer-node\"}",
+          "expr": "data_position{alias=\"relay-node-1\"}",
           "interval": "",
           "legendFormat": "__auto",
           "range": true,
@@ -5328,7 +5339,7 @@
     "list": []
   },
   "time": {
-    "from": "now-12h",
+    "from": "now-3h",
     "to": "now"
   },
   "timepicker": {
@@ -5347,6 +5358,6 @@
   "timezone": "",
   "title": "Cardano SPO",
   "uid": "CardanoNodeDashboard24",
-  "version": 12,
+  "version": 7,
   "weekStart": ""
 }

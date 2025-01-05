@@ -8,12 +8,16 @@
 #   stop |
 #   restart |
 #   watch |
+#   status |
 #   view |
 #   restart_prom |
 #   watch_prom |
+#   status_prom |
 #   watch_prom_ex |
+#   status_prom_ex |
 #   restart_grafana |
 #   watch_grafana |
+#   status_grafana |
 #   help [?-h]
 # ]
 #
@@ -27,12 +31,16 @@
 #   - stop) Stop the node systemctl service.
 #   - restart) Restart the node systemctl service.
 #   - watch) Watch the node service logs.
+#   - status) Display the node service status.
 #   - view) View the node using gLiveView script.
 #   - restart_prom) Restart the prometheus services.
 #   - watch_prom) Watch the prometheus service logs.
+#   - status_prom) Display the prometheus service status.
 #   - watch_prom_ex) Watch the prometheus exporter service logs.
+#   - status_prom_ex) Display the prometheus exporter service status.
 #   - restart_grafana) Restart the grafana server services.
 #   - watch_grafana) Watch the grafana server service logs.
+#   - status_grafana) Display the grafana server service status.
 #   - help) View this files help. Default value if no option is passed.
 
 source "$(dirname "$0")/../env"
@@ -86,6 +94,11 @@ node_watch() {
   journalctl -u $NETWORK_SERVICE -f -o cat
 }
 
+node_status() {
+  exit_if_cold
+  sudo systemctl status $NETWORK_SERVICE
+}
+
 node_view() {
   exit_if_cold
   bash $NETWORK_PATH/scripts/gLiveView.sh "$@"
@@ -103,9 +116,19 @@ node_watch_prom() {
   journalctl --system -u prometheus.service --follow
 }
 
+node_status_prom() {
+  exit_if_cold
+  sudo systemctl status prometheus.service
+}
+
 node_watch_prom_ex() {
   exit_if_cold
   journalctl --system -u prometheus-node-exporter.service --follow
+}
+
+node_status_prom_ex() {
+  exit_if_cold
+  sudo systemctl status prometheus-node-exporter.service
 }
 
 node_restart_grafana() {
@@ -119,6 +142,11 @@ node_watch_grafana() {
   journalctl --system -u grafana-server.service --follow
 }
 
+node_status_grafana() {
+  exit_if_cold
+  sudo systemctl status grafana-server.service
+}
+
 case $1 in
   install) bash $(dirname "$0")/node/install.sh "${@:2}" ;;
   update) bash $(dirname "$0")/node/update.sh "${@:2}" ;;
@@ -128,12 +156,16 @@ case $1 in
   stop) node_stop ;;
   restart) node_restart ;;
   watch) node_watch ;;
+  status) node_status ;;
   view) node_view "${@:2}" ;;
   restart_prom) node_restart_prom ;;
   watch_prom) node_watch_prom ;;
+  status_prom) node_status_prom ;;
   watch_prom_ex) node_watch_prom_ex ;;
+  status_prom_ex) node_status_prom_ex ;;
   restart_grafana) node_restart_grafana ;;
   watch_grafana) node_watch_grafana ;;
+  status_grafana) node_status_grafana ;;
   help) help "${2:-"--help"}" ;;
   *) help "${1:-"--help"}" ;;
 esac

@@ -106,11 +106,11 @@ query_leader() {
   tempFilePath=$outputPath/$targetEpoch.txt
   csvFile=$outputPath/slots.csv
   grafanaLocation=/usr/share/grafana/slots.csv
-  poolId=$(bash "$(dirname "$0")/pool.sh" get_pool_id bech32)
+  poolId=$POOL_ID
 
   # Run the leadership-schedule query
   print 'QUERY' "Leadership schedule starting, please wait..."
-  cardano-cli query leadership-schedule $NETWORK_ARG --socket-path $NETWORK_SOCKET_PATH \
+  $CNCLI query leadership-schedule $NETWORK_ARG --socket-path $NETWORK_SOCKET_PATH \
     --genesis $NETWORK_PATH/shelley-genesis.json \
     --stake-pool-id $poolId \
     --vrf-signing-key-file $VRF_KEY \

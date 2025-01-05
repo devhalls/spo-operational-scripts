@@ -481,8 +481,11 @@ As an SPO there are a few things you must do to keep a producing block producing
 Knowing what's going on under the hood is essential to running a node. 
 
 ```
-# Watch the service logs
+# Watch the node service logs
 scripts/node.sh watch
+
+¢ Display the node service status
+scripts/node.sh status
 
 # Run the gLiveView script
 scripts/node.sh view
@@ -508,7 +511,7 @@ scripts/query.sh metrics cardano_node_metrics_peerSelection_warm
 
 ### Monitoring with Grafana
 
-View your node state via Grafana dashboards makes it easy to manage your nodes. Once you have installed the necessary packages you can visit the dashboard.
+View your node state via Grafana dashboards makes it easy to manage your nodes. Once you have installed the necessary packages and configs restart your nodes and you can visit the dashboard.
 Dashboard: http://<monitor node IP>:3000 
 Username: admin
 Password: admin (change your password after first login)
@@ -521,24 +524,30 @@ scripts/node.sh install prometheus_explorer
 scripts/node.sh install grafana
 
 # ALL NODES: Check the service status
-scripts/node.sh watch_prometheus_ex
+scripts/node.sh watch_prom_ex
+scripts/node.sh status_prom_ex
 
 # MONITOR: Check the service status
-scripts/node.sh watch_prometheus
+scripts/node.sh watch_prom
 scripts/node.sh watch_grafana
+scripts/node.sh status_prom
+scripts/node.sh status_grafana
 
 # ALL NODES: Restart the prometheus services
-scripts/node.sh restart_prometheus
+scripts/node.sh restart_prom
 
 # MONITOR: Restart the grafana services
 scripts/node.sh restart_grafana
 
-# MONITOR: You may need to add the prometheus user to the folders group to avoid permission issues
-sudo usermod -a -G upstream prometheus
-
 # MONITOR: Edit your prometheus config to collect data from all your replays, then restart
 sudo nano /etc/prometheus/prometheus.yml
 scripts/node.sh restart_prometheus
+
+# MONITOR: You may need to add the prometheus user to the folders group to avoid permission issues
+sudo usermod -a -G upstream prometheus
+
+# MONITOR: You may also need to change the user in the prometheus.yml if you still experience permissions issues
+sudo nano /etc/prometheus/prometheus.yml
 ```
 
 To enable metrics from Cardanoscan API, set the env API key in NODE_CARDANOSCAN_API, then run the following commands:
