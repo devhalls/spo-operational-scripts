@@ -1,10 +1,14 @@
 # Cardano Stake Pool Operator (SPO) scripts
 
-A collection of scripts and procedures for operating a Stake Pool, DRep or a simple node on Cardano. Developed by Upstream SPO [UPSTR](https://upstream.org.uk).
+A collection of scripts and procedures for operating a Stake Pool, DRep or a Cardano node. Developed by Upstream Stake Pool [UPSTR](https://upstream.org.uk).
+
+<details>
+<summary>File tree</summary>
 
 ```
 tree --filesfirst -L 3
 .
+├── LICENSE
 ├── README.md
 ├── env.example
 ├── metadata
@@ -19,42 +23,40 @@ tree --filesfirst -L 3
 │   ├── pool.sh
 │   ├── query.sh
 │   ├── tx.sh
-│   ├── dbsync
-│   │   ├── download.sh
-│   │   ├── install.sh
-│   │   └── start.sh
-│   ├── node
-│   │   ├── build.sh
-│   │   ├── download.sh
-│   │   ├── install.sh
-│   │   ├── mithril.sh
-│   │   └── update.sh
-│   └── query
-│       └── leader.sh
+│   └── node
+│       ├── build.sh
+│       ├── download.sh
+│       ├── install.sh
+│       ├── mithril.sh
+│       └── update.sh
 └── services
-    ├── cardano-db-sync.service
     ├── cardano-node.service
     ├── grafana-mithril-dashboard.json
     ├── grafana-node-dashboard.json
     ├── mithril.service
     ├── ngrok.service
     └── prometheus.yml
-
 ```
+</details>
 
-## Assumptions
+<details>
+<summary>Assumptions</summary>
 
 1. Your OS, LAN network, ports and user are already configured. 
 2. The Ngrok script requires you to know how to set up your own ngrok account and endpoints.
 3. You are comfortable with cardano-node / cardano-cli and SPO requirements 
 4. You are comfortable with Linux and managing networks and servers
 5. You are able to setup your cold node by copying the binaries, scripts and keys securely as required.
+</details>
 
 ---
 
 ## Node setup
 
-This table describes the env variables and their available options. Read through these options before proceeding to the installation.
+This table describes the env variables you most likely need to adjust to suit your system and their available options. Read through these options before proceeding to the installation.
+
+<details>
+<summary>env variables</summary>
 
 <table>
     <tbody>
@@ -172,6 +174,8 @@ This table describes the env variables and their available options. Read through
     </tbody>
 </table>
 
+</details>
+
 ### Node install
 
 Get started by creating a directory and pulling this repo, and edit the env file (see table below for env descriptions and configure).
@@ -237,6 +241,9 @@ sudo ufw enable
 ## Registering a Stake Pool
 
 To register a stake pool you must have a running **fully synced** node. We can then generate the following assets:
+
+<details>
+<summary>pool assets</summary>
 
 <table>
     <tbody>
@@ -370,6 +377,7 @@ To register a stake pool you must have a running **fully synced** node. We can t
         </tr>
     </tbody>
 </table>
+</details>
 
 ### Generate stake pool keys and certificates
 
@@ -706,6 +714,9 @@ scripts/tx.sh submit
 
 To register a stake pool you must have a running **fully synced** node. We can then generate the following assets:
 
+<details>
+<summary>DRep assets</summary>
+
 <table>
     <tbody>
         <tr>
@@ -742,6 +753,7 @@ To register a stake pool you must have a running **fully synced** node. We can t
         </tr>
     </tbody>
 </table>
+</details>
 
 ### Generate DRep keys and certificate
 
@@ -793,17 +805,6 @@ scripts/tx.sh submit
 
 ---
 
-## Code examples
-
-Some useful examples.
-
-```
-# Register a stake poool certificate
-scripts/pool/certpool.sh 5000000000 170000000 0.01 8.tcp.eu.ngrok.io 22222 https://upstream.org.uk/assets/metadata.json $(cat metadata/metadataHash.txt)
-```
-
----
-
 ## Repository info
 
 ### Contributors
@@ -833,6 +834,6 @@ Distributed under the GPL-3.0 License. See LICENSE.txt for more information.
 ### Links
 
 - [Cardano testnet faucet](https://docs.cardano.org/cardano-testnets/tools/faucet/)
-- [Upstream SPO](https://upstream.org.uk)
-- [Twitter](https://x.com/Upstream_ada)
+- [Upstream SPO website](https://upstream.org.uk)
+- [Upstream Twitter](https://x.com/Upstream_ada)
 

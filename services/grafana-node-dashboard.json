@@ -1160,9 +1160,9 @@
           },
           "editorMode": "code",
           "exemplar": true,
-          "expr": "data_activePledge{alias=\"relay-node-1\"}/1000000",
+          "expr": "round(data_activePledge{alias=\"relay-node-1\"}/1000000)",
           "interval": "",
-          "legendFormat": "",
+          "legendFormat": "__auto",
           "range": true,
           "refId": "A"
         }
@@ -2957,18 +2957,22 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "fe8du3r69is5cf"
+            "uid": "ae8zae77gagw0b"
           },
+          "disableTextWrap": false,
           "editorMode": "code",
-          "expr": "cardano_node_metrics_slotNum_int{alias=\"block-producer-node\"}",
-          "legendFormat": "Current slot",
+          "expr": "cardano_node_metrics_slotNum_int{alias=\"relay-node-1\"}   ",
+          "fullMetaSearch": false,
+          "includeNullMetadata": true,
+          "legendFormat": "Slot",
           "range": true,
-          "refId": "A"
+          "refId": "A",
+          "useBackend": false
         },
         {
           "datasource": {
             "type": "marcusolsson-csv-datasource",
-            "uid": "de8oze2jm5ipsb"
+            "uid": "fe92yrclgk64gc"
           },
           "decimalSeparator": ".",
           "delimiter": ",",
@@ -2986,8 +2990,7 @@
               "type": "number"
             }
           ],
-          "skipRows": 0,
-          "timezone": "UTC"
+          "skipRows": 0
         }
       ],
       "timeFrom": "+24h",
@@ -5339,7 +5342,7 @@
     "list": []
   },
   "time": {
-    "from": "now-3h",
+    "from": "now-24h",
     "to": "now"
   },
   "timepicker": {
@@ -5358,6 +5361,6 @@
   "timezone": "",
   "title": "Cardano SPO",
   "uid": "CardanoNodeDashboard24",
-  "version": 7,
+  "version": 10,
   "weekStart": ""
 }
