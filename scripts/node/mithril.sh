@@ -161,8 +161,8 @@ mithril_install_squid() {
   mkdir -p downloads
   wget -O "downloads/squid-$MITHRIL_SQUID_VERSION.tar.gz" "https://www.squid-cache.org/Versions/v6/squid-$MITHRIL_SQUID_VERSION.tar.gz"
   if [ $? -eq 0 ]; then
-    tar xzf squid-$MITHRIL_SQUID_VERSION.tar.gz
-    cd squid-$MITHRIL_SQUID_VERSION
+    tar -xvzf downloads/squid-$MITHRIL_SQUID_VERSION.tar.gz -C downloads
+    cd downloads/squid-$MITHRIL_SQUID_VERSION
 
     ./configure \
         --prefix=/opt/squid \
@@ -185,56 +185,62 @@ mithril_install_squid() {
 
 mithril_configure_squid() {
   exit_if_not_relay
+  ipAddress=$1
+  if [[ ! $ipAddress ]]; then
+    print 'ERROR' 'Please supply and IP address'
+    exit 1
+  fi
+
   sudo cp /etc/squid/squid.conf /etc/squid/squid.conf.bak
-  sudo bash -c 'cat > /etc/squid/squid.conf << EOF
-  # Listening port (port 3132 is recommended)
-  http_port **YOUR_RELAY_LISTENING_PORT**
+  sudo printf "
+# Listening port (port 3132 is recommended)
+http_port **YOUR_RELAY_LISTENING_PORT**
 
-  # ACL for internal IP of your block producer node
-  acl block_producer_internal_ip src **YOUR_BLOCK_PRODUCER_INTERNAL_IP**
+# ACL for internal IP of your block producer node
+acl block_producer_internal_ip src **YOUR_BLOCK_PRODUCER_INTERNAL_IP**
 
-  # ACL for aggregator endpoint
-  acl aggregator_domain dstdomain .mithril.network
+# ACL for aggregator endpoint
+acl aggregator_domain dstdomain .mithril.network
 
-  # ACL for SSL port only
-  acl SSL_port port 443
+# ACL for SSL port only
+acl SSL_port port 443
 
-  # Allowed traffic
-  http_access allow block_producer_internal_ip aggregator_domain SSL_port
+# Allowed traffic
+http_access allow block_producer_internal_ip aggregator_domain SSL_port
 
-  # Do not disclose block producer internal IP
-  forwarded_for delete
+# Do not disclose block producer internal IP
+forwarded_for delete
 
-  # Turn off via header
-  via off
+# Turn off via header
+via off
 
-  # Deny request for original source of a request
-  follow_x_forwarded_for deny all
+# Deny request for original source of a request
+follow_x_forwarded_for deny all
 
-  # Anonymize request headers
-  request_header_access Authorization allow all
-  request_header_access Proxy-Authorization allow all
-  request_header_access Cache-Control allow all
-  request_header_access Content-Length allow all
-  request_header_access Content-Type allow all
-  request_header_access Date allow all
-  request_header_access Host allow all
-  request_header_access If-Modified-Since allow all
-  request_header_access Pragma allow all
-  request_header_access Accept allow all
-  request_header_access Accept-Charset allow all
-  request_header_access Accept-Encoding allow all
-  request_header_access Accept-Language allow all
-  request_header_access Connection allow all
-  request_header_access All deny all
+# Anonymize request headers
+request_header_access Authorization allow all
+request_header_access Proxy-Authorization allow all
+request_header_access Cache-Control allow all
+request_header_access Content-Length allow all
+request_header_access Content-Type allow all
+request_header_access Date allow all
+request_header_access Host allow all
+request_header_access If-Modified-Since allow all
+request_header_access Pragma allow all
+request_header_access Accept allow all
+request_header_access Accept-Charset allow all
+request_header_access Accept-Encoding allow all
+request_header_access Accept-Language allow all
+request_header_access Connection allow all
+request_header_access All deny all
 
-  # Disable cache
-  cache deny all
+# Disable cache
+cache deny all
 
-  # Deny everything else
-  http_access deny all
+# Deny everything else
+http_access deny all
+" > /etc/squid/squid.conf
 
-  EOF'
 }
 
 mithril_start() {
@@ -286,7 +292,7 @@ case $1 in
   install_signer_env) mithril_install_signer_env ;;
   install_signer_service) mithril_install_signer_service ;;
   install_squid) mithril_install_squid ;;
-  configure_squid) mithril_configure_squid ;;
+  configure_squid) mithril_configure_squid "${2:@}" ;;
   start) mithril_start ;;
   stop) mithril_stop ;;
   restart) mithril_restart ;;
