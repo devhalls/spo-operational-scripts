@@ -106,7 +106,7 @@ query_leader() {
   tempFilePath=$outputPath/$targetEpoch.txt
   csvFile=$outputPath/slots.csv
   grafanaLocation=/usr/share/grafana/slots.csv
-  poolId=$POOL_ID
+  poolId=$(< $POOL_ID)
 
   # Run the leadership-schedule query
   print 'QUERY' "Leadership schedule starting, please wait..."
