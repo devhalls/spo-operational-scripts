@@ -192,7 +192,7 @@ mithril_configure_squid() {
   fi
 
   sudo cp /etc/squid/squid.conf /etc/squid/squid.conf.bak
-  sudo printf "
+  printf "
 # Listening port (port 3132 is recommended)
 http_port **YOUR_RELAY_LISTENING_PORT**
 
@@ -239,7 +239,7 @@ cache deny all
 
 # Deny everything else
 http_access deny all
-" > /etc/squid/squid.conf
+" | sudo tee -a /etc/squid/squid.conf > /dev/null
 
 }
 
