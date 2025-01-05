@@ -560,7 +560,7 @@ scripts/node.sh restart_prometheus
 sudo usermod -a -G upstream prometheus
 
 # MONITOR: You may also need to change the user in the prometheus.yml if you still experience permissions issues
-sudo nano /etc/prometheus/prometheus.yml
+sudo nano /lib/systemd/system/prometheus-node-exporter.service
 ```
 
 To enable metrics from Cardanoscan API, set the env API key in NODE_CARDANOSCAN_API, then run the following commands:
@@ -577,22 +577,6 @@ crontab -e
 
 # Get data from Cardanoscan every hour at 5 past the hour
 5 * * * * /home/upstream/Cardano/scripts/pool.sh get_stats
-```
-
-### Backing up your pool
-
-It's vitally import you make multiple backups of your node cold keys, this is what gives you control over your node. You can also backup your producer and relays to make redeployment simpler.  
-
-```
-# COLD: Backup the keys.
-.
-├── $NETWORK_PATH/keys
-
-# PRODUCER: Optionally backup the below directories and env configuration, EXCLUDING the $NETWORK_PATH/db folder which contains the blockchain database.
-.
-├── env
-├── metadata
-├── $NETWORK_PATH
 ```
 
 ### Rotate your KES
@@ -613,6 +597,38 @@ scripts/node.sh restart
 
 # PRODUCER: Check the updates have applied
 scripts/query.sh kes_state
+```
+
+### Leader schedule
+
+Checking when you are due to mint blocks is essential to running your stake pool.
+
+```
+# PRODUER: Check the next epoch leader schedule
+scripts/query.sh leader next 
+
+# PRODUER: OR you can check the current epoch if needed
+scripts/query.sh leader current
+
+# COPY: Copy the out put ready to past to your monitor nodes grafana csv file
+# MONITOR: Paste in the below file (if your runnong a testnet node with only a producer this is done automatically)  
+sudo nano /usr/share/grafana/slots.csv
+```
+
+### Backing up your pool
+
+It's vitally import you make multiple backups of your node cold keys, this is what gives you control over your node. You can also backup your producer and relays to make redeployment simpler.
+
+```
+# COLD: Backup the keys.
+.
+├── $NETWORK_PATH/keys
+
+# PRODUCER: Backup the below directories and env configuration, EXCLUDING the $NETWORK_PATH/db folder which contains the blockchain database.
+.
+├── env
+├── metadata
+├── $NETWORK_PATH
 ```
 
 ### Regenerate pool certificates

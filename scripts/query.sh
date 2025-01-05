@@ -111,7 +111,7 @@ query_leader() {
   outputPath=$NETWORK_PATH/logs
   tempFilePath=$outputPath/$targetEpoch.txt
   csvFile=$outputPath/slots.csv
-  grafanaLocation=/usr/share/grafana/slots.csv
+  grafanaLocation=/usr/share/grafana
   poolId=$(< $POOL_ID)
 
   # Run the leadership-schedule query
@@ -131,13 +131,16 @@ query_leader() {
     echo 'Time,Slot,No,Epoch' > $csvFile 2>/dev/null
   fi
 
-  # Process the output file adding values to $csvFile, echo the result, and copy to grafana folder
+  # Process the output file adding values to $csvFile, echo the result, and copy to grafana folder if it exists
   if [ -f $tempFilePath ]; then
     echo "$(tail -n +3 $tempFilePath)" > $tempFilePath
     sed -i "s/\$/ $targetEpoch/" $tempFilePath
     content=$(awk '{print $2,$3","$1","NR","$5}' $tempFilePath)
     grep -qxF "$content" $csvFile || echo "$content" >> $csvFile
     echo "$content"
+    if [ -d $grafanaLocation ]; then
+      sudo cp $csvFile $grafanaLocation/slots.csv
+    fi
     rm $tempFilePath
   else
     print 'ERROR' "Leadership schedule failed to run" $red
