@@ -39,7 +39,7 @@ mithril_download() {
   local arm=$(platform_arm)
   mkdir -p downloads
 
-  if [ $arm == 'arm' ]; then
+  if [ "$arm" == 'arm' ]; then
     local filename="mithril-binaries-version-${MITHRIL_VERSION//./_}"
     wget -O "downloads/$filename.tar.zst" "$MITHRIL_REMOTE_ARM/$filename.tar.zst"
     if [ $? -eq 0 ]; then
@@ -49,7 +49,8 @@ mithril_download() {
     local filename="mithril-$MITHRIL_VERSION-$p-x64"
     wget -O "downloads/$filename.tar.gz" "$MITHRIL_REMOTE/$filename.tar.gz"
     if [ $? -eq 0 ]; then
-      tar -xvzf "downloads/$filename.tar.gz" -C downloads
+      mkdir -p downloads/$filename
+      tar -xvzf "downloads/$filename.tar.gz" -C downloads/$filename
     fi
   fi
 
@@ -125,10 +126,11 @@ ERA_READER_ADAPTER_TYPE=cardano-chain
 ERA_READER_ADAPTER_PARAMS=$MITHRIL_AGGREGATOR_PARAMS
 ENABLE_METRICS_SERVER=$MITHRIL_PROMETHEUS
 METRICS_SERVER_IP=$MITHRIL_METRICS_SERVER_IP
-METRICS_SERVER_PORT=$MITHRIL_METRICS_SERVER_PORT" > $MITHRIL_PATH/mithril-signer.env
+METRICS_SERVER_PORT=$MITHRIL_METRICS_SERVER_PORT
+" > $MITHRIL_PATH/mithril-signer.env
 
   if [ $MITHRIL_RELAY ]; then
-    printf "RELAY_ENDPOINT=$MITHRIL_RELAY" > $MITHRIL_PATH/mithril-signer.env
+    echo "RELAY_ENDPOINT=$MITHRIL_RELAY" >> $MITHRIL_PATH/mithril-signer.env
   fi
 }
 
@@ -150,24 +152,29 @@ mithril_install_signer_service() {
 }
 
 mithril_install_squid() {
-  wget https://www.squid-cache.org/Versions/v6/squid-6.12.tar.gz
-  tar xzf squid-6.12.tar.gz
-  cd squid-6.12
+  mkdir -p downloads
+  wget -O "downloads/squid-$MITHRIL_SQUID_VERSION.tar.gz" "https://www.squid-cache.org/Versions/v6/squid-$MITHRIL_SQUID_VERSION.tar.gz"
+  if [ $? -eq 0 ]; then
+    tar xzf squid-$MITHRIL_SQUID_VERSION.tar.gz
+    cd squid-$MITHRIL_SQUID_VERSION
 
-  ./configure \
-      --prefix=/opt/squid \
-      --localstatedir=/opt/squid/var \
-      --libexecdir=/opt/squid/lib/squid \
-      --datadir=/opt/squid/share/squid \
-      --sysconfdir=/etc/squid \
-      --with-default-user=squid \
-      --with-logdir=/opt/squid/var/log/squid \
-      --with-pidfile=/opt/squid/var/run/squid.pid
+    ./configure \
+        --prefix=/opt/squid \
+        --localstatedir=/opt/squid/var \
+        --libexecdir=/opt/squid/lib/squid \
+        --datadir=/opt/squid/share/squid \
+        --sysconfdir=/etc/squid \
+        --with-default-user=squid \
+        --with-logdir=/opt/squid/var/log/squid \
+        --with-pidfile=/opt/squid/var/run/squid.pid
 
-  make
-
-  sudo make install
-  /opt/squid/sbin/squid -v
+    make
+    sudo make install
+    /opt/squid/sbin/squid -v
+    rm -R downloads
+  else
+    print 'ERROR' 'Could not install squid' $red
+  fi
 }
 
 mithril_configure_squid() {
@@ -244,6 +251,11 @@ mithril_restart() {
 mithril_watch() {
   exit_if_cold
   tail -f /var/log/syslog | grep $MITHRIL_SERVICE
+}
+
+mithril_status() {
+  exit_if_not_producer
+  sudo systemctl status $MITHRIL_SERVICE
 }
 
 mithril_verify_signer_registration() {
