@@ -11,6 +11,12 @@
 #   stop |
 #   restart |
 #   watch |
+#   status |
+#   start_squid |
+#   stop_squid |
+#   restart_squid |
+#   watch_squid |
+#   status_squid |
 #   verify_registration |
 #   verify_signature |
 #   help [?-h]
@@ -29,6 +35,12 @@
 #   - stop) Stops the mithril signer service.
 #   - restart) Restarts the mithril signer service.
 #   - watch) Watch mithril signer service logs.
+#   - status) Display mithril signer service status.
+#   - start_squid) Starts the squid service.
+#   - stop_squid) Stops the squid service.
+#   - restart_squid) Restarts the squid service.
+#   - watch_squid) Watch squid service logs.
+#   - status_squid) Display squid service status.
 #   - verify_registration) Verify that your signer is registered.
 #   - verify_signature) Verify that your signer contributes with individual signatures.
 #   - help) View this files help.
@@ -241,6 +253,16 @@ cache deny all
 http_access deny all
 " | sudo tee -a /etc/squid/squid.conf > /dev/null
 
+  sudo adduser --system --no-create-home --group squid
+  sudo chown squid -R /opt/squid/var/
+  sudo chgrp squid -R /opt/squid/var/
+
+  sudo cp -p services/$MITHRIL_SQUID_SERVICE /etc/systemd/system/$MITHRIL_SQUID_SERVICE
+  sudo systemctl daemon-reload
+  sudo systemctl start squid
+  sudo systemctl enable squid
+  
+  print 'MITHRIL' 'Squid service started' $green
 }
 
 mithril_start() {
@@ -271,6 +293,34 @@ mithril_status() {
   sudo systemctl status $MITHRIL_SERVICE
 }
 
+mithril_start_squid() {
+  exit_if_not_producer
+  sudo systemctl start $MITHRIL_SQUID_SERVICE
+  print 'MITHRIL' "Squid service started" $green
+}
+
+mithril_stop_squid() {
+  exit_if_not_producer
+  sudo systemctl stop $MITHRIL_SQUID_SERVICE
+  print 'MITHRIL' "Squid service stopped" $green
+}
+
+mithril_restart_squid() {
+  exit_if_not_producer
+  sudo systemctl restart $MITHRIL_SQUID_SERVICE
+  print 'MITHRIL' "Squid service restarted" $green
+}
+
+mithril_watch_squid() {
+  exit_if_cold
+  tail -f /var/log/syslog | grep $MITHRIL_SQUID_SERVICE
+}
+
+mithril_status_squid() {
+  exit_if_not_relay
+  sudo systemctl status $MITHRIL_SQUID_SERVICE
+}
+
 mithril_verify_signer_registration() {
   exit_if_not_producer
   export PARTY_ID=$(< $POOL_ID)
@@ -298,6 +348,11 @@ case $1 in
   restart) mithril_restart ;;
   watch) mithril_watch ;;
   status) mithril_status ;;
+  start_squid) mithril_start_squid ;;
+  stop_squid) mithril_stop_squid ;;
+  restart_squid) mithril_restart_squid ;;
+  watch_squid) mithril_watch_squid ;;
+  status_squid) mithril_status_squid ;;
   verify_registration) mithril_verify_signer_registration ;;
   verify_signature) mithril_verify_signer_signature ;;
   help) help "${2:-"--help"}" ;;

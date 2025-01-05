@@ -1,0 +1,15 @@
+Unit]
+Description=Squid service
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=60
+User=squid
+Group=squid
+ExecStart=/opt/squid/sbin/squid -f /etc/squid/squid.conf -d5
+PIDFile=/opt/squid/var/run/squid.pid
+
+[Install]
+WantedBy=multi-user.target
