@@ -292,7 +292,7 @@ case $1 in
   install_signer_env) mithril_install_signer_env ;;
   install_signer_service) mithril_install_signer_service ;;
   install_squid) mithril_install_squid ;;
-  configure_squid) mithril_configure_squid "${2:@}" ;;
+  configure_squid) mithril_configure_squid "${@:2}" ;;
   start) mithril_start ;;
   stop) mithril_stop ;;
   restart) mithril_restart ;;
