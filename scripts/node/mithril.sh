@@ -251,7 +251,7 @@ cache deny all
 
 # Deny everything else
 http_access deny all
-" | sudo tee -a /etc/squid/squid.conf > /dev/null
+" | sudo tee /etc/squid/squid.conf > /dev/null
 
   sudo adduser --system --no-create-home --group squid
   sudo chown squid -R /opt/squid/var/
