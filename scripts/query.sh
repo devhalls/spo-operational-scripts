@@ -53,9 +53,9 @@ query_params() {
 query_metrics() {
   exit_if_cold
   if [ "$1" ]; then
-    curl -s 127.0.0.1:12798/metrics | grep "$1"
+    curl -s localhost:12798/metrics | grep "$1"
   else
-    curl -s 127.0.0.1:12798/metrics
+    curl -s localhost:12798/metrics
   fi
 }
 
@@ -71,12 +71,14 @@ query_key() {
 
 query_kes() {
   exit_if_not_producer
+  exit_if_file_missing $NODE_CERT
   $CNCLI conway query kes-period-info $NETWORK_ARG --socket-path $NETWORK_SOCKET_PATH \
     --op-cert-file $NODE_CERT
 }
 
 query_kes_period() {
   exit_if_cold
+  exit_if_file_missing $NETWORK_PATH/shelley-genesis.json
   slotsPerKESPeriod=$(cat $NETWORK_PATH/shelley-genesis.json | jq -r '.slotsPerKESPeriod')
   slotNo=$(query_tip slot)
   kesPeriod=$(($slotNo / $slotsPerKESPeriod))
@@ -87,11 +89,15 @@ query_kes_period() {
 
 query_uxto() {
   exit_if_cold
+  exit_if_file_missing $PAYMENT_ADDR
   $CNCLI conway query utxo $NETWORK_ARG --socket-path $NETWORK_SOCKET_PATH \
     --address ${1:-"$(cat $PAYMENT_ADDR)"}
 }
 
 query_leader() {
+  exit_if_not_producer
+  exit_if_file_missing $POOL_ID
+
   # Set the query period and targetEpoch
   period="--${1:-"next"}"
   targetEpoch=$(query_tip epoch)

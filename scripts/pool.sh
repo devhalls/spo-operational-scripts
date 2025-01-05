@@ -120,7 +120,7 @@ pool_generate_pool_meta_hash() {
 }
 
 pool_get_pool_id() {
-  exit_if_not_producer
+  exit_if_not_cold
   format="${1:-hex}"
   $CNCLI conway stake-pool id --cold-verification-key-file $NODE_VKEY --output-format $format > $POOL_ID
   echo "$(cat $POOL_ID)"

@@ -453,6 +453,11 @@ scripts/tx.sh pool_reg_sign
 # COPY: tx.signed to your producer node
 # PRODUCER: Submit the signed transaction 
 scripts/tx.sh submit
+
+# COLD: Now you have registered your pool, get your pool.id
+scripts/pool.sh get_pool_id
+
+# COPY: pool.id to your producer node, and to your replay node 
 ```
 
 ### Edit topology and restart the producer
