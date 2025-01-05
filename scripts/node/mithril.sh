@@ -5,6 +5,8 @@
 #   check_compatability |
 #   install_signer_env |
 #   install_signer_service |
+#   install_squid |
+#   configure_squid |
 #   start |
 #   stop |
 #   restart |
@@ -21,6 +23,8 @@
 #   - check_compatability) Checks if $NODE_VERSION is compatible as a mithril signer.
 #   - install_signer_env) Installs the mithril signer env.
 #   - install_signer_service) Installs the mithril signer service.
+#   - install_squid) Installs the squid proxy server.
+#   - configure_squid) Configures the squid server.
 #   - start) Starts the mithril signer service.
 #   - stop) Stops the mithril signer service.
 #   - restart) Restarts the mithril signer service.
@@ -135,6 +139,7 @@ METRICS_SERVER_PORT=$MITHRIL_METRICS_SERVER_PORT
 }
 
 mithril_install_signer_service() {
+  exit_if_not_producer
   print 'INSTALL' "Creating mithril signer service: $MITHRIL_SERVICE"
   cp -p services/$MITHRIL_SERVICE services/$MITHRIL_SERVICE.temp
   sed -i services/$MITHRIL_SERVICE.temp \
@@ -152,6 +157,7 @@ mithril_install_signer_service() {
 }
 
 mithril_install_squid() {
+  exit_if_not_relay
   mkdir -p downloads
   wget -O "downloads/squid-$MITHRIL_SQUID_VERSION.tar.gz" "https://www.squid-cache.org/Versions/v6/squid-$MITHRIL_SQUID_VERSION.tar.gz"
   if [ $? -eq 0 ]; then
@@ -178,6 +184,7 @@ mithril_install_squid() {
 }
 
 mithril_configure_squid() {
+  exit_if_not_relay
   sudo cp /etc/squid/squid.conf /etc/squid/squid.conf.bak
   sudo bash -c 'cat > /etc/squid/squid.conf << EOF
   # Listening port (port 3132 is recommended)
@@ -231,19 +238,19 @@ mithril_configure_squid() {
 }
 
 mithril_start() {
-  exit_if_cold
+  exit_if_not_producer
   sudo systemctl start $MITHRIL_SERVICE
   print 'MITHRIL' "Mithril service started" $green
 }
 
 mithril_stop() {
-  exit_if_cold
+  exit_if_not_producer
   sudo systemctl stop $MITHRIL_SERVICE
   print 'MITHRIL' "Mithril service stopped" $green
 }
 
 mithril_restart() {
-  exit_if_cold
+  exit_if_not_producer
   sudo systemctl restart $MITHRIL_SERVICE
   print 'MITHRIL' "Mithril service restarted" $green
 }
@@ -259,13 +266,15 @@ mithril_status() {
 }
 
 mithril_verify_signer_registration() {
-  export PARTY_ID=$(bash "$(dirname "$0")/../pool.sh" get_pool_id bech32)
+  exit_if_not_producer
+  export PARTY_ID=$(< $POOL_ID)
   export AGGREGATOR_ENDPOINT=$MITHRIL_AGGREGATOR_ENDPOINT
   bash $MITHRIL_PATH/verify_signer_registration.sh
 }
 
 mithril_verify_signer_signature() {
-  export PARTY_ID=$(bash "$(dirname "$0")/../pool.sh" get_pool_id bech32)
+  exit_if_not_producer
+  export PARTY_ID=$(< $POOL_ID)
   export AGGREGATOR_ENDPOINT=$MITHRIL_AGGREGATOR_ENDPOINT
   bash $MITHRIL_PATH/verify_signer_signature.sh
 }
@@ -276,10 +285,13 @@ case $1 in
   check_compatability) mithril_check_compatability ;;
   install_signer_env) mithril_install_signer_env ;;
   install_signer_service) mithril_install_signer_service ;;
+  install_squid) mithril_install_squid ;;
+  configure_squid) mithril_configure_squid ;;
   start) mithril_start ;;
   stop) mithril_stop ;;
   restart) mithril_restart ;;
   watch) mithril_watch ;;
+  status) mithril_status ;;
   verify_registration) mithril_verify_signer_registration ;;
   verify_signature) mithril_verify_signer_signature ;;
   help) help "${2:-"--help"}" ;;
