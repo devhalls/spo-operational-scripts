@@ -133,7 +133,6 @@ query_leader() {
     grep -qxF "$content" $csvFile || echo "$content" >> $csvFile
     echo "$content"
     rm $tempFilePath
-    sudo cp $csvFile $grafanaLocation
   else
     print 'ERROR' "Leadership schedule failed to run" $red
     exit 0

@@ -512,7 +512,7 @@ scripts/query.sh metrics cardano_node_metrics_peerSelection_warm
 ### Monitoring with Grafana
 
 View your node state via Grafana dashboards makes it easy to manage your nodes. Once you have installed the necessary packages and configs restart your nodes and you can visit the dashboard.
-Dashboard: http://<monitor node IP>:3000 
+Dashboard: MONITOR_NODE_IP:3000 
 Username: admin
 Password: admin (change your password after first login)
 

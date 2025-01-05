@@ -112,12 +112,12 @@ node_restart_prom() {
 }
 
 node_watch_prom() {
-  exit_if_cold
+  exit_if_not_relay
   journalctl --system -u prometheus.service --follow
 }
 
 node_status_prom() {
-  exit_if_cold
+  exit_if_not_relay
   sudo systemctl status prometheus.service
 }
 
@@ -132,18 +132,18 @@ node_status_prom_ex() {
 }
 
 node_restart_grafana() {
-  exit_if_cold
+  exit_if_not_relay
   sudo systemctl restart grafana-server.service
   print 'NODE' "Grafana service restarted" $green
 }
 
 node_watch_grafana() {
-  exit_if_cold
+  exit_if_not_relay
   journalctl --system -u grafana-server.service --follow
 }
 
 node_status_grafana() {
-  exit_if_cold
+  exit_if_not_relay
   sudo systemctl status grafana-server.service
 }
 
