@@ -290,7 +290,7 @@ mithril_watch() {
 
 mithril_status() {
   exit_if_not_producer
-  sudo systemctl status $MITHRIL_SERVICE
+  sudo systemctl status mithril
 }
 
 mithril_start_squid() {
