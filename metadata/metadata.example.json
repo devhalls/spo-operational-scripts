@@ -1,0 +1,7 @@
+{
+  "name": "Up Test #1",
+  "description": "Upstream tester pool #1",
+  "ticker": "UPSTRT1",
+  "homepage": "https://upstream.org.uk",
+  "extended": "https://upstream.org.uk/assets/extended.json"
+}

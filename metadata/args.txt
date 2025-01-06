@@ -1,7 +1,0 @@
-scripts/help.sh [contentKey] [argCount] -h $@
-scripts/build.sh
-scripts/clean.sh [sanchonet | preview | preprod | mainnet]
-scripts/install.sh
-scripts/restart.sh [sanchonet | preview | preprod | mainnet]
-scripts/start.sh [sanchonet | preview | preprod | mainnet]
-scripts/watch.sh [sanchonet | preview | preprod | mainnet]

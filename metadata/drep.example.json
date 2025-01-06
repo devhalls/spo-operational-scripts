@@ -1,0 +1,58 @@
+{
+    "@context": {
+        "CIP100": "https://github.com/cardano-foundation/CIPs/blob/master/CIP-0100/README.md#",
+        "CIP119": "https://github.com/cardano-foundation/CIPs/blob/master/CIP-0119/README.md#",
+        "hashAlgorithm": "CIP100:hashAlgorithm",
+        "body": {
+            "@id": "CIP119:body",
+            "@context": {
+                "references": {
+                    "@id": "CIP119:references",
+                    "@container": "@set",
+                    "@context": {
+                        "GovernanceMetadata": "CIP100:GovernanceMetadataReference",
+                        "Other": "CIP100:OtherReference",
+                        "label": "CIP100:reference-label",
+                        "uri": "CIP100:reference-uri"
+                    }
+                },
+                "paymentAddress": "CIP119:paymentAddress",
+                "givenName": "CIP119:givenName",
+                "image": {
+                    "@id": "CIP119:image",
+                    "@context": {
+                        "ImageObject": "https://schema.org/ImageObject"
+                    }
+                },
+                "objectives": "CIP119:objectives",
+                "motivations": "CIP119:motivations",
+                "qualifications": "CIP119:qualifications"
+            }
+        }
+    },
+    "hashAlgorithm": "blake2b-256",
+    "body": {
+        "paymentAddress": "addr1q8r728temtlmdj982q8w94ywq00qpx55uymjfamdlr5m2llevylhlgj20qjn9ff9wkqsv8rcceen0l6f8q6ugcuepd6s0l4x24",
+        "givenName": "Upstream SPO",
+        "image": {
+            "@type": "ImageObject",
+            "contentUrl": "https://upstream.org.uk/assets/logo.png",
+            "sha256": "a8f03c07454d8fcd027060d3d437c5f48c195387f27436268d9bde3c03e1985d"
+        },
+        "objectives": "Upstream [UPSTR] is an independent Cardano Stake Pool Operator, our mission is to continue to provide Cardano Community events, educational workshops, promoting Cardano adoption, and actively participating in ongoing Cardano Governance.",
+        "motivations": "We promote grass root adoption of the Cardano ecosystem. Aiming to provide the community with a point of contact for Governance topics, community workshops and on-boarding advice. As a DRep we align our voting actions with ensuring grass root adoption remains possible, affordable and actively encouraged and the Cardano Constitution upheld.",
+        "qualifications": "Upstream (Mark Hall, Chris Warren) are UK small business owners. Spanning the UK commercial flooring industry to web development we both have over 10 years experience in our crafts. Coming together on Cardano as Upstream [UPSTR], we have been active community members since 2021 and a SPO since 2022. Holding community workshops and meet-ups we have pushed our community forward and ensure we all stay upto date with the Cardano Network.",
+        "references": [
+          {
+            "@type": "Link",
+            "label": "Website",
+            "uri": "https://upstream.org.uk"
+          },
+          {
+            "@type": "Link",
+            "label": "Upstream Twitter",
+            "uri": "https://x.com/Upstream_ada"
+          }
+        ]
+    }
+}

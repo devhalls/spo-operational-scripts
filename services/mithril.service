@@ -1,0 +1,15 @@
+[Unit]
+Description             = Mithril signer service
+StartLimitIntervalSec   = 0
+
+[Service]
+Type                    = simple
+Restart                 = always
+RestartSec              = 60
+User                    = NODE_USER
+EnvironmentFile         = MITHRIL_PATH/mithril-signer.env
+ExecStart               = MITHRIL_SIGNER -vvv
+SyslogIdentifier        = MITHRIL_SERVICE
+
+[Install]
+WantedBy                = multi-user.target
