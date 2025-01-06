@@ -1,5 +1,5 @@
 #!/bin/bash
-# Usage: pool.sh [
+# Usage: govern.sh [
 #   action [govActionId] [govActionIndex] [decision] [?keyFile] |
 #   vote [govActionId] |
 #   drep_id [?format] |

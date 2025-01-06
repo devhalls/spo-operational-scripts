@@ -1,5 +1,5 @@
 #!/bin/bash
-# Usage: pool.sh [
+# Usage: tx.sh [
 #   stake_reg_raw |
 #   stake_reg_sign |
 #   stake_vote_reg_raw |
@@ -303,7 +303,8 @@ tx_submit() {
   rm $outputPath/tx.signed
 }
 
-# New functions for tx building
+# @todo complete new functions for tx building below
+# scripts/tx.sh build 0 --certificate-file 1 --certificate-file 2
 
 tx_in() {
   paymentAddress=$(< $PAYMENT_ADDR)
@@ -386,7 +387,6 @@ tx_out() {
   rm $outputPath/tx.tmp
 }
 
-# scripts/tx.sh build 0 --certificate-file 1 --certificate-file 2
 tx_build() {
   amount=${1:-0}
   certificates="${@:2}"

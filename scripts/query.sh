@@ -1,5 +1,5 @@
 #!/bin/bash
-# Usage: pool.sh [
+# Usage: query.sh [
 #   tip [?name] |
 #   params [?name] |
 #   metrics [?name] |

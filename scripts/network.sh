@@ -1,5 +1,5 @@
 #!/bin/bash
-# Usage: pool.sh [
+# Usage: network.sh [
 #   ngrok |
 #   set_ip |
 #   help [?-h]
