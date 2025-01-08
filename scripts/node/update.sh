@@ -33,8 +33,8 @@ update_current_version() {
 }
 
 update_check_version() {
-  latest=$(target_version)
-  current=$(current_version)
+  latest=$(update_target_version)
+  current=$(update_current_version)
   if [ "$current" == "$latest" ]; then
     print 'UPDATE' "Cardano node is already up to date (v$current)" $green
     exit 1
