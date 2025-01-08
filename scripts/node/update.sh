@@ -58,11 +58,9 @@ update_binaries() {
 }
 
 update() {
-  latest=$(check_version)
+  latest=$(update_check_version)
   confirm "Please confirm update to the new version: $latest?"
   bash $(dirname "$0")/../node.sh stop
-  sed -i $(dirname "$0")/../../env -e "s|NODE_VERSION|$latest|g"
-  source $(dirname "$0")/../../env
   update_binaries
   bash $(dirname "$0")/../node.sh restart
   source ~/.bashrc
