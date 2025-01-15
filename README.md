@@ -79,7 +79,7 @@ This table describes the env variables you most likely need to adjust to suit yo
                 <code>NODE_VERSION</code>
             </td>
             <td>
-                <code>10.1.3</code><br/>
+                <code>10.1.4</code><br/>
             </td>
             <td>
                 <p>The current node version. Must be &gt the version defined here.</p>
@@ -90,10 +90,10 @@ This table describes the env variables you most likely need to adjust to suit yo
                 <code>NODE_HOME</code>
             </td>
             <td>
-                <code>"/home/upstream/Node"</code>
+                <code>"/home/upstream/Cardano"</code>
             </td>
             <td>
-                <p>The current node version. Must be &gt the version defined here.</p>
+                <p>The home folder for your node.</p>
             </td>
         </tr>
         <tr>
@@ -132,7 +132,7 @@ This table describes the env variables you most likely need to adjust to suit yo
             <td>
                 <p>
                     The build type.<br/>
-                    0 = do not build or download.<br/>
+                    0 = do not build or download binaries.<br/>
                     1 = downloads node binaries.<br/>
                     2 = builds node binaries from source.
                 </p>
@@ -169,6 +169,61 @@ This table describes the env variables you most likely need to adjust to suit yo
             </td>
             <td>
                 <p>A Cardanoscan.io API key used to fetch pool data displayed in Grafana.</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <code>MITHRIL_RELAY_HOST</code>
+            </td>
+            <td>
+                <code>http:192.168.X.X</code>
+            </td>
+            <td>
+                <p>Your mithril relay host address excluding port.</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <code>MITHRIL_RELAY_PORT</code>
+            </td>
+            <td>
+                <code>1234</code>
+            </td>
+            <td>
+                <p>Your mithril relay port.</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <code>BIN_PATH</code>
+            </td>
+            <td>
+                <code>$HOME/local/bin</code>
+            </td>
+            <td>
+                <p>Your users local bin path.</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <code>PACKAGER</code>
+            </td>
+            <td>
+                <code>apt-get</code>
+            </td>
+            <td>
+                <p>System package manager.</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <code>SERVICE_PATH</code>
+            </td>
+            <td>
+                <code>/etc/systemd/system</code>
+            </td>
+            <td>
+                <p>System service path.</p>
             </td>
         </tr>
     </tbody>
@@ -726,6 +781,24 @@ scripts/tx.sh submit
 
 ---
 
+### Retiring your Stake Pool
+
+```
+# PRODUCER: Get the retirement epoch window
+poolRetireMaxEpoch=$(scripts/query.sh params poolRetireMaxEpoch)
+epoch=$(scripts/query.sh tip epoch)
+minRetirementEpoch=$(( ${epoch} + 1 ))
+maxRetirementEpoch=$(( ${epoch} + ${poolRetireMaxEpoch} ))
+echo earliest epoch for retirement is: ${minRetirementEpoch}
+echo latest epoch for retirement is: ${maxRetirementEpoch}
+
+# COLD: generate deregistration certificate ($POOL_DREG_CERT)
+scripts/pool.sh generate_pool_dreg_cert <epoch>
+
+# COPY: copy pool.dereg to producer
+scripts/tx.sh build 0 $POOL_DREG_CERT 
+```
+
 ## Registering a DRep
 
 To register a stake pool you must have a running **fully synced** node. We can then generate the following assets:
@@ -850,6 +923,7 @@ Distributed under the GPL-3.0 License. See LICENSE.txt for more information.
 ### Links
 
 - [Cardano testnet faucet](https://docs.cardano.org/cardano-testnets/tools/faucet/)
+- [Db-sync snapshots](https://update-cardano-mainnet.iohk.io/cardano-db-sync/index.html)
 - [Upstream SPO website](https://upstream.org.uk)
 - [Upstream Twitter](https://x.com/Upstream_ada)
 

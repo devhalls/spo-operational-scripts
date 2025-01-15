@@ -5,6 +5,7 @@
 #   generate_vrf_keys |
 #   generate_node_op_cert [kesPeriod] |
 #   generate_pool_reg_cert [pledge] [cost] [margin] [relayAddress] [relayPort] [metadataUrl] [metadataHash] |
+#   generate_pool_dreg_cert [epoch] |
 #   generate_metadata_hash |
 #   get_pool_id [?format] |
 #   get_stats |
@@ -19,6 +20,7 @@
 #   - generate_vrf_keys) Generate node VRF key pair and sets permissions.
 #   - generate_node_op_cert) Generate node operational certificate. Requires the kesPeriod parameter.
 #   - generate_pool_reg_cert) Generate pool registration certificate. Requires all params to generate the certificate.
+#   - generate_pool_dreg_cert) Generate pool registration certificate.
 #   - generate_metadata_hash) Generate pools metadata hash from the metadata.json file.
 #   - get_pool_id) Output the pool ID to $POOL_ID and display it on screen. Optionally pass in the format, defaults to hex.
 #   - get_stats) Retrieve pool stats from js.cexplorer.io.
@@ -106,6 +108,13 @@ pool_generate_pool_reg_cert() {
   print 'POOL' "Node registration certificate created at $POOL_CERT" $green
 }
 
+pool_generate_pool_dreg_cert() {
+  $CNCLI conway stake-pool deregistration-certificate \
+    --cold-verification-key-file $NODE_VKEY \
+    --epoch $1 \
+    --out-file $POOL_DREG_CERT
+}
+
 pool_generate_pool_meta_hash() {
   exit_if_not_producer
   inputFile="metadata/metadata.json"
@@ -171,6 +180,7 @@ case $1 in
   generate_vrf_keys) pool_generate_node_vrf_keys ;;
   generate_node_op_cert) pool_generate_node_op_cert "${@:2}" ;;
   generate_pool_reg_cert) pool_generate_pool_reg_cert "${@:2}" ;;
+  generate_pool_dreg_cert) pool_generate_pool_dreg_cert "${@:2}" ;;
   generate_pool_meta_hash) pool_generate_pool_meta_hash ;;
   get_pool_id) pool_get_pool_id "${@:2}" ;;
   get_stats) pool_get_stats ;;

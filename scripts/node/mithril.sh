@@ -25,7 +25,7 @@
 # Info:
 #
 #   - download) Download the mithril binaries.
-#   - sync) Sync your node using the Mithril client. Default value if no option is passed.
+#   - sync) Sync your node using the Mithril client.
 #   - check_compatability) Checks if $NODE_VERSION is compatible as a mithril signer.
 #   - install_signer_env) Installs the mithril signer env.
 #   - install_signer_service) Installs the mithril signer service.
@@ -43,7 +43,7 @@
 #   - status_squid) Display squid service status.
 #   - verify_registration) Verify that your signer is registered.
 #   - verify_signature) Verify that your signer contributes with individual signatures.
-#   - help) View this files help.
+#   - help) View this files help. Default value if no option is passed.
 
 source "$(dirname "$0")/../../env"
 source "$(dirname "$0")/../common.sh"
@@ -145,8 +145,8 @@ METRICS_SERVER_IP=$MITHRIL_METRICS_SERVER_IP
 METRICS_SERVER_PORT=$MITHRIL_METRICS_SERVER_PORT
 " > $MITHRIL_PATH/mithril-signer.env
 
-  if [ $MITHRIL_RELAY ]; then
-    echo "RELAY_ENDPOINT=$MITHRIL_RELAY" >> $MITHRIL_PATH/mithril-signer.env
+  if [ $MITHRIL_RELAY_HOST ]; then
+    echo "RELAY_ENDPOINT=$MITHRIL_RELAY_HOST:$MITHRIL_RELAY_PORT" >> $MITHRIL_PATH/mithril-signer.env
   fi
 }
 
@@ -171,7 +171,7 @@ mithril_install_signer_service() {
 mithril_install_squid() {
   exit_if_not_relay
   mkdir -p downloads
-  wget -O "downloads/squid-$MITHRIL_SQUID_VERSION.tar.gz" "https://www.squid-cache.org/Versions/v6/squid-$MITHRIL_SQUID_VERSION.tar.gz"
+  wget -O "downloads/squid-$MITHRIL_SQUID_VERSION.tar.gz" "$MITHRIL_SQUID_REMOTE"
   if [ $? -eq 0 ]; then
     tar -xvzf downloads/squid-$MITHRIL_SQUID_VERSION.tar.gz -C downloads
     cd downloads/squid-$MITHRIL_SQUID_VERSION
@@ -205,11 +205,11 @@ mithril_configure_squid() {
 
   sudo cp /etc/squid/squid.conf /etc/squid/squid.conf.bak
   printf "
-# Listening port (port 3132 is recommended)
-http_port 3132
+# Listening port
+http_port $MITHRIL_RELAY_PORT
 
 # ACL for internal IP of your block producer node
-acl block_producer_internal_ip src $ipAddress
+acl block_producer_internal_ip src $MITHRIL_RELAY_HOST
 
 # ACL for aggregator endpoint
 acl aggregator_domain dstdomain .mithril.network
@@ -285,7 +285,7 @@ mithril_restart() {
 
 mithril_watch() {
   exit_if_cold
-  tail -f /var/log/syslog | grep $MITHRIL_SERVICE
+  journalctl -u $MITHRIL_SERVICE -f -o cat
 }
 
 mithril_status() {
@@ -306,14 +306,14 @@ mithril_stop_squid() {
 }
 
 mithril_restart_squid() {
-  exit_if_not_producer
+  exit_if_not_relay
   sudo systemctl restart $MITHRIL_SQUID_SERVICE
   print 'MITHRIL' "Squid service restarted" $green
 }
 
 mithril_watch_squid() {
-  exit_if_cold
-  tail -f /var/log/syslog | grep $MITHRIL_SQUID_SERVICE
+  exit_if_not_relay
+  journalctl -u $MITHRIL_SQUID_SERVICE -f -o cat
 }
 
 mithril_status_squid() {
@@ -356,5 +356,5 @@ case $1 in
   verify_registration) mithril_verify_signer_registration ;;
   verify_signature) mithril_verify_signer_signature ;;
   help) help "${2:-"--help"}" ;;
-  *) sync ;;
+  *) help "${2:-"--help"}" ;;
 esac
