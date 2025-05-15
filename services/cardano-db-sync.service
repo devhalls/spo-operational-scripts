@@ -1,0 +1,20 @@
+[Unit]
+Description       = Cardano db-sync Service (DB_SYNC_SERVICE)
+Wants             = network-online.target
+After             = network-online.target
+
+[Service]
+User              = NODE_USER
+Type              = simple
+WorkingDirectory  = NODE_HOME
+ExecStart         = /bin/bash -c 'NODE_HOME/scripts/dbsync.sh run'
+KillSignal        = SIGINT
+RestartKillSignal = SIGINT
+TimeoutStopSec    = 300
+LimitNOFILE       = 32768
+Restart           = always
+RestartSec        = 5
+SyslogIdentifier  = DB_SYNC_SERVICE
+
+[Install]
+WantedBy          = multi-user.target

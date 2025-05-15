@@ -45,90 +45,89 @@
 #   - verify_signature) Verify that your signer contributes with individual signatures.
 #   - help) View this files help. Default value if no option is passed.
 
-source "$(dirname "$0")/../../env"
 source "$(dirname "$0")/../common.sh"
 
 mithril_download() {
-  exit_if_cold
-  print 'MITHRIL' "Downloading mithril binaries"
-  local p=$(platform)
-  local arm=$(platform_arm)
-  mkdir -p downloads
+    exit_if_cold
+    print 'MITHRIL' "Downloading mithril binaries"
+    local p=$(platform)
+    local arm=$(platform_arm)
+    mkdir -p downloads
 
-  if [ "$arm" == 'arm' ]; then
-    local filename="mithril-binaries-version-${MITHRIL_VERSION//./_}"
-    wget -O "downloads/$filename.tar.zst" "$MITHRIL_REMOTE_ARM/$filename.tar.zst"
-    if [ $? -eq 0 ]; then
-      tar --zstd -xvf "downloads/$filename.tar.zst" -C downloads
+    if [ "$arm" == 'arm' ]; then
+        local filename="mithril-binaries-version-${MITHRIL_VERSION//./_}"
+        wget -O "downloads/$filename.tar.zst" "$MITHRIL_REMOTE_ARM/$filename.tar.zst"
+        if [ $? -eq 0 ]; then
+            tar --zstd -xvf "downloads/$filename.tar.zst" -C downloads
+        fi
+    else
+        local filename="mithril-$MITHRIL_VERSION-$p-x64"
+        wget -O "downloads/$filename.tar.gz" "$MITHRIL_REMOTE/$filename.tar.gz"
+        if [ $? -eq 0 ]; then
+            mkdir -p downloads/$filename
+            tar -xvzf "downloads/$filename.tar.gz" -C downloads/$filename
+        fi
     fi
-  else
-    local filename="mithril-$MITHRIL_VERSION-$p-x64"
-    wget -O "downloads/$filename.tar.gz" "$MITHRIL_REMOTE/$filename.tar.gz"
-    if [ $? -eq 0 ]; then
-      mkdir -p downloads/$filename
-      tar -xvzf "downloads/$filename.tar.gz" -C downloads/$filename
-    fi
-  fi
 
-  if [ $? -eq 0 ]; then
-    cp -a downloads/$filename/. $BIN_PATH/
-    chmod +x -R $BIN_PATH
-    rm -R downloads
-    $MITHRIL_CLIENT --version
-    $MITHRIL_SIGNER --version
-    print 'DOWNLOAD' "Mithril binaries moved to $BIN_PATH" $green
-    return 0
-  else
-    rm -R downloads
-    print 'ERROR' "Unable to download mithril binaries" $red
-    exit 1
-  fi
+    if [ $? -eq 0 ]; then
+        cp -a downloads/$filename/. $BIN_PATH/
+        chmod +x -R $BIN_PATH
+        rm -R downloads
+        $MITHRIL_CLIENT --version
+        $MITHRIL_SIGNER --version
+        print 'DOWNLOAD' "Mithril binaries moved to $BIN_PATH" $green
+        return 0
+    else
+        rm -R downloads
+        print 'ERROR' "Unable to download mithril binaries" $red
+        exit 1
+    fi
 }
 
 mithril_sync() {
-  exit_if_cold
-  print 'MITHRIL' "Syncing db via mithril"
-  export AGGREGATOR_ENDPOINT=$MITHRIL_AGGREGATOR_ENDPOINT
-  if [[ $NODE_NETWORK == 'preprod' ]]; then
-    export GENESIS_VERIFICATION_KEY=$(curl -s https://raw.githubusercontent.com/input-output-hk/mithril/main/mithril-infra/configuration/release-preprod/genesis.vkey)
-  elif [[ $NODE_NETWORK == 'preview' ]]; then
-    export GENESIS_VERIFICATION_KEY=$(curl -s https://raw.githubusercontent.com/input-output-hk/mithril/main/mithril-infra/configuration/pre-release-preview/genesis.vkey)
-  elif [[ $NODE_NETWORK == 'mainnet' ]]; then
-    export GENESIS_VERIFICATION_KEY=$(curl -s https://raw.githubusercontent.com/input-output-hk/mithril/main/mithril-infra/configuration/release-mainnet/genesis.vkey)
-  else
-    print "ERROR" "$NODE_NETWORK is not supported by mithril sync"
-    exit 1
-  fi
-  export NETWORK=$NODE_NETWORK
+    exit_if_cold
+    print 'MITHRIL' "Syncing db via mithril"
+    export AGGREGATOR_ENDPOINT=$MITHRIL_AGGREGATOR_ENDPOINT
+    if [[ $NODE_NETWORK == 'preprod' ]]; then
+        export GENESIS_VERIFICATION_KEY=$(curl -s https://raw.githubusercontent.com/input-output-hk/mithril/main/mithril-infra/configuration/release-preprod/genesis.vkey)
+    elif [[ $NODE_NETWORK == 'preview' ]]; then
+        export GENESIS_VERIFICATION_KEY=$(curl -s https://raw.githubusercontent.com/input-output-hk/mithril/main/mithril-infra/configuration/pre-release-preview/genesis.vkey)
+    elif [[ $NODE_NETWORK == 'mainnet' ]]; then
+        export GENESIS_VERIFICATION_KEY=$(curl -s https://raw.githubusercontent.com/input-output-hk/mithril/main/mithril-infra/configuration/release-mainnet/genesis.vkey)
+    else
+        print "ERROR" "$NODE_NETWORK is not supported by mithril sync"
+        exit 1
+    fi
+    export NETWORK=$NODE_NETWORK
 
-  $MITHRIL_CLIENT cardano-db download --download-dir $NETWORK_PATH latest
+    $MITHRIL_CLIENT cardano-db download --download-dir $NETWORK_PATH latest
 
-  if [ $? -ne 0 ]; then
-    print 'MITHRIL' "Unable to sync with mithril" $red
-    exit 1
-  fi
-  print 'MITHRIL' "DB synced via mithril, please restart your node" $green
-  return 0
+    if [ $? -ne 0 ]; then
+        print 'MITHRIL' "Unable to sync with mithril" $red
+        exit 1
+    fi
+    print 'MITHRIL' "DB synced via mithril, please restart your node" $green
+    return 0
 }
 
 mithril_check_compatability() {
-  exit_if_not_producer
-  print 'MITHRIL' 'Min node version:'
-  wget -q -O - https://raw.githubusercontent.com/input-output-hk/mithril/main/networks.json |
-  jq -r ".\"$NODE_NETWORK\".\"cardano-minimum-version\".\"mithril-signer\""
+    exit_if_not_producer
+    print 'MITHRIL' 'Min node version:'
+    wget -q -O - https://raw.githubusercontent.com/input-output-hk/mithril/main/networks.json |
+        jq -r ".\"$NODE_NETWORK\".\"cardano-minimum-version\".\"mithril-signer\""
 }
 
 mithril_install_signer_env() {
-  exit_if_not_producer
-  mkdir -p $MITHRIL_PATH
-  rm $MITHRIL_PATH/mithril-signer.env
+    exit_if_not_producer
+    mkdir -p $MITHRIL_PATH
+    rm $MITHRIL_PATH/mithril-signer.env
 
-  wget -O $MITHRIL_PATH/verify_signer_registration.sh https://mithril.network/doc/scripts/verify_signer_registration.sh
-  chmod +x $MITHRIL_PATH/verify_signer_registration.sh
-  wget -O $MITHRIL_PATH/verify_signer_signature.sh https://mithril.network/doc/scripts/verify_signer_signature.sh
-  chmod +x $MITHRIL_PATH/verify_signer_signature.sh
+    wget -O $MITHRIL_PATH/verify_signer_registration.sh https://mithril.network/doc/scripts/verify_signer_registration.sh
+    chmod +x $MITHRIL_PATH/verify_signer_registration.sh
+    wget -O $MITHRIL_PATH/verify_signer_signature.sh https://mithril.network/doc/scripts/verify_signer_signature.sh
+    chmod +x $MITHRIL_PATH/verify_signer_signature.sh
 
-  printf "KES_SECRET_KEY_PATH=$KES_KEY
+    printf "KES_SECRET_KEY_PATH=$KES_KEY
 OPERATIONAL_CERTIFICATE_PATH=$NODE_CERT
 NETWORK=$NODE_NETWORK
 AGGREGATOR_ENDPOINT=$MITHRIL_AGGREGATOR_ENDPOINT
@@ -143,68 +142,68 @@ ERA_READER_ADAPTER_PARAMS=$MITHRIL_AGGREGATOR_PARAMS
 ENABLE_METRICS_SERVER=$MITHRIL_PROMETHEUS
 METRICS_SERVER_IP=$MITHRIL_METRICS_SERVER_IP
 METRICS_SERVER_PORT=$MITHRIL_METRICS_SERVER_PORT
-" > $MITHRIL_PATH/mithril-signer.env
+" >$MITHRIL_PATH/mithril-signer.env
 
-  if [ $MITHRIL_RELAY_HOST ]; then
-    echo "RELAY_ENDPOINT=$MITHRIL_RELAY_HOST:$MITHRIL_RELAY_PORT" >> $MITHRIL_PATH/mithril-signer.env
-  fi
+    if [ $MITHRIL_RELAY_HOST ]; then
+        echo "RELAY_ENDPOINT=$MITHRIL_RELAY_HOST:$MITHRIL_RELAY_PORT" >>$MITHRIL_PATH/mithril-signer.env
+    fi
 }
 
 mithril_install_signer_service() {
-  exit_if_not_producer
-  print 'INSTALL' "Creating mithril signer service: $MITHRIL_SERVICE"
-  cp -p services/$MITHRIL_SERVICE services/$MITHRIL_SERVICE.temp
-  sed -i services/$MITHRIL_SERVICE.temp \
-      -e "s|NODE_USER|$NODE_USER|g" \
-      -e "s|MITHRIL_PATH|$MITHRIL_PATH|g" \
-      -e "s|MITHRIL_SIGNER|$MITHRIL_SIGNER|g" \
-      -e "s|MITHRIL_SERVICE|$MITHRIL_SERVICE|g"
-  sudo cp -p services/$MITHRIL_SERVICE.temp $SERVICE_PATH/$MITHRIL_SERVICE
-  sudo systemctl daemon-reload
-  sudo systemctl enable $MITHRIL_SERVICE
-  sudo systemctl start $MITHRIL_SERVICE
-  rm services/$MITHRIL_SERVICE.temp
-  print 'INSTALL' "Mithril service created: $MITHRIL_SERVICE" $green
-  return 0
+    exit_if_not_producer
+    print 'INSTALL' "Creating mithril signer service: $MITHRIL_SERVICE"
+    cp -p services/$MITHRIL_SERVICE services/$MITHRIL_SERVICE.temp
+    sed -i services/$MITHRIL_SERVICE.temp \
+        -e "s|NODE_USER|$NODE_USER|g" \
+        -e "s|MITHRIL_PATH|$MITHRIL_PATH|g" \
+        -e "s|MITHRIL_SIGNER|$MITHRIL_SIGNER|g" \
+        -e "s|MITHRIL_SERVICE|$MITHRIL_SERVICE|g"
+    sudo cp -p services/$MITHRIL_SERVICE.temp $SERVICE_PATH/$MITHRIL_SERVICE
+    sudo systemctl daemon-reload
+    sudo systemctl enable $MITHRIL_SERVICE
+    sudo systemctl start $MITHRIL_SERVICE
+    rm services/$MITHRIL_SERVICE.temp
+    print 'INSTALL' "Mithril service created: $MITHRIL_SERVICE" $green
+    return 0
 }
 
 mithril_install_squid() {
-  exit_if_not_relay
-  mkdir -p downloads
-  wget -O "downloads/squid-$MITHRIL_SQUID_VERSION.tar.gz" "$MITHRIL_SQUID_REMOTE"
-  if [ $? -eq 0 ]; then
-    tar -xvzf downloads/squid-$MITHRIL_SQUID_VERSION.tar.gz -C downloads
-    cd downloads/squid-$MITHRIL_SQUID_VERSION
+    exit_if_not_relay
+    mkdir -p downloads
+    wget -O "downloads/squid-$MITHRIL_SQUID_VERSION.tar.gz" "$MITHRIL_SQUID_REMOTE"
+    if [ $? -eq 0 ]; then
+        tar -xvzf downloads/squid-$MITHRIL_SQUID_VERSION.tar.gz -C downloads
+        cd downloads/squid-$MITHRIL_SQUID_VERSION
 
-    ./configure \
-        --prefix=/opt/squid \
-        --localstatedir=/opt/squid/var \
-        --libexecdir=/opt/squid/lib/squid \
-        --datadir=/opt/squid/share/squid \
-        --sysconfdir=/etc/squid \
-        --with-default-user=squid \
-        --with-logdir=/opt/squid/var/log/squid \
-        --with-pidfile=/opt/squid/var/run/squid.pid
+        ./configure \
+            --prefix=/opt/squid \
+            --localstatedir=/opt/squid/var \
+            --libexecdir=/opt/squid/lib/squid \
+            --datadir=/opt/squid/share/squid \
+            --sysconfdir=/etc/squid \
+            --with-default-user=squid \
+            --with-logdir=/opt/squid/var/log/squid \
+            --with-pidfile=/opt/squid/var/run/squid.pid
 
-    make
-    sudo make install
-    /opt/squid/sbin/squid -v
-    rm -R downloads
-  else
-    print 'ERROR' 'Could not install squid' $red
-  fi
+        make
+        sudo make install
+        /opt/squid/sbin/squid -v
+        rm -R downloads
+    else
+        print 'ERROR' 'Could not install squid' $red
+    fi
 }
 
 mithril_configure_squid() {
-  exit_if_not_relay
-  ipAddress=$1
-  if [[ ! $ipAddress ]]; then
-    print 'ERROR' 'Please supply and IP address'
-    exit 1
-  fi
+    exit_if_not_relay
+    ipAddress=$1
+    if [[ ! $ipAddress ]]; then
+        print 'ERROR' 'Please supply and IP address'
+        exit 1
+    fi
 
-  sudo cp /etc/squid/squid.conf /etc/squid/squid.conf.bak
-  printf "
+    sudo cp /etc/squid/squid.conf /etc/squid/squid.conf.bak
+    printf "
 # Listening port
 http_port $MITHRIL_RELAY_PORT
 
@@ -251,110 +250,110 @@ cache deny all
 
 # Deny everything else
 http_access deny all
-" | sudo tee /etc/squid/squid.conf > /dev/null
+" | sudo tee /etc/squid/squid.conf >/dev/null
 
-  sudo adduser --system --no-create-home --group squid
-  sudo chown squid -R /opt/squid/var/
-  sudo chgrp squid -R /opt/squid/var/
+    sudo adduser --system --no-create-home --group squid
+    sudo chown squid -R /opt/squid/var/
+    sudo chgrp squid -R /opt/squid/var/
 
-  sudo cp -p services/$MITHRIL_SQUID_SERVICE /etc/systemd/system/$MITHRIL_SQUID_SERVICE
-  sudo systemctl daemon-reload
-  sudo systemctl start squid
-  sudo systemctl enable squid
+    sudo cp -p services/$MITHRIL_SQUID_SERVICE /etc/systemd/system/$MITHRIL_SQUID_SERVICE
+    sudo systemctl daemon-reload
+    sudo systemctl start squid
+    sudo systemctl enable squid
 
-  print 'MITHRIL' 'Squid service started' $green
+    print 'MITHRIL' 'Squid service started' $green
 }
 
 mithril_start() {
-  exit_if_not_producer
-  sudo systemctl start $MITHRIL_SERVICE
-  print 'MITHRIL' "Mithril service started" $green
+    exit_if_not_producer
+    sudo systemctl start $MITHRIL_SERVICE
+    print 'MITHRIL' "Mithril service started" $green
 }
 
 mithril_stop() {
-  exit_if_not_producer
-  sudo systemctl stop $MITHRIL_SERVICE
-  print 'MITHRIL' "Mithril service stopped" $green
+    exit_if_not_producer
+    sudo systemctl stop $MITHRIL_SERVICE
+    print 'MITHRIL' "Mithril service stopped" $green
 }
 
 mithril_restart() {
-  exit_if_not_producer
-  sudo systemctl restart $MITHRIL_SERVICE
-  print 'MITHRIL' "Mithril service restarted" $green
+    exit_if_not_producer
+    sudo systemctl restart $MITHRIL_SERVICE
+    print 'MITHRIL' "Mithril service restarted" $green
 }
 
 mithril_watch() {
-  exit_if_cold
-  journalctl -u $MITHRIL_SERVICE -f -o cat
+    exit_if_cold
+    journalctl -u $MITHRIL_SERVICE -f -o cat
 }
 
 mithril_status() {
-  exit_if_not_producer
-  sudo systemctl status mithril
+    exit_if_not_producer
+    sudo systemctl status mithril
 }
 
 mithril_start_squid() {
-  exit_if_not_producer
-  sudo systemctl start $MITHRIL_SQUID_SERVICE
-  print 'MITHRIL' "Squid service started" $green
+    exit_if_not_producer
+    sudo systemctl start $MITHRIL_SQUID_SERVICE
+    print 'MITHRIL' "Squid service started" $green
 }
 
 mithril_stop_squid() {
-  exit_if_not_producer
-  sudo systemctl stop $MITHRIL_SQUID_SERVICE
-  print 'MITHRIL' "Squid service stopped" $green
+    exit_if_not_producer
+    sudo systemctl stop $MITHRIL_SQUID_SERVICE
+    print 'MITHRIL' "Squid service stopped" $green
 }
 
 mithril_restart_squid() {
-  exit_if_not_relay
-  sudo systemctl restart $MITHRIL_SQUID_SERVICE
-  print 'MITHRIL' "Squid service restarted" $green
+    exit_if_not_relay
+    sudo systemctl restart $MITHRIL_SQUID_SERVICE
+    print 'MITHRIL' "Squid service restarted" $green
 }
 
 mithril_watch_squid() {
-  exit_if_not_relay
-  journalctl -u $MITHRIL_SQUID_SERVICE -f -o cat
+    exit_if_not_relay
+    journalctl -u $MITHRIL_SQUID_SERVICE -f -o cat
 }
 
 mithril_status_squid() {
-  exit_if_not_relay
-  sudo systemctl status $MITHRIL_SQUID_SERVICE
+    exit_if_not_relay
+    sudo systemctl status $MITHRIL_SQUID_SERVICE
 }
 
 mithril_verify_signer_registration() {
-  exit_if_not_producer
-  export PARTY_ID=$(< $POOL_ID)
-  export AGGREGATOR_ENDPOINT=$MITHRIL_AGGREGATOR_ENDPOINT
-  bash $MITHRIL_PATH/verify_signer_registration.sh
+    exit_if_not_producer
+    export PARTY_ID=$(<$POOL_ID)
+    export AGGREGATOR_ENDPOINT=$MITHRIL_AGGREGATOR_ENDPOINT
+    bash $MITHRIL_PATH/verify_signer_registration.sh
 }
 
 mithril_verify_signer_signature() {
-  exit_if_not_producer
-  export PARTY_ID=$(< $POOL_ID)
-  export AGGREGATOR_ENDPOINT=$MITHRIL_AGGREGATOR_ENDPOINT
-  bash $MITHRIL_PATH/verify_signer_signature.sh
+    exit_if_not_producer
+    export PARTY_ID=$(<$POOL_ID)
+    export AGGREGATOR_ENDPOINT=$MITHRIL_AGGREGATOR_ENDPOINT
+    bash $MITHRIL_PATH/verify_signer_signature.sh
 }
 
 case $1 in
-  download) mithril_download ;;
-  sync) mithril_sync ;;
-  check_compatability) mithril_check_compatability ;;
-  install_signer_env) mithril_install_signer_env ;;
-  install_signer_service) mithril_install_signer_service ;;
-  install_squid) mithril_install_squid ;;
-  configure_squid) mithril_configure_squid "${@:2}" ;;
-  start) mithril_start ;;
-  stop) mithril_stop ;;
-  restart) mithril_restart ;;
-  watch) mithril_watch ;;
-  status) mithril_status ;;
-  start_squid) mithril_start_squid ;;
-  stop_squid) mithril_stop_squid ;;
-  restart_squid) mithril_restart_squid ;;
-  watch_squid) mithril_watch_squid ;;
-  status_squid) mithril_status_squid ;;
-  verify_registration) mithril_verify_signer_registration ;;
-  verify_signature) mithril_verify_signer_signature ;;
-  help) help "${2:-"--help"}" ;;
-  *) help "${2:-"--help"}" ;;
+    download) mithril_download ;;
+    sync) mithril_sync ;;
+    check_compatability) mithril_check_compatability ;;
+    install_signer_env) mithril_install_signer_env ;;
+    install_signer_service) mithril_install_signer_service ;;
+    install_squid) mithril_install_squid ;;
+    configure_squid) mithril_configure_squid "${@:2}" ;;
+    start) mithril_start ;;
+    stop) mithril_stop ;;
+    restart) mithril_restart ;;
+    watch) mithril_watch ;;
+    status) mithril_status ;;
+    start_squid) mithril_start_squid ;;
+    stop_squid) mithril_stop_squid ;;
+    restart_squid) mithril_restart_squid ;;
+    watch_squid) mithril_watch_squid ;;
+    status_squid) mithril_status_squid ;;
+    verify_registration) mithril_verify_signer_registration ;;
+    verify_signature) mithril_verify_signer_signature ;;
+    help) help "${2:-"--help"}" ;;
+    *) help "${2:-"--help"}" ;;
 esac

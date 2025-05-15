@@ -90,8 +90,8 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 7,
-        "w": 4,
+        "h": 5,
+        "w": 3,
         "x": 0,
         "y": 1
       },
@@ -164,9 +164,9 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 7,
-        "w": 4,
-        "x": 4,
+        "h": 5,
+        "w": 3,
+        "x": 3,
         "y": 1
       },
       "id": 6,
@@ -239,9 +239,9 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 7,
-        "w": 4,
-        "x": 8,
+        "h": 5,
+        "w": 3,
+        "x": 6,
         "y": 1
       },
       "id": 7,
@@ -391,18 +391,19 @@
         ]
       },
       "gridPos": {
-        "h": 7,
-        "w": 12,
-        "x": 12,
+        "h": 5,
+        "w": 15,
+        "x": 9,
         "y": 1
       },
       "id": 1,
       "options": {
         "legend": {
           "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "width": 120
         },
         "tooltip": {
           "maxHeight": 600,
@@ -490,10 +491,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 7,
-        "w": 4,
+        "h": 5,
+        "w": 3,
         "x": 0,
-        "y": 8
+        "y": 6
       },
       "id": 13,
       "options": {
@@ -563,10 +564,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 7,
-        "w": 4,
-        "x": 4,
-        "y": 8
+        "h": 5,
+        "w": 3,
+        "x": 3,
+        "y": 6
       },
       "id": 14,
       "options": {
@@ -637,10 +638,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 7,
-        "w": 4,
-        "x": 8,
-        "y": 8
+        "h": 5,
+        "w": 3,
+        "x": 6,
+        "y": 6
       },
       "id": 15,
       "options": {
@@ -786,18 +787,19 @@
         ]
       },
       "gridPos": {
-        "h": 7,
-        "w": 12,
-        "x": 12,
-        "y": 8
+        "h": 5,
+        "w": 15,
+        "x": 9,
+        "y": 6
       },
       "id": 16,
       "options": {
         "legend": {
           "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "width": 120
         },
         "tooltip": {
           "maxHeight": 600,
@@ -884,10 +886,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 7,
-        "w": 4,
+        "h": 5,
+        "w": 3,
         "x": 0,
-        "y": 15
+        "y": 11
       },
       "id": 9,
       "options": {
@@ -957,10 +959,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 7,
-        "w": 4,
-        "x": 4,
-        "y": 15
+        "h": 5,
+        "w": 3,
+        "x": 3,
+        "y": 11
       },
       "id": 10,
       "options": {
@@ -1030,10 +1032,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 7,
-        "w": 4,
-        "x": 8,
-        "y": 15
+        "h": 5,
+        "w": 3,
+        "x": 6,
+        "y": 11
       },
       "id": 11,
       "options": {
@@ -1171,18 +1173,19 @@
         ]
       },
       "gridPos": {
-        "h": 7,
-        "w": 12,
-        "x": 12,
-        "y": 15
+        "h": 5,
+        "w": 15,
+        "x": 9,
+        "y": 11
       },
       "id": 12,
       "options": {
         "legend": {
           "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "width": 120
         },
         "tooltip": {
           "maxHeight": 600,
@@ -1229,6 +1232,7 @@
           "type": "prometheus"
         },
         "definition": "label_values(instance)",
+        "hide": 2,
         "includeAll": true,
         "name": "signers",
         "options": [],
@@ -1250,8 +1254,8 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "Cardano Mithril Signer",
+  "title": "Cardano Mithril Signer - Mainnet",
   "uid": "MithrilSignerDashboard24",
-  "version": 2,
+  "version": 6,
   "weekStart": ""
 }

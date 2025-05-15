@@ -1,0 +1,38 @@
+# Use Ubuntu 24.04 as the base image
+FROM ubuntu:24.04
+
+# Prevent interactive prompts
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Update package lists and install dependencies
+RUN apt-get update && apt install -y \
+    sudo            `# Privilege escalation tool` \
+    bash-completion `# Command completion` \
+    lsb-release     `# Get Ubuntu version details` \
+    tcptraceroute   `# Traces the route of TCP packets` \
+    bc              `# Calculator for shell scripts` \
+    curl            `# Download files` \
+    wget            `# Fetch remote content` \
+    nano            `# Text editor` \
+    git             `# Version control` \
+    unzip           `# Extract zip files` \
+    tar             `# Extract tar files` \
+    zstd            `# zst compression tool` \
+    iproute2        `# networking utilities` \
+    lsof            `# list open files` \
+    jq              `# json reading` \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Prometheus exporter
+ARG VERSION=1.0.1
+ARG DIRNAME="node_exporter-$VERSION.linux-amd64"
+WORKDIR /opt
+RUN wget https://github.com/prometheus/node_exporter/releases/download/v$VERSION/$DIRNAME.tar.gz \
+    && tar xvfz $DIRNAME.tar.gz \
+    && mv $DIRNAME/node_exporter /usr/local/bin
+
+# Expose node ports
+EXPOSE 9100 12798
+
+# Default command
+CMD ["echo", "Start script not provided. Ensure scripts are mounted and use Docker Compose to run the services."]
