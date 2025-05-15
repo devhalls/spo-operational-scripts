@@ -1,0 +1,93 @@
+version: '3.9'
+
+services:
+    node:
+        build:
+            context: .
+            dockerfile: Dockerfile.node
+            args:
+                NODE_HOME: "${NODE_HOME}"
+        container_name: node
+        restart: unless-stopped
+        env_file:
+            - ./../env.example
+        ports:
+            - "${NODE_PORT}:${NODE_PORT}"
+        networks:
+            - dapp_network
+        volumes:
+            - "./../metadata:${NODE_HOME}/metadata"
+            - "./../scripts:${NODE_HOME}/scripts"
+            - "./../services:${NODE_HOME}/services"
+            - "./../env.example:${NODE_HOME}/env.example"
+            - "./entrypoint.node.sh:${NODE_HOME}/entrypoint.node.sh"
+            - "./bin:${BIN_PATH}"
+            - "./node:${NODE_HOME}"
+        entrypoint: [ "/bin/bash", "-c", "${NODE_HOME}/entrypoint.node.sh" ]
+    prometheus:
+        image: prom/prometheus:latest
+        container_name: prometheus
+        restart: unless-stopped
+        volumes:
+            - "./config.prometheus.yml:/etc/prometheus/prometheus.yml"
+        ports:
+            - "${PROMETHEUS_PORT}:${PROMETHEUS_PORT}"
+        networks:
+            - dapp_network
+    grafana:
+        image: grafana/grafana:latest
+        container_name: grafana
+        restart: unless-stopped
+        volumes:
+            - grafana_data:/var/lib/grafana
+        environment:
+            - "GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}"
+        ports:
+            - "${GRAFANA_PORT}:${GRAFANA_PORT}"
+        networks:
+            - dapp_network
+    postgres:
+        image: postgres:17.2-alpine
+        container_name: postgres
+        restart: always
+        environment:
+            - POSTGRES_LOGGING=true
+            - POSTGRES_USER=$POSTGRES_USER
+            - POSTGRES_PASSWORD=$POSTGRES_PASSWORD
+            - POSTGRES_DB=$POSTGRES_DB
+        ports:
+            - "${POSTGRES_PORT}:${POSTGRES_PORT}"
+        volumes:
+            - "./postgres:/var/lib/postgresql/data"
+            - "./postgresql.conf:/etc/postgresql/postgresql.conf"
+            - "./pg_hba.conf:/etc/postgresql/pg_hba.conf"
+        networks:
+            - dapp_network
+    db-sync:
+        image: ghcr.io/intersectmbo/cardano-db-sync:13.6.0.5
+        container_name: db-sync
+        depends_on:
+            - node
+            - postgres
+        restart: always
+        environment:
+            - POSTGRES_USER=$POSTGRES_USER
+            - POSTGRES_PASSWORD=$POSTGRES_PASSWORD
+            - POSTGRES_HOST=postgres
+            - POSTGRES_DB=$POSTGRES_DB
+            - POSTGRES_PORT=$POSTGRES_PORT
+        volumes:
+            - "./db-sync:/var/lib/cexplorer"
+            - "./node:/node"
+        command: [
+            "--config /node/cardano-node/db-sync-config.json",
+            "--socket-path /node/cardano-node/db/socket",
+        ]
+        networks:
+            - dapp_network
+
+networks:
+    dapp_network:
+
+volumes:
+    grafana_data:

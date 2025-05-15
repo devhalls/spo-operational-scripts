@@ -51,6 +51,41 @@ tree --filesfirst -L 3
 
 ---
 
+## Docker
+
+We use a docker container to run a local node simulation on testnets. This should not be used for mainnet.
+
+```
+# Build and start the docker containers
+./docker/run.sh up -d --build 
+
+# OPTIONAL: run fixtures to generate address credentials
+./docker/fixture.sh addresses
+```
+
+Once your containers are running you can run node operation scripts as usual:
+
+```
+# Run scripts in the container, e.g.
+./docker/script.sh node.sh view
+./docker/exec.sh node scripts/query.sh uxto
+
+# OR Connect to the cardano node container
+docker exec -it node bash
+```
+
+### Managing the containers
+
+```
+# Restart a container e.g. prometheus
+./docker/run.sh restart prometheus
+
+# Rebuld containers f changes have been made to compose OR .env file
+./docker/run.sh up -d --build 
+```
+
+---
+
 ## Node setup
 
 This table describes the env variables you most likely need to adjust to suit your system and their available options. Read through these options before proceeding to the installation.
@@ -79,7 +114,7 @@ This table describes the env variables you most likely need to adjust to suit yo
                 <code>NODE_VERSION</code>
             </td>
             <td>
-                <code>10.1.3</code><br/>
+                <code>10.1.4</code><br/>
             </td>
             <td>
                 <p>The current node version. Must be &gt the version defined here.</p>
@@ -90,10 +125,10 @@ This table describes the env variables you most likely need to adjust to suit yo
                 <code>NODE_HOME</code>
             </td>
             <td>
-                <code>"/home/upstream/Node"</code>
+                <code>"/home/upstream/Cardano"</code>
             </td>
             <td>
-                <p>The current node version. Must be &gt the version defined here.</p>
+                <p>The home folder for your node.</p>
             </td>
         </tr>
         <tr>
@@ -132,7 +167,7 @@ This table describes the env variables you most likely need to adjust to suit yo
             <td>
                 <p>
                     The build type.<br/>
-                    0 = do not build or download.<br/>
+                    0 = do not build or download binaries.<br/>
                     1 = downloads node binaries.<br/>
                     2 = builds node binaries from source.
                 </p>
@@ -171,6 +206,61 @@ This table describes the env variables you most likely need to adjust to suit yo
                 <p>A Cardanoscan.io API key used to fetch pool data displayed in Grafana.</p>
             </td>
         </tr>
+        <tr>
+            <td>
+                <code>MITHRIL_RELAY_HOST</code>
+            </td>
+            <td>
+                <code>http:192.168.X.X</code>
+            </td>
+            <td>
+                <p>Your mithril relay host address excluding port.</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <code>MITHRIL_RELAY_PORT</code>
+            </td>
+            <td>
+                <code>1234</code>
+            </td>
+            <td>
+                <p>Your mithril relay port.</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <code>BIN_PATH</code>
+            </td>
+            <td>
+                <code>$HOME/local/bin</code>
+            </td>
+            <td>
+                <p>Your users local bin path.</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <code>PACKAGER</code>
+            </td>
+            <td>
+                <code>apt-get</code>
+            </td>
+            <td>
+                <p>System package manager.</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <code>SERVICE_PATH</code>
+            </td>
+            <td>
+                <code>/etc/systemd/system</code>
+            </td>
+            <td>
+                <p>System service path.</p>
+            </td>
+        </tr>
     </tbody>
 </table>
 
@@ -178,11 +268,18 @@ This table describes the env variables you most likely need to adjust to suit yo
 
 ### Node install
 
+> IMPORTANT - Skip the node install steps for docker environments
+
 Get started by creating a directory and pulling this repo, and edit the env file (see table below for env descriptions and configure).
 
 ```
 mkdir Cardano && cd Cardano
 git clone https://github.com/devhalls/spo-operational-scripts.git . 
+```
+
+Create and edit your env file:
+
+```
 cp -p env.example env && nano env
 ```
 
@@ -194,6 +291,8 @@ scripts/node.sh install
 
 ### Mithril db sync
 
+> IMPORTANT - Mithril snapshots are downloaded during docker installation and can be skipped for docker environments.
+
 Once installation is complete, download the mithril binaries and run mithril sync.
 
 ```
@@ -202,6 +301,8 @@ scripts/node.sh mithril sync
 ```
 
 ### Node start, stop and restart
+
+> IMPORTANT - Skip this step for docker environments and use docker scripts to start and stop the node.
 
 After installation is complete you can start, stop or restart the node service.
 
@@ -585,7 +686,7 @@ You must rotate your KES keys every 90 days or you will not be able to produce b
 
 ```
 # PRODUCER: Check the current status and take note of the 'kesPeriod'
-scripts/query.sh kes_state
+scripts/query.sh kes
 scripts/query.sh kes_period
 
 # COLD: Rotate the node
@@ -667,7 +768,7 @@ In order to withdraw your SPO rewards you will need to participate in Cardano Go
 3. delegate your voting power to a vote of on-confidence
 
 ```
-# COLD: Generate your vote delegation certificate using one of the 3 options:
+# COLD: Generate your vote delegation certificate using one of the 4 options:
 scripts/address.sh generate_stake_vote_cert drep <drepId>
 scripts/address.sh generate_stake_vote_cert script <scriptHash>
 scripts/address.sh generate_stake_vote_cert abstain
@@ -726,9 +827,35 @@ scripts/tx.sh submit
 
 ---
 
+### Retiring your Stake Pool
+
+```
+# PRODUCER: Get the retirement epoch window
+poolRetireMaxEpoch=$(scripts/query.sh params poolRetireMaxEpoch)
+epoch=$(scripts/query.sh tip epoch)
+minRetirementEpoch=$(( ${epoch} + 1 ))
+maxRetirementEpoch=$(( ${epoch} + ${poolRetireMaxEpoch} ))
+echo earliest epoch for retirement is: ${minRetirementEpoch}
+echo latest epoch for retirement is: ${maxRetirementEpoch}
+
+# COLD: generate deregistration certificate ($POOL_DREG_CERT)
+scripts/pool.sh generate_pool_dreg_cert <epoch>
+
+# COPY: copy pool.dereg to producer
+# PRODUCER: bbuild a tx with the dregistration certificate 
+scripts/tx.sh build 0 --certificate-file cardano-node/keys/pool.dereg
+
+# COPY: copy temp/tx.raw to cold
+# COLD: sign the transaction with your payment and node keys
+scripts/tx.sh sign --signing-key-file cardano-node/keys/payment.skey --signing-key-file cardano-node/keys/node.skey
+
+# COPY: copy temp/tx.signed to cold
+
+```
+
 ## Registering a DRep
 
-To register a stake pool you must have a running **fully synced** node. We can then generate the following assets:
+To register as a DRep you must have a running **fully synced** node. We can then generate the following assets:
 
 <details>
 <summary>DRep assets</summary>
@@ -792,7 +919,7 @@ scripts/tx.sh drep_reg_sign
 
 # COPY: tx.signed to your producer node
 # PRODUCER: Submit the transaction
-scripts/tx/submit.sh
+scripts/tx.sh submit
 ```
 
 ### Vote on a governance action as a DRep
@@ -819,9 +946,137 @@ scripts/tx.sh vote_sign
 scripts/tx.sh submit
 ```
 
+## Registering a Committee member
+
+To register as a DRep you must have a running **fully synced** node. We can then generate the following assets:
+
+<details>
+<summary>Committee member assets</summary>
+
+<table>
+    <tbody>
+        <tr>
+            <td>
+                <p><code>cc-hot.vkey</code></p>
+            </td>
+            <td>
+                <p>Committee hot verification key</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <p><code>cc-hot.skey</code></p>
+            </td>
+            <td>
+                <p>Committee hot signing key</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <p><code>cc-cold.vkey</code></p>
+            </td>
+            <td>
+                <p>Committee cold verification key</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <p><code>cc-cold.skey</code></p>
+            </td>
+            <td>
+                <p>Committee cold signing key</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <p><code>cc-key.hash</code></p>
+            </td>
+            <td>
+                <p>Hashed cold verification key</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <p><code>cc.cert</code></p>
+            </td>
+            <td>
+                <p>Committee hot > cold certificate</p>
+            </td>
+        </tr>
+    </tbody>
+</table>
+</details>
+
+### Generate Committee member keys and certificate
+
+Start your Committee registration by generating keys and a certificate.
+
+```
+# COLD: Generate Committee keys and certificate
+scripts/govern.sh cc_cold_keys
+scripts/govern.sh cc_cold_hash
+scripts/govern.sh cc_hot_keys
+scripts/govern.sh cc_cert
+
+# COPY: copy the cc.cert to the producer
+# PRODUCER: Build a transaction with the Committee certificate
+scripts/tx.sh build 0 2 --certificate-file "/home/upstream/Cardano/cardano-node/keys/cc.cert"
+
+# COPY: tx.raw to your cold node
+# COLD: Sign the transaction
+scripts/tx.sh sign --signing-key-file "/home/upstream/Cardano/cardano-node/keys/payment.skey" --signing-key-file "/home/upstream/Cardano/cardano-node/keys/cc-cold.skey"
+
+# COPY: tx.signed to your producer node
+# PRODUCER: Submit the transaction
+scripts/tx.sh submit
+```
+
+## Voting
+
+Although voting methods are detailed above the new process makes it easier to build transactions:
+
+```
+# COPY: Create you public rational named rationale-GOV_ACTION_ID-GOV_ACTION_INDEX.jsonld and publish to a public location
+# COLD: Then create the vote.json file as a DRep or SPO:
+scripts/govern.sh vote_json $GOV_ACTION_HEX $GOV_ACTION_INDEX abstain $RATIONALE_URL.jsonld 
+
+# COPY: vote.json to producer
+# PRODUCER: build your raw transaction
+scripts/tx.sh build 0 2 --metadata-json-file ~/Cardano/cardano-node/temp/vote.json
+
+# COLD: sign the transaction
+scripts/tx.sh sign --signing-key-file ~/Cardano/cardano-node/keys/node.skey --signing-key-file ~/Cardano/cardano-node/keys/payment.skey
+
+# PRODUCER: send the transaction
+scripts/tx.sh submit
+```
+
 ---
 
 ## Repository info
+
+### Script notation
+
+* `( )` Parenthesis = mandatory parameters.
+* `[ ]` Square brackets = optional parameters.
+* `< >` Angle brackets = parameter types.
+* ` | ` Bar = Choice between several options.
+
+```
+Usage: query.sh [
+  tip [name <STRING>] |
+  params [name <STRING>] |
+  metrics [name <STRING>] |
+  config (name <STRING>) |
+  key [name <STRING>] |
+  kes |
+  kes_period |
+  uxto [address <ADDRESS>] |
+  leader [period <INT>] |
+  rewards [name <STRING>] |
+  help [-h]
+]
+```
 
 ### Contributors
 
@@ -850,6 +1105,8 @@ Distributed under the GPL-3.0 License. See LICENSE.txt for more information.
 ### Links
 
 - [Cardano testnet faucet](https://docs.cardano.org/cardano-testnets/tools/faucet/)
+- [Db-sync snapshots](https://update-cardano-mainnet.iohk.io/cardano-db-sync/index.html)
 - [Upstream SPO website](https://upstream.org.uk)
 - [Upstream Twitter](https://x.com/Upstream_ada)
 
+---

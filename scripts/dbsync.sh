@@ -1,0 +1,206 @@
+#!/bin/bash
+# Usage: dbsync.sh [
+#   dependencies |
+#   download |
+#   install |
+#   snapshot_download |
+#   snapshot_process |
+#   snapshot_restore |
+#   run |
+#   start |
+#   stop |
+#   restart |
+#   watch |
+#   status |
+#   create |
+#   drop |
+#   view |
+#   help [?-h]
+# ]
+#
+# Info:
+#
+#   - dependencies) Install db sync dependencies, eg postgresql. Creates a new pg user $DB_SYNC_PG_USER.
+#   - download) Download the db sync binaries.
+#   - install) Install the db sync service and create directories.
+#   - snapshot_download) Download the db sync snapshot from $DB_SYNC_PG_SNAPSHOT.
+#   - snapshot_process) Processes the db sync snapshot zip archive preparing for import.
+#   - snapshot_restore) Restore db sync snapshot.
+#   - run) Run the db sync service.
+#   - start) Start the db-sync systemctl service.
+#   - stop) Stop the db-sync systemctl service.
+#   - restart) Restart the db-sync systemctl service.
+#   - watch) Watch the db-sync service logs.
+#   - status) Display the db-sync service status.
+#   - create) ...
+#   - drop) ...
+#   - view) ...
+#   - help) View this files help. Default value if no option is passed.
+
+source "$(dirname "$0")/../env"
+source "$(dirname "$0")/common.sh"
+
+dbsync_dependencies() {
+    sudo $PACKAGER install postgresql postgresql-contrib -y
+    sudo -u postgres createuser -d -r -s $DB_SYNC_PG_USER
+}
+
+dbsync_download() {
+    print 'INSTALL' "Downloading node binaries"
+    local target="downloads/$DB_SYNC_REMOTE_NAME"
+    local extension=".tar.gz"
+    mkdir -p $target
+    wget -O $target.tar.gz $DB_SYNC_REMOTE/$DB_SYNC_VERSION/$DB_SYNC_REMOTE_NAME
+    if [ $? -eq 0 ]; then
+        tar -xvzf $target.tar.gz -C $target
+        sudo cp -a $target/. $BIN_PATH/
+        chmod +x -R $BIN_PATH
+        sudo rm -R downloads
+        $DB_SYNC_NAME --version
+        print 'INSTALL' "DBSync binaries moved to $BIN_PATH" $green
+    else
+        rm -R downloads
+        print 'ERROR' "Unable to download binaries" $red
+        exit 1
+    fi
+}
+
+dbsync_install() {
+    print 'INSTALL' "Creating directories at $DB_SYNC_PATH"
+    mkdir -p $DB_SYNC_PATH $DB_SYNC_PATH/schema $DB_SYNC_PATH/ledger-state
+    cp -p services/pgpass-mainnet $DB_SYNC_PATH/pgpass-mainnet
+    cp -pr services/schema/. $DB_SYNC_PATH/schema
+
+    print 'INSTALL' 'Creating db-sync service'
+    cp -p services/$DB_SYNC_SERVICE services/$DB_SYNC_NAME.temp
+    sed -i services/$DB_SYNC_NAME.temp \
+        -e "s|NODE_HOME|$NODE_HOME|g" \
+        -e "s|NODE_USER|$NODE_USER|g" \
+        -e "s|DB_SYNC_SERVICE|$DB_SYNC_SERVICE|g"
+    sudo cp -p services/$DB_SYNC_NAME.temp $SERVICE_PATH/$DB_SYNC_SERVICE
+    rm services/$DB_SYNC_NAME.temp
+
+    sudo systemctl daemon-reload
+    sudo systemctl enable $DB_SYNC_SERVICE
+    print 'INSTALL' "DB-sync installed and enabled" $green
+}
+
+dbsync_snapshot_download() {
+    cd $DB_SYNC_PATH && {
+                        curl -O $DB_SYNC_PG_SNAPSHOT
+                                                       cd -
+    }
+    if [ $? -eq 0 ]; then
+        print 'INSTALL' "Snapshot downloaded to $DB_SYNC_PATH" $green
+    else
+        print 'ERROR' "Unable to download snapshot" $red
+        exit 1
+    fi
+}
+
+dbsync_snapshot_process() {
+    print 'INSTALL' "Processing snapshot archive ..."
+    if test -d "$tmpDir/db/"; then
+        print 'ERROR' "Import snapshot/db directory already exists" $red
+    fi
+    local fileName=$(echo $DB_SYNC_PG_SNAPSHOT | awk -F'/' '{print $NF}')
+    local tmpDir=$DB_SYNC_PATH/snapshot
+    mkdir -p $tmpDir
+    tar -xvf "$DB_SYNC_PATH/$fileName" -C "$tmpDir"
+    if test -d "$tmpDir/db/"; then
+        print 'INSTALL' "Snapshot imported" $green
+        return 0
+    fi
+    print 'ERROR' "Unable to import snapshot" $red
+}
+
+dbsync_snapshot_restore() {
+    cores=$(getconf _NPROCESSORS_ONLN)
+    if test "${cores}" -le 2; then
+        cores=1
+    else
+        cores=$((cores - 1))
+    fi
+    if test -d "$DB_SYNC_PATH/snapshot/db/"; then
+        pg_restore \
+            --schema=public \
+            --format=directory \
+            --dbname="$DB_SYNC_PG_DATABASE" \
+            --jobs="$cores" \
+            --exit-on-error \
+            --no-owner \
+            "$DB_SYNC_PATH/snapshot/db/"
+        return 0
+    fi
+    print 'ERROR' "Unable to import snapshot, no " $red
+}
+
+dbsync_run() {
+    export PGPASSFILE=$DB_SYNC_PATH/pgpass-mainnet
+    $DB_SYNC \
+        --config $NETWORK_PATH/db-sync-config.json \
+        --socket-path $NETWORK_SOCKET_PATH \
+        --state-dir $DB_SYNC_PATH/ledger-state \
+        --schema-dir $DB_SYNC_PATH/schema/
+}
+
+dbsync_start() {
+    exit_if_cold
+    sudo systemctl start $DB_SYNC_SERVICE
+    print 'NODE' "DBSync service started" $green
+}
+
+dbsync_stop() {
+    exit_if_cold
+    sudo systemctl stop $DB_SYNC_SERVICE
+    print 'NODE' "DBSync service stopped" $green
+}
+
+dbsync_restart() {
+    exit_if_cold
+    sudo systemctl restart $DB_SYNC_SERVICE
+    print 'NODE' "DBSync service restarted" $green
+}
+
+dbsync_watch() {
+    exit_if_cold
+    journalctl -u $DB_SYNC_SERVICE -f -o cat
+}
+
+dbsync_status() {
+    exit_if_cold
+    sudo systemctl status $DB_SYNC_SERVICE
+}
+
+dbsync_create_db() {
+    createdb -T template0 --owner="${DB_SYNC_PG_USER}" --encoding=UTF8 "${DB_SYNC_PG_DATABASE}"
+}
+
+dbsync_drop_db() {
+    dropdb -f cexplorer
+}
+
+dbsync_view_db() {
+    psql "${DB_SYNC_PG_DATABASE}" \
+        --command="select table_name from information_schema.views where table_catalog = '${DB_SYNC_PG_DATABASE}' and table_schema = 'public' ;"
+}
+
+case $1 in
+    dependencies) dbsync_dependencies ;;
+    download) dbsync_download ;;
+    install) dbsync_install ;;
+    snapshot) dbsync_snapshot_download ;;
+    process) dbsync_snapshot_process ;;
+    import) dbsync_snapshot_import ;;
+    run) dbsync_run ;;
+    start) dbsync_start ;;
+    stop) dbsync_stop ;;
+    restart) dbsync_restart ;;
+    watch) dbsync_watch ;;
+    status) dbsync_status ;;
+    create) dbsync_create_db ;;
+    drop) dbsync_drop_db ;;
+    view) dbsync_view_db ;;
+    help) help "${2:-"--help"}" ;;
+    *) help "${1:-"--help"}" ;;
+esac
