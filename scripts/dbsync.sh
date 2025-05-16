@@ -20,7 +20,7 @@
 #
 # Info:
 #
-#   - dependencies) Install db sync dependencies, eg postgresql. Creates a new pg user $DB_SYNC_PG_USER.
+#   - dependencies) Install db sync dependencies, eg postgresql. Creates a new pg user $POSTGRES_USER.
 #   - download) Download the db sync binaries.
 #   - install) Install the db sync service and create directories.
 #   - snapshot_download) Download the db sync snapshot from $DB_SYNC_PG_SNAPSHOT.
@@ -42,7 +42,7 @@ source "$(dirname "$0")/common.sh"
 
 dbsync_dependencies() {
     sudo $PACKAGER install postgresql postgresql-contrib -y
-    sudo -u postgres createuser -d -r -s $DB_SYNC_PG_USER
+    sudo -u postgres createuser -d -r -s $POSTGRES_USER
 }
 
 dbsync_download() {
@@ -125,7 +125,7 @@ dbsync_snapshot_restore() {
         pg_restore \
             --schema=public \
             --format=directory \
-            --dbname="$DB_SYNC_PG_DATABASE" \
+            --dbname="$POSTGRES_DB" \
             --jobs="$cores" \
             --exit-on-error \
             --no-owner \
@@ -173,7 +173,7 @@ dbsync_status() {
 }
 
 dbsync_create_db() {
-    createdb -T template0 --owner="${DB_SYNC_PG_USER}" --encoding=UTF8 "${DB_SYNC_PG_DATABASE}"
+    createdb -T template0 --owner="${POSTGRES_USER}" --encoding=UTF8 "${POSTGRES_DB}"
 }
 
 dbsync_drop_db() {
@@ -181,8 +181,8 @@ dbsync_drop_db() {
 }
 
 dbsync_view_db() {
-    psql "${DB_SYNC_PG_DATABASE}" \
-        --command="select table_name from information_schema.views where table_catalog = '${DB_SYNC_PG_DATABASE}' and table_schema = 'public' ;"
+    psql "${POSTGRES_DB}" \
+        --command="select table_name from information_schema.views where table_catalog = '${POSTGRES_DB}' and table_schema = 'public' ;"
 }
 
 case $1 in
