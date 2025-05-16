@@ -173,7 +173,7 @@ dbsync_status() {
 }
 
 dbsync_create_db() {
-    createdb -T template0 --owner="${POSTGRES_USER}" --encoding=UTF8 "${POSTGRES_DB}"
+    createdb -U ${POSTGRES_USER} -T template0 --owner="${POSTGRES_USER}" --encoding=UTF8 "${POSTGRES_DB}"
 }
 
 dbsync_drop_db() {
