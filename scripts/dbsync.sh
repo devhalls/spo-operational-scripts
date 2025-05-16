@@ -43,6 +43,7 @@ source "$(dirname "$0")/common.sh"
 dbsync_dependencies() {
     sudo $PACKAGER install postgresql postgresql-contrib -y
     sudo -u postgres createuser -d -r -s $POSTGRES_USER
+    sudo -u postgres createuser -d -r -s $NODE_USER
 }
 
 dbsync_download() {
@@ -173,7 +174,7 @@ dbsync_status() {
 }
 
 dbsync_create_db() {
-    createdb -U ${POSTGRES_USER} -T template0 --owner="${POSTGRES_USER}" --encoding=UTF8 "${POSTGRES_DB}"
+    createdb -T template0 --owner="${POSTGRES_USER}" --encoding=UTF8 "${POSTGRES_DB}"
 }
 
 dbsync_drop_db() {
