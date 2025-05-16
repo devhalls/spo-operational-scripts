@@ -42,7 +42,7 @@ network_set_ip() {
     print 'NETWORK' 'Setting fixed IP address for your device'
     sudo $PACKAGER install net-tools -y
 
-    ipAddress=$(hostname -I | awk '{$1=$1};1')
+    ipAddress=${1:-$(hostname -I | awk '{print $1}')}
     router=$(ip r | grep -m 1 default | awk '{print $3}')
     interface=$(route | grep -m 1 '^default' | grep -o '[^ ]*$')
 
