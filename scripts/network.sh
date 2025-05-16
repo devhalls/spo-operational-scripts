@@ -1,9 +1,9 @@
 #!/bin/bash
-# Usage: network.sh [
+# Usage: network.sh (
 #   ngrok |
-#   set_ip |
-#   help [?-h]
-# ]
+#   set_ip [ <STRING>] |
+#   help [-h <STRING>]
+# )
 #
 # Info:
 #
@@ -51,6 +51,7 @@ network_set_ip() {
     update_or_append "/etc/dhcpcd.conf" "static ip_address" "static ip_address=$ipAddress/24"
     update_or_append "/etc/dhcpcd.conf" "static routers" "static routers=$router"
     update_or_append "/etc/dhcpcd.conf" "static domain_name_servers" "static domain_name_servers=$router"
+    sudo systemctl status systemd-networkd
 
     print 'NETWORK' "IP address set to $ipAddress. Restart your device for this change to take effect." $green
 }

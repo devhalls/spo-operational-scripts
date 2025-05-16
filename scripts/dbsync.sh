@@ -50,7 +50,7 @@ dbsync_download() {
     local target="downloads/$DB_SYNC_REMOTE_NAME"
     local extension=".tar.gz"
     mkdir -p $target
-    wget -O $target.tar.gz $DB_SYNC_REMOTE/$DB_SYNC_VERSION/$DB_SYNC_REMOTE_NAME
+    wget -O $target.tar.gz "${DB_SYNC_REMOTE}/${DB_SYNC_VERSION}/${DB_SYNC_REMOTE_NAME}${extension}"
     if [ $? -eq 0 ]; then
         tar -xvzf $target.tar.gz -C $target
         sudo cp -a $target/. $BIN_PATH/
