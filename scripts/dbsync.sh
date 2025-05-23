@@ -69,8 +69,11 @@ dbsync_download() {
 dbsync_install() {
     print 'INSTALL' "Creating directories at $DB_SYNC_PATH"
     mkdir -p $DB_SYNC_PATH $DB_SYNC_PATH/schema $DB_SYNC_PATH/ledger-state
-    cp -p services/pgpass-mainnet $DB_SYNC_PATH/pgpass-mainnet
     cp -pr services/schema/. $DB_SYNC_PATH/schema
+    cp -p services/pgpass services/pgpass.temp
+    sed -i services/pgpass.temp \
+        -e "s|POSTGRES_DB|$POSTGRES_DB|g"
+    cp -p services/pgpass.temp $DB_SYNC_PATH/pgpass
 
     print 'INSTALL' 'Creating db-sync service'
     cp -p services/cardano-db-sync.service services/$DB_SYNC_NAME.temp
@@ -137,7 +140,7 @@ dbsync_snapshot_restore() {
 }
 
 dbsync_run() {
-    export PGPASSFILE=$DB_SYNC_PATH/pgpass-mainnet
+    export PGPASSFILE=$DB_SYNC_PATH/pgpass
     $DB_SYNC \
         --config $NETWORK_PATH/db-sync-config.json \
         --socket-path $NETWORK_SOCKET_PATH \
@@ -178,7 +181,7 @@ dbsync_create_db() {
 }
 
 dbsync_drop_db() {
-    dropdb -f cexplorer
+    dropdb -f $POSTGRES_DB
 }
 
 dbsync_view_db() {
