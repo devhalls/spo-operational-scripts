@@ -1,14 +1,14 @@
 #!/bin/bash
-# Usage: address.sh [
+# Usage: address.sh (
 #   generate_payment_keys |
 #   generate_stake_keys |
 #   generate_payment_address |
 #   generate_stake_address |
-#   generate_stake_reg_cert [deposit] |
+#   generate_stake_reg_cert [deposit <INT>] |
 #   generate_stake_del_cert |
-#   generate_stake_vote_cert [?delegateTo] [?drepId | ?scriptHash] |
-#   help [?-h]
-# ]
+#   generate_stake_vote_cert (delegateTo <STRING<'drep'|'script'|'abstain'|'no-confidence'>>) |
+#   help [?-h <BOOLEAN>]
+# )
 #
 # Info:
 #

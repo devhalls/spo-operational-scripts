@@ -1,5 +1,5 @@
 #!/bin/bash
-# Usage: node.sh [
+# Usage: node.sh (
 #   install [...params] |
 #   update [...params] |
 #   mithril [...params] |
@@ -18,8 +18,8 @@
 #   restart_grafana |
 #   watch_grafana |
 #   status_grafana |
-#   help [?-h]
-# ]
+#   help [-h <BOOLEAN>]
+# )
 #
 # Info:
 #

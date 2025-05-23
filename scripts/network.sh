@@ -1,8 +1,8 @@
 #!/bin/bash
 # Usage: network.sh (
 #   ngrok |
-#   set_ip [ <STRING>] |
-#   help [-h <STRING>]
+#   set_ip [ipAddress <STRING>] |
+#   help [-h <BOOLEAN>]
 # )
 #
 # Info:
@@ -43,9 +43,9 @@ network_set_ip() {
     print 'NETWORK' 'Setting fixed IP address for your device'
     sudo $PACKAGER install net-tools -y
 
-    ipAddress=${1:-$(hostname -I | awk '{print $1}')}
-    router=$(ip r | grep -m 1 default | awk '{print $3}')
-    interface=$(route | grep -m 1 '^default' | grep -o '[^ ]*$')
+    local ipAddress=${1:-$(hostname -I | awk '{print $1}')}
+    local router=$(ip r | grep -m 1 default | awk '{print $3}')
+    local interface=$(route | grep -m 1 '^default' | grep -o '[^ ]*$')
 
     update_or_append "/etc/dhcpcd.conf" "# Added by node scripts" "# Added by node scripts"
     update_or_append "/etc/dhcpcd.conf" "interface" "interface $interface"

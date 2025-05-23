@@ -1,5 +1,5 @@
 #!/bin/bash
-# Usage: node/install.sh [
+# Usage: node/install.sh (
 #   install |
 #   validate |
 #   dependencies |
@@ -8,12 +8,12 @@
 #   download [...params] |
 #   configs |
 #   guild |
-#   prometheus_explorer [?monitoringIp] |
+#   prometheus_explorer [monitoringIp <STRING>] |
 #   grafana |
 #   service |
 #   clean |
-#   help [?-h]
-# ]
+#   help [-h <BOOLEAN>]
+# )
 #
 # Info:
 #

@@ -5,7 +5,7 @@ After             = network-online.target
 
 [Service]
 User              = NODE_USER
-ExecStart         = /usr/local/bin/ngrok tcp --region=NGROK_REGION -remote-addr=NGROK_ADDR NODE_PORT
+ExecStart         = /usr/local/bin/ngrok tcp --region=NGROK_REGION --remote-addr=NGROK_ADDR NODE_PORT
 ExecReload        = /bin/kill -HUP $MAINPID
 KillMode          = process
 IgnoreSIGPIPE     = true

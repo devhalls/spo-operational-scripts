@@ -1,18 +1,18 @@
 #!/bin/bash
-# Usage: govern.sh [
-#   action [govActionId] |
-#   vote [govActionId <STRING>] [govActionIndex <INT>] [decision <STRING>] [?keyFile <STRING>] |
-#   vote_json [govActionId <STRING>] [govActionIndex <INT>] [decision <STRING>] [url <STRING>] [?keyFile <STRING>] |
-#   drep_id [?format <STRING>] |
-#   drep_id_CIP129 [?type <STRING>]
+# Usage: govern.sh (
+#   action (govActionId <STRING>) |
+#   vote (govActionId <STRING>) (govActionIndex <INT>) (decision <STRING>) [keyFile <STRING>] |
+#   vote_json (govActionId <STRING>) (govActionIndex <INT>) (decision <STRING>) (url <STRING>) |
+#   drep_id [format <STRING<'--output-bech32'|'--output-hex'>>] |
+#   drep_id_CIP129 [type <STRING<'drep1'|'drep_script1'|'cc_hot1'|'cc_hot_script1'|'cc_cold1'|'cc_cold_script1'>>]
 #   drep_keys |
-#   drep_cert [url] [?update <STRING>] |
+#   drep_cert (url <STRING>) [deposit <BOOLEAN>] |
 #   cc_cold_keys |
 #   cc_cold_hash |
 #   cc_hot_keys |
 #   cc_cert |
-#   help [?-h]
-# ]
+#   help [-h <BOOLEAN>]
+# )
 #
 # Info:
 #
@@ -32,7 +32,8 @@ source "$(dirname "$0")/common.sh"
 
 govern_action() {
     exit_if_cold
-    govActionId=${1}
+    exit_if_empty "${1}" "1 govActionId"
+    local govActionId=${1}
     $CNCLI conway query gov-state $NETWORK_ARG --socket-path $NETWORK_SOCKET_PATH |
         jq -r --arg govActionId "$govActionId" '.proposals | to_entries[] | select(.value.actionId.txId | contains($govActionId)) | .value'
 }
@@ -44,23 +45,25 @@ govern_state() {
 
 govern_vote() {
     exit_if_not_cold
-    govActionId=${1}
-    govActionIndex=${2}
-    decision=${3}
-    keyFile=${4:-'node'}
-    outputPath=$NETWORK_PATH/temp/vote.raw
-
+    exit_if_empty "${1}" "1 govActionId"
+    exit_if_empty "${2}" "2 govActionIndex"
+    exit_if_empty "${3}" "3 decision"
+    local govActionId=${1}
+    local govActionIndex=${2}
+    local decision=${3}
+    local keyFile=${4:-'node'}
+    local outputPath=$NETWORK_PATH/temp/vote.raw
     if [ "$decision" != "yes" ] && [ "$decision" != "no" ] && [ "$decision" != "abstain" ]; then
         print 'GOVERN' "Incorrect decision value $decision: allowed values 'yes' | 'no' | 'abstain'" $red
         exit 1
     fi
 
-    verification_arg=
-    case $keyFile in
-        "node") verification_arg="--cold-verification-key-file $NODE_VKEY" ;;
-        "drep") verification_arg="--drep-verification-key-file $DREP_VKEY" ;;
-        "cc") verification_arg="--cc-hot-verification-key-file $CC_HOT_VKEY" ;;
-    esac
+    local verification_arg=
+        case $keyFile in
+            "node") verification_arg="--cold-verification-key-file $NODE_VKEY" ;;
+            "drep") verification_arg="--drep-verification-key-file $DREP_VKEY" ;;
+            "cc") verification_arg="--cc-hot-verification-key-file $CC_HOT_VKEY" ;;
+        esac
 
     $CNCLI conway governance vote create \
         --$decision \
@@ -73,16 +76,22 @@ govern_vote() {
 }
 
 govern_vote_json() {
-    govActionId=${1}
-    govActionIndex=${2}
-    decision=${3}
-    url=${4}
-    urlFile=$NETWORK_PATH/temp/rationale.jsonld
-    voteJson=$NETWORK_PATH/temp/vote.json
-    outputPath=$NETWORK_PATH/temp/vote.wit
+    # @todo test this vote json function?
+    exit_if_not_cold
+    exit_if_empty "${1}" "1 govActionId"
+    exit_if_empty "${2}" "2 govActionIndex"
+    exit_if_empty "${3}" "3 decision"
+    exit_if_empty "${4}" "4 url"
+    local govActionId=${1}
+    local govActionIndex=${2}
+    local decision=${3}
+    local url=${4}
+    local urlFile=$NETWORK_PATH/temp/rationale.jsonld
+    local voteJson=$NETWORK_PATH/temp/vote.json
+    local outputPath=$NETWORK_PATH/temp/vote.wit
     curl -L -o "$urlFile" "$url"
-    actionType=$(govern_action "$govActionId" | jq -r '.proposalProcedure.govAction.tag')
-    urlHash=$($CNCLI hash anchor-data --file-text "$urlFile")
+    local actionType=$(govern_action "$govActionId" | jq -r '.proposalProcedure.govAction.tag')
+    local urlHash=$($CNCLI hash anchor-data --file-text "$urlFile")
     case "$actionType" in
       MotionNoConfidence)  actionType="motion_no_confidence" ;;
       CommitteeChange)     actionType="committee_update" ;;
@@ -124,7 +133,7 @@ govern_vote_json() {
 
 govern_drep_id() {
     exit_if_not_producer
-    format="${1:-"--output-bech32"}"
+    local format="${1:-"--output-bech32"}"
     $CNCLI conway governance drep id \
         --drep-verification-key-file $DREP_VKEY \
         $format \
@@ -133,8 +142,9 @@ govern_drep_id() {
 }
 
 govern_drep_id_CIP129() {
-    type=${1}
-	hexId=$($CNBECH32 <<< "$(govern_drep_id)")
+    exit_if_not_producer
+    local type=${1:-drep1}
+	local hexId=$($CNBECH32 <<< "$(govern_drep_id)")
 	case "${type}" in
 		"drep1"*) formatted=$($CNBECH32 "drep" <<< "22${hexId}");;
 		"drep_script1"*) formatted=$($CNBECH32 "drep" <<< "23${hexId}");;
@@ -149,51 +159,47 @@ govern_drep_id_CIP129() {
 
 govern_generate_drep_keys() {
     exit_if_not_cold
-    if [ -f $DREP_KEY ]; then
+    if [ -f $DREP_VKEY ]; then
         confirm "DRep keys already exist! 'yes' to overwrite, 'no' to cancel"
     fi
     $CNCLI conway governance drep key-gen \
         --verification-key-file $DREP_VKEY \
         --signing-key-file $DREP_KEY
+    print 'GOVERN' "DRep keys created at $NETWORK_PATH/keys" $green
 }
 
 govern_generate_drep_cert() {
     exit_if_not_cold
+    exit_if_file_missing $DREP_VKEY
+    exit_if_file_missing $NODE_HOME/metadata/drep.json
     if [ -f $DREP_CERT ]; then
         confirm "DRep certificate already exists! 'yes' to overwrite, 'no' to cancel"
     fi
+    local url=${1}
+    local update=${2}
+    local file=$NODE_HOME/metadata/drep.json
+    local hash=$($CNCLI conway governance drep metadata-hash --drep-metadata-file $file)
+    print "GOVERN" "DRep metadata URL: $url"
+    print "GOVERN" "DRep metadata hash: $hash"
 
-    url=${1}
-    update=${2}
-    temp=$NETWORK_PATH/temp/drep.json
-
-    wget -O $temp $url
-    if [ $? -eq 0 ]; then
-        hash=$($CNCLI conway governance drep metadata-hash --drep-metadata-file $temp)
-        print "GOVERN" "DRep metadata URL: $url"
-        print "GOVERN" "DRep metadata hash: $hash"
-
-        if [ -z "$update" ]; then
-            deposit=${2:-$($CNCLI conway query protocol-parameters $NETWORK_ARG --socket-path $NETWORK_SOCKET_PATH | jq .dRepDeposit)}
-            print "GOVERN" "DRep deposit: $deposit"
-
-            $CNCLI conway governance drep registration-certificate \
-                --drep-verification-key-file $DREP_VKEY \
-                --key-reg-deposit-amt $deposit \
-                --drep-metadata-url $url \
-                --drep-metadata-hash $hash \
-                --out-file $DREP_CERT
-        else
-            $CNCLI conway governance drep update-certificate \
-                --drep-verification-key-file $DREP_VKEY \
-                --drep-metadata-url $url \
-                --drep-metadata-hash $hash \
-                --out-file $DREP_CERT
-        fi
-        rm $temp
+    if [ -z "$update" ]; then
+        deposit=${2:-$($CNCLI conway query protocol-parameters $NETWORK_ARG --socket-path $NETWORK_SOCKET_PATH | jq .dRepDeposit)}
+        print "GOVERN" "DRep deposit: $deposit"
+        $CNCLI conway governance drep registration-certificate \
+            --drep-verification-key-file $DREP_VKEY \
+            --key-reg-deposit-amt $deposit \
+            --drep-metadata-url $url \
+            --drep-metadata-hash $hash \
+            --out-file $DREP_CERT
     else
-        print "GOVERN" "Unable to download drep.json from passed url" $red
+        $CNCLI conway governance drep update-certificate \
+            --drep-verification-key-file $DREP_VKEY \
+            --drep-metadata-url $url \
+            --drep-metadata-hash $hash \
+            --out-file $DREP_CERT
     fi
+
+    print 'GOVERN' "DRep certificate created at $DREP_CERT" $green
 }
 
 govern_generate_cc_cold_keys() {
@@ -204,12 +210,15 @@ govern_generate_cc_cold_keys() {
     $CNCLI conway governance committee key-gen-cold \
       --cold-verification-key-file $CC_COLD_VKEY \
       --cold-signing-key-file $CC_COLD_KEY
+    print 'GOVERN' "CC cold keys created at $NETWORK_PATH/keys" $green
 }
 
 govern_generate_cc_cold_hash() {
     exit_if_not_cold
+    exit_if_file_missing $CC_COLD_VKEY
     $CNCLI conway governance committee key-hash \
       --verification-key-file $CC_COLD_VKEY > $CC_COLD_HASH
+    print 'GOVERN' "CC cold hash created at $NETWORK_PATH/keys" $green
 }
 
 govern_generate_cc_hot_keys() {
@@ -220,10 +229,13 @@ govern_generate_cc_hot_keys() {
     $CNCLI conway governance committee key-gen-hot \
       --verification-key-file $CC_HOT_VKEY \
       --signing-key-file $CC_HOT_KEY
+    print 'GOVERN' "CC hot keys created at $NETWORK_PATH/keys" $green
 }
 
 govern_generate_cc_cert() {
     exit_if_not_cold
+    exit_if_file_missing $CC_COLD_VKEY
+    exit_if_file_missing $CC_HOT_VKEY
     if [ -f $CC_CERT ]; then
         confirm "CC certificate already exist! 'yes' to overwrite, 'no' to cancel"
     fi
@@ -231,6 +243,7 @@ govern_generate_cc_cert() {
       --cold-verification-key-file $CC_COLD_VKEY \
       --hot-verification-key-file $CC_HOT_VKEY \
       --out-file $CC_CERT
+    print 'GOVERN' "CC certificate created at $CC_CERT" $green
 }
 
 case $1 in

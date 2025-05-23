@@ -1,13 +1,13 @@
 #!/bin/bash
-# Usage: node/build.sh [
+# Usage: node/build.sh (
 #   build |
 #   dependencies |
 #   sodium |
 #   secp |
 #   blst |
 #   node |
-#   help [?-h]
-# ]
+#   help [-h <BOOLEAN>]
+# )
 #
 # Info:
 #

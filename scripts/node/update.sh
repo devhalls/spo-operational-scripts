@@ -1,5 +1,5 @@
 #!/bin/bash
-# Usage: node/update.sh [
+# Usage: node/update.sh (
 #   update |
 #   latest |
 #   current |
@@ -7,8 +7,8 @@
 #   binaries |
 #   build [...params] |
 #   download [...params] |
-#   help [?-h]
-# ]
+#   help [-h <BOOLEAN>]
+# )
 #
 # Info:
 #
