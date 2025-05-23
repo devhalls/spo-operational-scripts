@@ -73,7 +73,7 @@ dbsync_install() {
     cp -pr services/schema/. $DB_SYNC_PATH/schema
 
     print 'INSTALL' 'Creating db-sync service'
-    cp -p services/$DB_SYNC_SERVICE services/$DB_SYNC_NAME.temp
+    cp -p services/cardano-db-sync.service services/$DB_SYNC_NAME.temp
     sed -i services/$DB_SYNC_NAME.temp \
         -e "s|NODE_HOME|$NODE_HOME|g" \
         -e "s|NODE_USER|$NODE_USER|g" \
