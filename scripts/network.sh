@@ -26,7 +26,8 @@ network_ngrok_install() {
     cp -p $servicesDir/ngrok.service $servicesDir/$NGROK_SERVICE.temp
     sed -i $servicesDir/$NGROK_SERVICE.temp \
         -e "s|NODE_USER|$NODE_USER|g" \
-        -e "s|NGROK_EDGE|$NGROK_EDGE|g" \
+        -e "s|NGROK_REGION|$NGROK_REGION|g" \
+        -e "s|NGROK_ADDR|$NGROK_ADDR|g" \
         -e "s|NODE_PORT|$NODE_PORT|g"
     sudo cp -p $servicesDir/$NGROK_SERVICE.temp $SERVICE_PATH/$NGROK_SERVICE
 
