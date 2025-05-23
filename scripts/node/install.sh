@@ -101,8 +101,8 @@ install_guild() {
         -e "s|\#CONFIG=\"\${CNODE_HOME}\/files\/config.json\"|CONFIG=\"${NETWORK_PATH}\/config.json\"|g" \
         -e "s|\#SOCKET=\"\${CNODE_HOME}\/sockets\/node.socket\"|SOCKET=\"${NETWORK_PATH}\/db\/socket\"|g" \
         -e "s|\#CNODE_PORT=6000|CNODE_PORT=\"${NODE_PORT}\"|g" \
-        -e "s|\#CNODEBIN=\"\${HOME}\/.local\/bin\/cardano-node\"|CNODEBIN=\"${BIN_PATH}\/cardano-node\"|g" \
-        -e "s|\#CCLI=\"\${HOME}\/.local\/bin\/cardano-cli\"|CCLI=\"${BIN_PATH}\/cardano-cli\"|g"
+        -e "s|\#CNODEBIN=\"\${HOME}\/.local\/bin\/cardano-node\"|CNODEBIN=\"${BIN_PATH}\/${NODE_NAME}\"|g" \
+        -e "s|\#CCLI=\"\${HOME}\/.local\/bin\/cardano-cli\"|CCLI=\"${BIN_PATH}\/${NODE_CLI_NAME}\"|g"
     print 'INSTALL' "Downloaded guild scripts" $green
     return 0
 }
