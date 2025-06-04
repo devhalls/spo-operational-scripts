@@ -1053,6 +1053,21 @@ scripts/tx.sh submit
 
 ---
 
+h2: ## BlockFrost SPO Icebreaker
+
+Installed on a Relay connected to your block producing SPOs topology.
+
+```
+# RELAY: Download blockfrost and init
+scripts/node/icebreaker.sh download
+
+# RELAY: Install blockfrost service and start
+scripts/node/icebreaker.sh install
+
+# Check installed version
+blockfrost-platform --version
+ ```
+
 ## Repository info
 
 ### Script notation

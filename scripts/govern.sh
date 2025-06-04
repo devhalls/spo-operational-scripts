@@ -16,7 +16,7 @@
 #
 # Info:
 #
-#   - action) Query the blockchain for a gov action info. Expects a govActionId param.
+#   - action) Query the blockchain for a gov action info by its tx ID. Expects a govActionId param.
 #   - vote) Cast a vote for the passed params. keyFile defaults to 'node' assuming a pool vote. Can be 'node' | 'drep' | 'cc'.
 #   - vote_json) Cast a vote for the passed params. Same as vote but includes anchor url and json format submission.
 #   - drep_id) Retrieve the DReps id. Optionally pass the format, defaults to bech32.
@@ -34,6 +34,7 @@ govern_action() {
     exit_if_cold
     exit_if_empty "${1}" "1 govActionId"
     local govActionId=${1}
+    echo $govActionId
     $CNCLI conway query gov-state $NETWORK_ARG --socket-path $NETWORK_SOCKET_PATH |
         jq -r --arg govActionId "$govActionId" '.proposals | to_entries[] | select(.value.actionId.txId | contains($govActionId)) | .value'
 }
@@ -232,6 +233,14 @@ govern_generate_cc_hot_keys() {
     print 'GOVERN' "CC hot keys created at $NETWORK_PATH/keys" $green
 }
 
+govern_generate_cc_hot_hash() {
+    exit_if_not_cold
+    exit_if_file_missing $CC_HOT_VKEY
+    $CNCLI conway governance committee key-hash \
+      --verification-key-file $CC_HOT_VKEY > $CC_HOT_HASH
+    print 'GOVERN' "CC cold hash created at $NETWORK_PATH/keys" $green
+}
+
 govern_generate_cc_cert() {
     exit_if_not_cold
     exit_if_file_missing $CC_COLD_VKEY
@@ -258,6 +267,7 @@ case $1 in
     cc_cold_keys) govern_generate_cc_cold_keys ;;
     cc_cold_hash) govern_generate_cc_cold_hash ;;
     cc_hot_keys) govern_generate_cc_hot_keys ;;
+    cc_hot_hash) govern_generate_cc_hot_hash ;;
     cc_cert) govern_generate_cc_cert ;;
     help) help "${2:-"--help"}" ;;
     *) help "${1:-"--help"}" ;;

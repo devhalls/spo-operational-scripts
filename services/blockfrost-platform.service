@@ -1,0 +1,21 @@
+[Unit]
+Description       = Blockfrost Platform
+Wants             = network-online.target
+After             = network-online.target
+
+[Service]
+User              = NODE_USER
+Type              = simple
+WorkingDirectory  = NODE_HOME/ICEBREAKER_NAME
+ExecStart         = /bin/bash -c 'NODE_HOME/scripts/node/icebreaker.sh run'
+ExecReload        = pkill -HUP ICEBREAKER_NAME
+KillSignal        = SIGINT
+RestartKillSignal = SIGINT
+TimeoutStopSec    = 300
+LimitNOFILE       = 32768
+Restart           = always
+RestartSec        = 5
+SyslogIdentifier  = ICEBREAKER_SERVICE
+
+[Install]
+WantedBy          = multi-user.target

@@ -258,8 +258,6 @@ tx_drep_reg_sign() {
 
 tx_vote_raw() {
     exit_if_not_producer
-    govActionId=${1}
-    govActionIndex=${2}
     votePath=$NETWORK_PATH/temp/vote.raw
 
     $CNCLI conway transaction build \
@@ -282,7 +280,7 @@ tx_vote_sign() {
 
     $CNCLI conway transaction sign \
         --tx-body-file $tempPath/tx.raw \
-        --signing-key-file $votePath \
+        --signing-key-file $keyFile \
         --signing-key-file $PAYMENT_KEY \
         --out-file $tempPath/tx.signed
 
