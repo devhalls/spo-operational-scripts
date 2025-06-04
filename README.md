@@ -1068,6 +1068,10 @@ scripts/node/icebreaker.sh install
 blockfrost-platform --version
  ```
 
+You can review icebreaker status using the BlockFrost UI:
+- https://blockfrost.grafana.net/public-dashboards/8d618eda298d472a996ca3473ab36177
+- https://platform.blockfrost.io/verification
+
 ## Repository info
 
 ### Script notation
@@ -1125,3 +1129,4 @@ Distributed under the GPL-3.0 License. See LICENSE.txt for more information.
 - [Upstream Twitter](https://x.com/Upstream_ada)
 
 ---
+
