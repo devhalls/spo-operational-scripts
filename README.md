@@ -939,7 +939,7 @@ scripts/tx.sh vote_raw
 
 # COPY: tx.raw to your cold node 
 # COLD: Sign the vote transaction tx.raw
-scripts/tx.sh vote_sign
+scripts/tx.sh vote_sign /home/upstream/Cardano/cardano-node/keys/keys/drep.skey
 
 # COPY: tx.signed to your producer node
 # PRODUCER: Submit the signed transaction 

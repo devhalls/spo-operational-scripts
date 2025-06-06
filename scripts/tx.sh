@@ -429,7 +429,7 @@ case $1 in
     drep_reg_raw) tx_drep_reg_raw ;;
     drep_reg_sign) tx_drep_reg_sign ;;
     vote_raw) tx_vote_raw ;;
-    vote_sign) tx_vote_sign ;;
+    vote_sign) tx_vote_sign "${@:2}" ;;
     in) tx_in "${@:2}" ;;
     out) tx_out "${@:2}" ;;
     build) tx_build "${@:2}" ;;
