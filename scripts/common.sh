@@ -32,9 +32,13 @@ CONFIG_DOWNLOADS=(
     "alonzo-genesis.json"
     "conway-genesis.json"
     "guardrails-script.plutus"
-    "topology-non-bootstrap-peers.json"
-    "checkpoints.json"
 )
+if [[ "$NODE_NETWORK" == "sanchonet" ]]; then
+    CONFIG_DOWNLOADS+=(
+        "topology-non-bootstrap-peers.json"
+        "checkpoints.json"
+    )
+fi
 
 GUILD_SCRIPT_DOWNLOADS=(
     "gLiveView.sh"
