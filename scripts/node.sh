@@ -174,7 +174,7 @@ node_status() {
         done
 
         # Show the selected display
-        echo -e "\n${orange}UPSTREAM Stake Pool - ${selected}${nc}\n"
+        echo -e "\n${orange}UPSTREAM Stake Pool - ${selected}${nc} ($NODE_NETWORK:$NODE_TYPE)\n"
         case $selected in
             Overview)
                 # Display overview table output

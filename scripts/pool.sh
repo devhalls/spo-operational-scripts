@@ -212,7 +212,6 @@ pool_get_stake() {
 }
 
 pool_get_stats() {
-    exit_if_file_missing $POOL_ID
     local file=$NETWORK_PATH/stats/data-pool.prom
     rm $file && touch "$file"
     chmod +r $file
@@ -220,17 +219,20 @@ pool_get_stats() {
 
     # Add data we can retrieve locally
     # - node version
+    local version=$($(dirname "$0")/node.sh version)
+    local majorMinor="${version%.*}"
+    update_or_append $file "data_nodeVersion" "data_nodeVersion{version=\"$version\"} $majorMinor"
+
+    # Add data we can retrieve locally with pool_id
     # - pool current epoch stake = set
     # - pool -2n epoch stake = mark
     # - pool middle current epoch stake = go
-    local version=$($(dirname "$0")/node.sh version)
-    local majorMinor="${version%.*}"
+    exit_if_file_missing $POOL_ID
     local stakeSnapshot=$(pool_get_stake)
     local totalStake=$(echo "$stakeSnapshot" | jq -r ".total.stakeSet")
     local stakeSet=$(echo "$stakeSnapshot" | jq -r ".pools | to_entries[0].value.stakeSet")
     local stakeMark=$(echo "$stakeSnapshot" | jq -r ".pools | to_entries[0].value.stakeMark")
     local stakeGo=$(echo "$stakeSnapshot" | jq -r ".pools | to_entries[0].value.stakeGo")
-    update_or_append $file "data_nodeVersion" "data_nodeVersion{version=\"$version\"} $majorMinor"
     update_or_append $file "data_poolStakeSetAda" "data_poolStakeSetAda $stakeSet"
     update_or_append $file "data_poolStakeMarkAda" "data_poolStakeMarkAda $stakeMark"
     update_or_append $file "data_poolStakeGoAda" "data_poolStakeGoAda $stakeGo"
@@ -239,25 +241,32 @@ pool_get_stats() {
     # - Pool saturation, delegators, ledge
     # - Supply network totals, treasury, reserves
     if [ -n "$NODE_KOIOS_API" ]; then
-        local poolApiData=$(curl -s -X POST "${NODE_KOIOS_API}pool_info" \
+
+        local poolApiResponse=$(curl -s -X POST "${NODE_KOIOS_API}pool_info" \
             -H "accept: application/json" \
             -H "content-type: application/json" \
-            -d '{"_pool_bech32_ids": ["'"$poolId"'"]}' | jq '.[-1]')
-        local totalsApiData=$(curl -s "${NODE_KOIOS_API}totals?limit=1" | jq '.[-1]')
-        update_or_append $file "data_poolPledge" "data_poolPledge $(echo "$poolApiData" | jq -r '.pledge')"
-        update_or_append $file "data_poolFixedCost" "data_poolFixedCost $(echo "$poolApiData" | jq -r '.fixed_cost')"
-        update_or_append $file "data_poolMargin" "data_poolMargin $(echo "$poolApiData" | jq -r '.margin')"
-        update_or_append $file "data_poolLivePledge" "data_poolLivePledge $(echo "$poolApiData" | jq -r '.live_pledge')"
-        update_or_append $file "data_poolActiveStake" "data_poolActiveStake $(echo "$poolApiData" | jq -r '.active_stake')"
-        update_or_append $file "data_poolLiveStake" "data_poolLiveStake $(echo "$poolApiData" | jq -r '.live_stake')"
-        update_or_append $file "data_poolLiveDelegators" "data_poolLiveDelegators $(echo "$poolApiData" | jq -r '.live_delegators')"
-        update_or_append $file "data_poolLiveSaturation" "data_poolLiveSaturation $(echo "$poolApiData" | jq -r '.live_saturation')"
-        update_or_append $file "data_poolLivePledge" "data_poolLivePledge $(echo "$poolApiData" | jq -r '.live_pledge')"
-        update_or_append $file "data_poolBlockCount" "data_poolBlockCount $(echo "$poolApiData" | jq -r '.block_count')"
-        update_or_append $file "data_totalCirculation" "data_totalCirculation $(echo "$totalsApiData" | jq -r '.circulation')"
-        update_or_append $file "data_totalSupply" "data_totalSupply $(echo "$totalsApiData" | jq -r '.supply')"
-        update_or_append $file "data_totalTreasury" "data_totalTreasury $(echo "$totalsApiData" | jq -r '.treasury')"
-        update_or_append $file "data_totalReserves" "data_totalReserves $(echo "$totalsApiData" | jq -r '.reserves')"
+            -d '{"_pool_bech32_ids": ["'"$poolId"'"]}')
+        if echo "$poolApiResponse" | jq -e 'type == "array"' > /dev/null; then
+            local poolApiData=$(echo "$poolApiResponse" | jq '.[-1]')
+            update_or_append $file "data_poolPledge" "data_poolPledge $(echo "$poolApiData" | jq -r '.pledge')"
+            update_or_append $file "data_poolFixedCost" "data_poolFixedCost $(echo "$poolApiData" | jq -r '.fixed_cost')"
+            update_or_append $file "data_poolMargin" "data_poolMargin $(echo "$poolApiData" | jq -r '.margin')"
+            update_or_append $file "data_poolLivePledge" "data_poolLivePledge $(echo "$poolApiData" | jq -r '.live_pledge')"
+            update_or_append $file "data_poolActiveStake" "data_poolActiveStake $(echo "$poolApiData" | jq -r '.active_stake')"
+            update_or_append $file "data_poolLiveStake" "data_poolLiveStake $(echo "$poolApiData" | jq -r '.live_stake')"
+            update_or_append $file "data_poolLiveDelegators" "data_poolLiveDelegators $(echo "$poolApiData" | jq -r '.live_delegators')"
+            update_or_append $file "data_poolLiveSaturation" "data_poolLiveSaturation $(echo "$poolApiData" | jq -r '.live_saturation')"
+            update_or_append $file "data_poolLivePledge" "data_poolLivePledge $(echo "$poolApiData" | jq -r '.live_pledge')"
+            update_or_append $file "data_poolBlockCount" "data_poolBlockCount $(echo "$poolApiData" | jq -r '.block_count')"
+        fi
+        local totalsApiResponse=$(curl -s "${NODE_KOIOS_API}totals?limit=1")
+        if echo "$totalsApiResponse" | jq -e 'type == "array"' > /dev/null; then
+            local totalsApiData=$(echo "$totalsApiResponse" | jq '.[-1]')
+            update_or_append $file "data_totalCirculation" "data_totalCirculation $(echo "$totalsApiData" | jq -r '.circulation')"
+            update_or_append $file "data_totalSupply" "data_totalSupply $(echo "$totalsApiData" | jq -r '.supply')"
+            update_or_append $file "data_totalTreasury" "data_totalTreasury $(echo "$totalsApiData" | jq -r '.treasury')"
+            update_or_append $file "data_totalReserves" "data_totalReserves $(echo "$totalsApiData" | jq -r '.reserves')"
+        fi
     fi
 }
 
