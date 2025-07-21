@@ -7,10 +7,10 @@
 #   generate_pool_reg_cert (pledge <INT>) (cost <FLOAT>) (margin <FLOAT>) (metaUrl <STRING>) (--relay <STRING>) [--relay <STRING>] [--type <STRING<'DNS'|'IP'>>] |
 #   generate_pool_dreg_cert (epoch <INT>) |
 #   generate_metadata_hash (url <STRING>) |
-#   get_pool_id [format <STRING<'hex'|'bech32'>>] |
-#   get_state |
-#   get_stats |
 #   rotate_kes (startPeriod <INT>) |
+#   get_pool_id [format <STRING<'hex'|'bech32'>>] |
+#   get_stake |
+#   get_stats |
 #   help [-h <BOOLEAN>]
 # )
 #
@@ -23,10 +23,10 @@
 #   - generate_pool_reg_cert) Generate pool registration certificate. Requires all params to generate the certificate.
 #   - generate_pool_dreg_cert) Generate pool registration certificate.
 #   - generate_metadata_hash) Generate pools metadata hash from the metadata.json url.
-#   - get_pool_id) Output the pool ID to $POOL_ID and display it on screen. Optionally pass in the format, defaults to hex.
-#   - get_state) Retrieve pool stats from the blockchain.
-#   - get_stats) Retrieve pool stats from js.cexplorer.io.
 #   - rotate_kes) Rotate the pool KES keys. Requires KES startPeriod as the first parameter.
+#   - get_pool_id) Output the pool ID to $POOL_ID and display it on screen. Optionally pass in the format, defaults to hex.
+#   - get_stake) Retrieve pool stats from the blockchain.
+#   - get_stats) Retrieve pool stats from js.cexplorer.io.
 #   - help) View this files help. Default value if no option is passed.
 
 source "$(dirname "$0")/common.sh"
@@ -176,35 +176,6 @@ pool_generate_pool_meta_hash() {
     print 'POOL' "Node metadata hash created at $NODE_HOME/metadata/metadataHash.txt" $green
 }
 
-pool_get_pool_id() {
-    exit_if_not_cold
-    exit_if_file_missing $NODE_VKEY
-    $CNCLI conway stake-pool id \
-        --cold-verification-key-file $NODE_VKEY \
-        --output-format ${1:-hex} >$POOL_ID
-    echo "$(cat $POOL_ID)"
-}
-
-pool_get_state() {
-    poolId=$(pool_get_pool_id)
-    $CNCLI query stake-snapshot --stake-pool-id $poolId \
-        $NETWORK_ARG --socket-path $NETWORK_SOCKET_PATH
-}
-
-pool_get_stats() {
-    # @todo cater for upstream | cardanoscan | blockfrost
-    curl -X GET https://api.cardanoscan.io/api/v1/pool/stats?poolId=$(cat $POOL_ID) \
-        -H "apiKey: $NODE_CARDANOSCAN_API" 2>/dev/null |
-        jq 'del(.poolId)' |
-        tr -d \"{},: |
-        awk NF |
-        sed -e 's/^[ \t]*/data_/' \
-            >$NETWORK_PATH/stats/data-pool.prom
-
-    chmod +r $NETWORK_PATH/stats/data-pool.prom
-    sed 's/ /: /g' $(cat $NETWORK_PATH/stats/data-pool.prom)
-}
-
 pool_rotate_kes() {
     exit_if_not_cold
     exit_if_file_missing $NODE_KEY
@@ -225,6 +196,82 @@ pool_rotate_kes() {
     print 'POOL' "Copy node.cert and kes.skey back to your block producer node and restart it" $green
 }
 
+pool_get_pool_id() {
+    exit_if_not_cold
+    exit_if_file_missing $NODE_VKEY
+    $CNCLI conway stake-pool id \
+        --cold-verification-key-file $NODE_VKEY \
+        --output-format ${1:-hex} >$POOL_ID
+    echo "$(cat $POOL_ID)"
+}
+
+pool_get_stake() {
+    exit_if_file_missing $POOL_ID
+    $CNCLI query stake-snapshot --stake-pool-id $(cat $POOL_ID) \
+        $NETWORK_ARG --socket-path $NETWORK_SOCKET_PATH
+}
+
+pool_get_stats() {
+    exit_if_file_missing $POOL_ID
+    local file=$NETWORK_PATH/stats/data-pool.prom
+    rm $file && touch "$file"
+    chmod +r $file
+    local poolId=$(<"$POOL_ID")
+
+    # Add data we can retrieve locally
+    # - node version
+    # - pool current epoch stake = set
+    # - pool -2n epoch stake = mark
+    # - pool middle current epoch stake = go
+    local version=$($(dirname "$0")/node.sh version)
+    local majorMinor="${version%.*}"
+    local stakeSnapshot=$(pool_get_stake)
+    local totalStake=$(echo "$stakeSnapshot" | jq -r ".total.stakeSet")
+    local stakeSet=$(echo "$stakeSnapshot" | jq -r ".pools | to_entries[0].value.stakeSet")
+    local stakeMark=$(echo "$stakeSnapshot" | jq -r ".pools | to_entries[0].value.stakeMark")
+    local stakeGo=$(echo "$stakeSnapshot" | jq -r ".pools | to_entries[0].value.stakeGo")
+    update_or_append $file "data_nodeVersion" "data_nodeVersion{version=\"$version\"} $majorMinor"
+    update_or_append $file "data_poolStakeSetAda" "data_poolStakeSetAda $stakeSet"
+    update_or_append $file "data_poolStakeMarkAda" "data_poolStakeMarkAda $stakeMark"
+    update_or_append $file "data_poolStakeGoAda" "data_poolStakeGoAda $stakeGo"
+
+    # Add data we can't retrieve locally using Koios API
+    # - Pool saturation, delegators, ledge
+    # - Supply network totals, treasury, reserves
+    if [ -n "$NODE_KOIOS_API" ]; then
+        local poolApiData=$(curl -s -X POST "${NODE_KOIOS_API}pool_info" \
+            -H "accept: application/json" \
+            -H "content-type: application/json" \
+            -d '{"_pool_bech32_ids": ["'"$poolId"'"]}' | jq '.[-1]')
+        local totalsApiData=$(curl -s "${NODE_KOIOS_API}totals?limit=1" | jq '.[-1]')
+        update_or_append $file "data_poolPledge" "data_poolPledge $(echo "$poolApiData" | jq -r '.pledge')"
+        update_or_append $file "data_poolFixedCost" "data_poolFixedCost $(echo "$poolApiData" | jq -r '.fixed_cost')"
+        update_or_append $file "data_poolMargin" "data_poolMargin $(echo "$poolApiData" | jq -r '.margin')"
+        update_or_append $file "data_poolLivePledge" "data_poolLivePledge $(echo "$poolApiData" | jq -r '.live_pledge')"
+        update_or_append $file "data_poolActiveStake" "data_poolActiveStake $(echo "$poolApiData" | jq -r '.active_stake')"
+        update_or_append $file "data_poolLiveStake" "data_poolLiveStake $(echo "$poolApiData" | jq -r '.live_stake')"
+        update_or_append $file "data_poolLiveDelegators" "data_poolLiveDelegators $(echo "$poolApiData" | jq -r '.live_delegators')"
+        update_or_append $file "data_poolLiveSaturation" "data_poolLiveSaturation $(echo "$poolApiData" | jq -r '.live_saturation')"
+        update_or_append $file "data_poolLivePledge" "data_poolLivePledge $(echo "$poolApiData" | jq -r '.live_pledge')"
+        update_or_append $file "data_poolBlockCount" "data_poolBlockCount $(echo "$poolApiData" | jq -r '.block_count')"
+        update_or_append $file "data_totalCirculation" "data_totalCirculation $(echo "$totalsApiData" | jq -r '.circulation')"
+        update_or_append $file "data_totalSupply" "data_totalSupply $(echo "$totalsApiData" | jq -r '.supply')"
+        update_or_append $file "data_totalTreasury" "data_totalTreasury $(echo "$totalsApiData" | jq -r '.treasury')"
+        update_or_append $file "data_totalReserves" "data_totalReserves $(echo "$totalsApiData" | jq -r '.reserves')"
+    fi
+
+    # Cardanoscan data
+    if [ -n "$NODE_CARDANOSCAN_API" ]; then
+        curl -X GET https://api.cardanoscan.io/api/v1/pool/stats?poolId=$(cat $POOL_ID) \
+            -H "apiKey: $NODE_CARDANOSCAN_API" 2>/dev/null |
+            jq 'del(.poolId)' |
+            tr -d \"{},: |
+            awk NF |
+            sed -e 's/^[ \t]*/data_/' >$file
+        sed 's/ /: /g' "$file"
+    fi
+}
+
 case $1 in
     generate_node_keys) pool_generate_node_keys ;;
     generate_kes_keys) pool_generate_node_kes_keys ;;
@@ -233,10 +280,11 @@ case $1 in
     generate_pool_reg_cert) pool_generate_pool_reg_cert "${@:2}" ;;
     generate_pool_dreg_cert) pool_generate_pool_dreg_cert "${@:2}" ;;
     generate_pool_meta_hash) pool_generate_pool_meta_hash "${@:2}" ;;
-    get_pool_id) pool_get_pool_id "${@:2}" ;;
-    get_state) pool_get_state ;;
-    get_stats) pool_get_stats ;;
     rotate_kes) pool_rotate_kes "${@:2}" ;;
+    get_pool_id) pool_get_pool_id "${@:2}" ;;
+    get_info) pool_get_info ;;
+    get_stake) pool_get_stake ;;
+    get_stats) pool_get_stats ;;
     help) help "${2:-"--help"}" ;;
     *) help "${1:-"--help"}" ;;
 esac

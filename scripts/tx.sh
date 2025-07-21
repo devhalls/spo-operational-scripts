@@ -276,7 +276,7 @@ tx_vote_sign() {
     exit_if_not_cold
     keyFile=${1}
     tempPath=$NETWORK_PATH/temp
-    votePath=$NETWORK_PATH/temp/vote.raw
+    votePath=$NETWORK_PATH/temp/tx.raw
 
     $CNCLI conway transaction sign \
         --tx-body-file $tempPath/tx.raw \

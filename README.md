@@ -1072,6 +1072,44 @@ You can review icebreaker status using the BlockFrost UI:
 - https://blockfrost.grafana.net/public-dashboards/8d618eda298d472a996ca3473ab36177
 - https://platform.blockfrost.io/verification
 
+## Midnight Validator
+
+```
+# Start and restarting containers
+docker compose -f ./compose-partner-chains.yml -f ./compose.yml -f ./proof-server.yml up -d
+docker compose -f ./compose-partner-chains.yml -f ./compose.yml -f ./proof-server.yml restart
+
+# Watch logs for each service
+docker logs -f --tail 100 cardano-ogmios
+docker logs -f --tail 100 cardano-db-sync
+docker logs -f --tail 100 db-sync-postgres
+docker logs -f --tail 100 cardano-node
+
+# Launch wizard used for configurations
+./midnight-node.sh wizards --help
+
+# Enter the node shell
+./midnight-shell.sh
+```
+
+```
+# Query sidechain status
+curl -L -X POST -H "Content-Type: application/json" -d '{
+      "jsonrpc": "2.0",
+      "method": "sidechain_getStatus",
+      "params": [997],
+      "id": 1
+    }' https://rpc.testnet-02.midnight.network | jq
+    
+# Query validator committee for n + 2 epochs
+curl -L -X POST -H "Content-Type: application/json" -d '{
+      "jsonrpc": "2.0",
+      "method": "sidechain_getAriadneParameters",
+      "params": [997],
+      "id": 1
+    }' https://rpc.testnet-02.midnight.network | jq
+```
+
 ## Repository info
 
 ### Script notation
@@ -1130,3 +1168,19 @@ Distributed under the GPL-3.0 License. See LICENSE.txt for more information.
 
 ---
 
+STATS to add to simple node view
+- Main node service state
+- Mithril node service state
+- Prometheus exporter + custom data 
+- Prometheus scraper + grafana
+- Ngrok service state
+- DBSync service state
+- Cron job collecting additional data_ stats, includes node version number
+- Port overview - Check ports for each case and service
+
+Producer
+- Main node service state
+- Mithril signer service state
+- Prometheus exporter + custom data
+- Cron job collecting additional data_ stats
+- Port overview

@@ -2,6 +2,7 @@
 # Usage: query.sh (
 #   tip [name <STRING>] |
 #   params [name <STRING>] |
+#   state (name <STRING>) |
 #   metrics [name <STRING>] |
 #   config (name <STRING>) |
 #   key (name <STRING>) |
@@ -18,6 +19,7 @@
 #
 #   - tip) Query the blockchain tip. Optionally pass a param name to view only this value.
 #   - params) Query the blockchain protocol parameters and saves these to $NETWORK_PATH/params.json. Optionally pass a param name to view only this value.
+#   - state) Query the blockchain ledger-state and saves these to $NETWORK_PATH/ledger.json. Optionally pass a param name to view only this value. Very large so we only create it if it does not exist (will become out of date if left as is, you must periodically delete the ledger.json file.)
 #   - metrics) Query the prometheus metrics. Optionally pass a param name to view only this value.
 #   - config) Echo the contents of any config file located in $NETWORK_PATH. Pass the file name you wish to read.
 #   - key) Echo the contents of any file located in $NETWORK_PATH/keys. Pass the file name you wish to read.
@@ -49,6 +51,20 @@ query_params() {
         cat $NETWORK_PATH/params.json | jq -r ".$1" | tr -d '\n\r'
     else
         cat $NETWORK_PATH/params.json
+        echo ''
+    fi
+}
+
+query_state() {
+    exit_if_cold
+    # if [ ! -f $NETWORK_PATH/ledger.json ]; then
+        $CNCLI conway query ledger-state $NETWORK_ARG --socket-path $NETWORK_SOCKET_PATH > ledger.txt
+    # fi
+    exit 1
+    if [ "$1" ]; then
+        cat $NETWORK_PATH/ledger.txt | jq -r ".$1" | tr -d '\n\r'
+    else
+        cat $NETWORK_PATH/ledger.txt
         echo ''
     fi
 }
@@ -222,6 +238,7 @@ case $1 in
     sum) query_sum "${@:2}" ;;
     tip) query_tip "${@:2}" ;;
     params) query_params "${@:2}" ;;
+    state) query_state "${@:2}" ;;
     metrics) query_metrics "${@:2}" ;;
     config) query_config "${@:2}" ;;
     key) query_key "${@:2}" ;;

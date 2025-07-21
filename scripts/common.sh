@@ -112,6 +112,93 @@ print() {
     fi
 }
 
+print_state() {
+    local state="$1"
+    local message="$2"
+
+    if [ -n "$state" ]; then
+        echo -e "$green+++$nc | $message"
+    else
+        echo -e "$red---$nc | $message"
+    fi
+}
+
+print_service_state() {
+    local service="$1"
+    local title="${2:-$service}"
+    local status=$(systemctl is-active $service 2>/dev/null)
+
+    # Should this service be enabled for the selected NODE_NETWORK / NODE_TYPE combination
+    local required
+    case "$NODE_NETWORK:$NODE_TYPE:$service" in
+        *":"*":$NETWORK_SERVICE")
+            required="required" ;;
+        *) required="-" ;;
+    esac
+
+    # Print the result
+    if [ "$status" = "active" ]; then
+        print_state "${status}" "${title} | ${green}${service} IS running${nc} | ${green}${required}${nc}"
+    else
+        print_state "" "${title} | ${red}${service} is NOT running${nc} | ${red}${required}${nc}"
+    fi
+}
+
+print_crontab_state() {
+    local cronTab="$1"
+    local title="${2:-'Cron tab'}"
+    if crontab -l 2>/dev/null | grep -Fq "$cronTab"; then
+        print_state "active" "$title | ${green}${cronTab} IS installed${nc} | ${green}-${nc}"
+    else
+      print_state "" "$title | ${red}${cronTab} is NOT installed${nc} | ${red}-${nc}"
+    fi
+}
+
+print_table() {
+  local lines=("$@")
+  local -a col_widths
+  local max_cols=0
+
+  # First pass: measure visible widths (no ANSI codes)
+  for line in "${lines[@]}"; do
+    line="${line#"${line%%[![:space:]]*}"}"
+    IFS='|' read -ra cols <<< "$line"
+    (( ${#cols[@]} > max_cols )) && max_cols=${#cols[@]}
+
+    for ((i = 0; i < ${#cols[@]}; i++)); do
+      local clean=$(echo "${cols[i]}" | sed -E 's/\x1B\[[0-9;]*m//g' | xargs)
+      local len=${#clean}
+      (( len > col_widths[i] )) && col_widths[i]=$len
+    done
+  done
+
+  # Draw horizontal border
+  draw_border() {
+    printf "+"
+    for width in "${col_widths[@]}"; do
+      printf "%s+" "$(printf '%*s' $((width + 2)) '' | tr ' ' '-')"
+    done
+    echo
+  }
+
+  # Print rows with visible alignment, preserving color
+  draw_border
+  for line in "${lines[@]}"; do
+    line="${line#"${line%%[![:space:]]*}"}"
+    IFS='|' read -ra cols <<< "$line"
+    printf "|"
+    for ((i = 0; i < max_cols; i++)); do
+      local val=$(echo "${cols[i]:-}" | xargs)
+      local clean=$(echo "$val" | sed -E 's/\x1B\[[0-9;]*m//g')
+      local color_len=$(( ${#val} - ${#clean} ))
+      local pad_width=$(( col_widths[i] + color_len ))
+      printf " %-*s |" "$pad_width" "$val"
+    done
+    echo
+    draw_border
+  done
+}
+
 confirm() {
     read -p "$1 ([y]es or [N]o): "
     case $(echo $REPLY | tr '[A-Z]' '[a-z]') in
@@ -171,13 +258,13 @@ get_option() {
 }
 
 update_or_append() {
-    file=${1}
-    check=${2}
-    line=${3}
-    if grep -q "^$check" "$file"; then
-        sudo sed -i "s|^$check.*|$line|" "$file"
+    local file="$1"
+    local check="$2"
+    local line="$3"
+    if grep -q "^${check}" "$file"; then
+        sudo sed -i "s|^${check}.*|${line}|" "$file"
     else
-        echo "$line" | sudo tee -a $file >/dev/null
+        echo "$line" | sudo tee -a "$file" > /dev/null
     fi
 }
 
