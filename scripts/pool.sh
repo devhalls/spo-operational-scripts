@@ -259,17 +259,6 @@ pool_get_stats() {
         update_or_append $file "data_totalTreasury" "data_totalTreasury $(echo "$totalsApiData" | jq -r '.treasury')"
         update_or_append $file "data_totalReserves" "data_totalReserves $(echo "$totalsApiData" | jq -r '.reserves')"
     fi
-
-    # Cardanoscan data
-    if [ -n "$NODE_CARDANOSCAN_API" ]; then
-        curl -X GET https://api.cardanoscan.io/api/v1/pool/stats?poolId=$(cat $POOL_ID) \
-            -H "apiKey: $NODE_CARDANOSCAN_API" 2>/dev/null |
-            jq 'del(.poolId)' |
-            tr -d \"{},: |
-            awk NF |
-            sed -e 's/^[ \t]*/data_/' >$file
-        sed 's/ /: /g' "$file"
-    fi
 }
 
 case $1 in
