@@ -135,7 +135,7 @@ print_service_state() {
     # Should this service be enabled for the selected NODE_NETWORK / NODE_TYPE combination
     local required
     case "$NODE_NETWORK:$NODE_TYPE:$service" in
-        *":"*":$NETWORK_SERVICE")
+        *":"*":$NETWORK_SERVICE" | *":"*":$PROMETHEUS_EXPORTER_SERVICE")
             required="required" ;;
         *) required="-" ;;
     esac
@@ -151,10 +151,19 @@ print_service_state() {
 print_crontab_state() {
     local cronTab="$1"
     local title="${2:-'Cron tab'}"
+
+    # Should this cron be enabled for the selected NODE_NETWORK / NODE_TYPE combination
+    local required
+    case "$NODE_NETWORK:$NODE_TYPE:$cronTab" in
+        *":"*":$NODE_HOME/scripts/pool.sh get_stats")
+            required="required" ;;
+        *) required="-" ;;
+    esac
+
     if crontab -l 2>/dev/null | grep -Fq "$cronTab"; then
-        print_state "active" "$title | ${green}${cronTab} IS installed${nc} | ${green}-${nc}"
+        print_state "active" "$title | ${green}${cronTab} IS installed${nc} | ${green}${required}${nc}"
     else
-      print_state "" "$title | ${red}${cronTab} is NOT installed${nc} | ${red}-${nc}"
+      print_state "" "$title | ${red}${cronTab} is NOT installed${nc} | ${red}${required}${nc}"
     fi
 }
 
@@ -266,9 +275,9 @@ update_or_append() {
     local check="$2"
     local line="$3"
     if grep -q "^${check}" "$file"; then
-        sudo sed -i "s|^${check}.*|${line}|" "$file"
+        sed -i "s|^${check}.*|${line}|" "$file"
     else
-        echo "$line" | sudo tee -a "$file" > /dev/null
+        echo "$line" | tee -a "$file" > /dev/null
     fi
 }
 

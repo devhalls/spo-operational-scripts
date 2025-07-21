@@ -151,10 +151,19 @@ node_status() {
                 local prodDataPath=$NETWORK_PATH/stats/data-pool.prom
                 if [[ -f "$prodDataPath" ]] && grep -q "data_nodeVersion" "$prodDataPath"; then
                     promNodeVersionExists="yes"
-                    promNodeVersionOutput="${green}$prodDataPath contains data_nodeVersion${nc} | ${green}-${nc}"
+                    promNodeVersionOutput="${green}$prodDataPath contains data_nodeVersion${nc} | ${green}required${nc}"
                 else
                     promNodeVersionExists=""
-                    promNodeVersionOutput="${red}$prodDataPath${nc} | ${red}-${nc}"
+                    promNodeVersionOutput="${red}$prodDataPath${nc} | ${red}required${nc}"
+                fi
+
+                # Prepare DBSync and postgres checks
+                local dbSyncOutput
+                local dbSyncBlock=$($(dirname "$0")/dbsync.sh get_block)
+                if [[ -n "$dbSyncBlock" ]]; then
+                    dbSyncOutput="${green}DBSync database ${POSTGRES_DB}, latest block: ${dbSyncBlock}${nc} | ${green}-${nc}"
+                else
+                    dbSyncOutput="${red}DBSync database not reachable ${POSTGRES_DB}${nc} | ${red}-${nc}"
                 fi
 
                 # Prepare the arrays to pass to table output
@@ -163,10 +172,12 @@ node_status() {
                     "$(print_service_state $NETWORK_SERVICE "Cardano Node")"
                     "$(print_service_state $MITHRIL_SERVICE "Mithril Signer")"
                     "$(print_service_state $MITHRIL_SQUID_SERVICE "Mithril Squid Proxy")"
-                    "$(print_service_state $PROMETHEUS_SCRAPER_SERVICE "Prometheus Scraper")"
+                    "$(print_service_state $DB_SYNC_SERVICE "DBSync Service")"
+                    "$(print_state "$dbSyncBlock" "DBSync Database | $dbSyncOutput")"
                     "$(print_service_state $PROMETHEUS_EXPORTER_SERVICE "Prometheus Exporter")"
                     "$(print_crontab_state "$NODE_HOME/scripts/pool.sh get_stats" "Crontab get_stats()")"
                     "$(print_state "$promNodeVersionExists" "Crontab get_stats() Output | $promNodeVersionOutput")"
+                    "$(print_service_state $PROMETHEUS_SCRAPER_SERVICE "Prometheus Scraper")"
                     "$(print_service_state $GRAFANA_SERVICE "Grafana Dashboard")"
                     "$(print_service_state $NGROK_SERVICE "Ngrok Networking")"
                 )

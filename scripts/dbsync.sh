@@ -189,6 +189,15 @@ dbsync_view_db() {
         --command="select table_name from information_schema.views where table_catalog = '${POSTGRES_DB}' and table_schema = 'public' ;"
 }
 
+dbsync_get_block() {
+    latest_block=$(psql "$POSTGRES_DB" -t -A -c "SELECT MAX(block_no) FROM block;" 2>/dev/null)
+    if [[ $? -eq 0 && "$latest_block" =~ ^[0-9]+$ ]]; then
+        echo $latest_block
+    else
+        echo ""
+    fi
+}
+
 case $1 in
     dependencies) dbsync_dependencies ;;
     download) dbsync_download ;;
@@ -205,6 +214,7 @@ case $1 in
     create) dbsync_create_db ;;
     drop) dbsync_drop_db ;;
     view) dbsync_view_db ;;
+    get_block) dbsync_get_block ;;
     help) help "${2:-"--help"}" ;;
     *) help "${1:-"--help"}" ;;
 esac

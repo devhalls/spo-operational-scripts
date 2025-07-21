@@ -1084,6 +1084,7 @@ docker logs -f --tail 100 cardano-ogmios
 docker logs -f --tail 100 cardano-db-sync
 docker logs -f --tail 100 db-sync-postgres
 docker logs -f --tail 100 cardano-node
+docker logs -f --tail 100 midnight-node
 
 # Launch wizard used for configurations
 ./midnight-node.sh wizards --help
@@ -1167,3 +1168,7 @@ Distributed under the GPL-3.0 License. See LICENSE.txt for more information.
 - [Upstream Twitter](https://x.com/Upstream_ada)
 
 ---
+
+
+How do I check if docker is installed and that a specific named container 'cardano-ogmios' is running, and if not fail gracefully if no docker of if the container is not running
+
