@@ -213,9 +213,8 @@ pool_get_stake() {
 
 pool_get_stats() {
     local file=$NETWORK_PATH/stats/data-pool.prom
-    rm $file && touch "$file"
-    chmod +r $file
-    local poolId=$(<"$POOL_ID" 2>/dev/null)
+    local poolId=$(cat "$POOL_ID" 2>/dev/null)
+    rm $file && touch "$file" && chmod +r $file
 
     # Add data we can retrieve locally
     # - node version

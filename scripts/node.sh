@@ -106,7 +106,7 @@ node_status() {
         tput cup 0 0
         printf "\e[2J"
 
-        # Prepare the data
+        # Prepare the node port state
         local portState
         if ss -tuln | grep -q ":$NODE_PORT"; then
           portState="${green}open${nc}"
@@ -114,12 +114,27 @@ node_status() {
           portState="${red}closed${nc}"
         fi
 
+        # Prepare the node version string
         local nodeVersion=$(node_version)
         if [[ -n "$nodeVersion" ]]; then
           nodeVersion="Active: $green$nodeVersion$nc"
         else
           nodeVersion="${red}Inactive${nc}"
         fi
+
+        # Prepare the extended data file check
+        local promNodeVersionExists
+        local promNodeVersionOutput
+        local prodDataPath=$NETWORK_PATH/stats/data-pool.prom
+        if [[ -f "$prodDataPath" ]] && grep -q "data_nodeVersion" "$prodDataPath"; then
+            promNodeVersionExists="yes"
+            promNodeVersionOutput="${green}$prodDataPath contains data_nodeVersion${nc} | ${green}-${nc}"
+        else
+            promNodeVersionExists=""
+            promNodeVersionOutput="${red}$prodDataPath${nc} | ${red}-${nc}"
+        fi
+
+        # Prepare the arrays to pass to table output
         local overviewRows=(
             "$(echo -e "$green+$nc $red-$nc | NAME | VALUE | DETAIL")"
             "$(print_state 1 "Network | $orange$NODE_NETWORK$nc | Type: $green$NODE_TYPE$nc")"
@@ -129,15 +144,18 @@ node_status() {
         )
         local serviceRows=(
             "$(echo -e "$green+$nc $red-$nc | NAME | RESULT | ?")"
-            "$(print_service_state $NETWORK_SERVICE "Node service")"
-            "$(print_service_state $MITHRIL_SERVICE "Mithril service")"
-            "$(print_service_state $MITHRIL_SQUID_SERVICE "Mithril Squid proxy")"
-            "$(print_service_state $PROMETHEUS_EXPORTER_SERVICE "Prometheus exporter")"
-            "$(print_crontab_state "$NODE_HOME/scripts/pool.sh get_stats" "Cron tab get_stats")"
-            "$(print_service_state $PROMETHEUS_SCRAPER_SERVICE "Prometheus scraper")"
-            "$(print_service_state $GRAFANA_SERVICE "Grafana dashboard")"
-            "$(print_service_state $NGROK_SERVICE "Ngrok network")"
+            "$(print_service_state $NETWORK_SERVICE "Cardano Node")"
+            "$(print_service_state $MITHRIL_SERVICE "Mithril Signer")"
+            "$(print_service_state $MITHRIL_SQUID_SERVICE "Mithril Squid Proxy")"
+            "$(print_service_state $PROMETHEUS_SCRAPER_SERVICE "Prometheus Scraper")"
+            "$(print_service_state $PROMETHEUS_EXPORTER_SERVICE "Prometheus Exporter")"
+            "$(print_crontab_state "$NODE_HOME/scripts/pool.sh get_stats" "Crontab get_stats()")"
+            "$(print_state "$promNodeVersionExists" "Crontab get_stats() Output | $promNodeVersionOutput")"
+            "$(print_service_state $GRAFANA_SERVICE "Grafana Dashboard")"
+            "$(print_service_state $NGROK_SERVICE "Ngrok Networking")"
         )
+
+        # Read and prepare port data
         local portInfo=$(sudo ss -tuln | awk '
             NR == 1 { next }
             {
@@ -188,6 +206,10 @@ node_status() {
                 # Display port table output
                 print_table "${portRows[@]}"
                 ;;
+            Keys)
+                # Display keys output
+                $(dirname "$0")/query.sh keys
+                ;;
             All)
                 # Display all
                 echo -e "${orange}Overview${nc}\n"
@@ -200,26 +222,29 @@ node_status() {
         esac
 
         # Display actions
-        echo -e "\no = ${orange}Overview${nc} | s = ${orange}Services${nc} | p = ${orange}Ports${nc} | a = ${orange}All${nc} | q = ${orange}Quit${nc}"
-        echo -e "Refresh count: ${orange}${counter}${nc}"
+        echo -e "\no = ${orange}Overview${nc} | s = ${orange}Services${nc} | p = ${orange}Ports${nc} | k = ${orange}Keys${nc} | a = ${orange}All${nc}"
+        echo -e "q = ${orange}Quit${nc}"
+        echo -e "\nRefresh count: ${orange}${counter}${nc}"
 
         # Wait for single key input
         read -rsn1 key
-        # If key is escape (first char of arrow), read the next two silently
+        # If key is escape (e.g. first char of arrow), read the next two silently
         if [[ "$key" == $'\e' ]]; then
-          read -rsn2 -t 0.01 discard  # Consume the rest of the arrow key sequence
-          continue  # Ignore it
+          read -rsn2 -t 0.01 discard # Consume the rest of the key sequence
+          continue # Ignore it
         fi
+        # Set the selected view
         case "$key" in
             o|O) selected="Overview" ;;
             s|S) selected="Services" ;;
             p|P) selected="Ports" ;;
+            k|K) selected="Keys" ;;
             a|A) selected="All" ;;
             q|Q) break ;;
         esac
 
         # Sleep then loop
-        sleep 0.5
+        sleep 0.2
         ((counter++))
     done
 
