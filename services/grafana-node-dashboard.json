@@ -1357,7 +1357,7 @@
                     },
                     "editorMode": "code",
                     "exemplar": true,
-                    "expr": "data_nodeVersion{alias=\"$relays\"}",
+                    "expr": "cardano_node_metrics_cardano_build_info{alias=\"$relays\"}",
                     "interval": "",
                     "legendFormat": "{{version}}",
                     "range": true,
@@ -1371,7 +1371,7 @@
             "datasource": {
                 "type": "prometheus"
             },
-            "description": "Relay node 1 uptime",
+            "description": "",
             "fieldConfig": {
                 "defaults": {
                     "decimals": 1,
@@ -1759,7 +1759,7 @@
             "datasource": {
                 "type": "prometheus"
             },
-            "description": "Connected peers to Relay 1",
+            "description": "",
             "fieldConfig": {
                 "defaults": {
                     "decimals": 0,
@@ -2027,16 +2027,6 @@
             "pluginVersion": "11.4.0",
             "targets": [
                 {
-                    "datasource": {
-                        "type": "prometheus"
-                    },
-                    "exemplar": true,
-                    "expr": "cardano_node_metrics_txsInMempool_int{alias=\"block-producer-node\"}",
-                    "interval": "",
-                    "legendFormat": "Core",
-                    "refId": "A"
-                },
-                {
                     "editorMode": "code",
                     "exemplar": true,
                     "expr": "cardano_node_metrics_txsInMempool_int{alias=~\"$relays\"}",
@@ -2137,13 +2127,6 @@
             "pluginVersion": "11.4.0",
             "targets": [
                 {
-                    "exemplar": true,
-                    "expr": "rate (cardano_node_metrics_blockNum_int{alias=\"block-producer-node\"}[150s]) *60",
-                    "interval": "",
-                    "legendFormat": "Core",
-                    "refId": "A"
-                },
-                {
                     "editorMode": "code",
                     "exemplar": true,
                     "expr": "rate (cardano_node_metrics_blockNum_int{alias=~\"$relays\"}[150s]) *60",
@@ -2242,13 +2225,6 @@
             },
             "pluginVersion": "11.4.0",
             "targets": [
-                {
-                    "exemplar": true,
-                    "expr": "cardano_node_metrics_density_real{alias=\"block-producer-node\"} * 100",
-                    "interval": "",
-                    "legendFormat": "Core",
-                    "refId": "A"
-                },
                 {
                     "editorMode": "code",
                     "exemplar": true,
@@ -2353,16 +2329,6 @@
                     "datasource": {
                         "type": "prometheus"
                     },
-                    "exemplar": true,
-                    "expr": "cardano_node_metrics_blockNum_int{alias=\"block-producer-node\"}",
-                    "interval": "",
-                    "legendFormat": "Core",
-                    "refId": "A"
-                },
-                {
-                    "datasource": {
-                        "type": "prometheus"
-                    },
                     "editorMode": "code",
                     "exemplar": true,
                     "expr": "cardano_node_metrics_blockNum_int{alias=~\"$relays\"}",
@@ -2461,19 +2427,6 @@
             "pluginVersion": "11.4.0",
             "targets": [
                 {
-                    "datasource": {
-                        "type": "prometheus"
-                    },
-                    "editorMode": "code",
-                    "exemplar": true,
-                    "expr": "cardano_node_metrics_slotNum_int{alias=\"block-producer-node\"}",
-                    "hide": false,
-                    "instant": false,
-                    "interval": "",
-                    "legendFormat": "Core",
-                    "refId": "A"
-                },
-                {
                     "editorMode": "code",
                     "exemplar": true,
                     "expr": "cardano_node_metrics_slotNum_int{alias=~\"$relays\"}",
@@ -2564,7 +2517,7 @@
                 "overrides": []
             },
             "gridPos": {
-                "h": 13,
+                "h": 10,
                 "w": 24,
                 "x": 0,
                 "y": 57
@@ -2587,15 +2540,6 @@
             },
             "pluginVersion": "11.4.0",
             "targets": [
-                {
-                    "editorMode": "code",
-                    "exemplar": true,
-                    "expr": "rate(node_network_receive_bytes_total{alias=\"block-producer-node\"}[1h]) * 3600",
-                    "interval": "",
-                    "legendFormat": "Core - {{device}}",
-                    "range": true,
-                    "refId": "A"
-                },
                 {
                     "datasource": {
                         "type": "prometheus",
@@ -2680,7 +2624,7 @@
                 "h": 6,
                 "w": 12,
                 "x": 0,
-                "y": 70
+                "y": 67
             },
             "id": 177,
             "options": {
@@ -2701,16 +2645,6 @@
             },
             "pluginVersion": "11.4.0",
             "targets": [
-                {
-                    "editorMode": "code",
-                    "exemplar": true,
-                    "expr": "(1 - (node_memory_MemAvailable_bytes{alias=\"block-producer-node\"} / (node_memory_MemTotal_bytes{alias=\"block-producer-node\"})))* 100",
-                    "format": "time_series",
-                    "instant": false,
-                    "legendFormat": "Core",
-                    "range": true,
-                    "refId": "A"
-                },
                 {
                     "datasource": {
                         "type": "prometheus",
@@ -2796,7 +2730,7 @@
                 "h": 6,
                 "w": 12,
                 "x": 12,
-                "y": 70
+                "y": 67
             },
             "id": 135,
             "options": {
@@ -2816,13 +2750,6 @@
             },
             "pluginVersion": "11.4.0",
             "targets": [
-                {
-                    "exemplar": true,
-                    "expr": "rts_gc_peak_megabytes_allocated{alias=\"block-producer-node\"}",
-                    "interval": "",
-                    "legendFormat": "Core",
-                    "refId": "A"
-                },
                 {
                     "editorMode": "code",
                     "exemplar": true,
@@ -2886,7 +2813,8 @@
                         "mode": "absolute",
                         "steps": [
                             {
-                                "color": "green"
+                                "color": "green",
+                                "value": null
                             },
                             {
                                 "color": "red",
@@ -2902,7 +2830,7 @@
                 "h": 6,
                 "w": 12,
                 "x": 0,
-                "y": 76
+                "y": 73
             },
             "id": 37,
             "options": {
@@ -2922,19 +2850,6 @@
             },
             "pluginVersion": "11.4.0",
             "targets": [
-                {
-                    "datasource": {
-                        "type": "prometheus"
-                    },
-                    "editorMode": "code",
-                    "exemplar": true,
-                    "expr": "rts_gc_current_bytes_used{alias=\"block-producer-node\"}/(1024*1024)",
-                    "hide": false,
-                    "interval": "",
-                    "legendFormat": "Core",
-                    "range": true,
-                    "refId": "A"
-                },
                 {
                     "editorMode": "code",
                     "exemplar": true,
@@ -2998,7 +2913,8 @@
                         "mode": "absolute",
                         "steps": [
                             {
-                                "color": "green"
+                                "color": "green",
+                                "value": null
                             },
                             {
                                 "color": "red",
@@ -3014,7 +2930,7 @@
                 "h": 6,
                 "w": 12,
                 "x": 12,
-                "y": 76
+                "y": 73
             },
             "id": 32,
             "options": {
@@ -3034,16 +2950,6 @@
             },
             "pluginVersion": "11.4.0",
             "targets": [
-                {
-                    "datasource": {
-                        "type": "prometheus"
-                    },
-                    "exemplar": true,
-                    "expr": "rts_gc_max_bytes_used{alias=\"block-producer-node\"} /(1024*1024)",
-                    "interval": "",
-                    "legendFormat": "Core",
-                    "refId": "A"
-                },
                 {
                     "editorMode": "code",
                     "exemplar": true,
@@ -3107,7 +3013,8 @@
                         "mode": "absolute",
                         "steps": [
                             {
-                                "color": "green"
+                                "color": "green",
+                                "value": null
                             },
                             {
                                 "color": "red",
@@ -3123,7 +3030,7 @@
                 "h": 6,
                 "w": 12,
                 "x": 0,
-                "y": 82
+                "y": 79
             },
             "id": 64,
             "options": {
@@ -3143,16 +3050,6 @@
             },
             "pluginVersion": "11.4.0",
             "targets": [
-                {
-                    "datasource": {
-                        "type": "prometheus"
-                    },
-                    "exemplar": true,
-                    "expr": "node_filefd_allocated{alias=\"block-producer-node\"}",
-                    "interval": "",
-                    "legendFormat": "Core",
-                    "refId": "A"
-                },
                 {
                     "editorMode": "code",
                     "exemplar": true,
@@ -3217,7 +3114,8 @@
                         "mode": "absolute",
                         "steps": [
                             {
-                                "color": "green"
+                                "color": "green",
+                                "value": null
                             },
                             {
                                 "color": "red",
@@ -3233,7 +3131,7 @@
                 "h": 6,
                 "w": 12,
                 "x": 12,
-                "y": 82
+                "y": 79
             },
             "id": 30,
             "options": {
@@ -3254,18 +3152,6 @@
             "pluginVersion": "11.4.0",
             "targets": [
                 {
-                    "datasource": {
-                        "type": "prometheus"
-                    },
-                    "editorMode": "code",
-                    "exemplar": true,
-                    "expr": "(cardano_node_metrics_Mem_resident_int{alias=\"block-producer-node\"})/(1024*1024)",
-                    "interval": "",
-                    "legendFormat": "Core",
-                    "range": true,
-                    "refId": "A"
-                },
-                {
                     "editorMode": "code",
                     "exemplar": true,
                     "expr": "(cardano_node_metrics_Mem_resident_int{alias=~\"$relays\"})/(1024*1024)",
@@ -3285,7 +3171,7 @@
                 "h": 1,
                 "w": 24,
                 "x": 0,
-                "y": 88
+                "y": 85
             },
             "id": 180,
             "panels": [],
@@ -3341,7 +3227,8 @@
                         "mode": "absolute",
                         "steps": [
                             {
-                                "color": "green"
+                                "color": "green",
+                                "value": null
                             },
                             {
                                 "color": "red",
@@ -3502,7 +3389,7 @@
                 "h": 9,
                 "w": 24,
                 "x": 0,
-                "y": 89
+                "y": 86
             },
             "id": 94,
             "options": {
@@ -3620,6 +3507,6 @@
     "timezone": "",
     "title": "Cardano SPO - Mainnet",
     "uid": "CardanoNodeDashboard24",
-    "version": 58,
+    "version": 61,
     "weekStart": ""
 }
