@@ -595,14 +595,14 @@ As an SPO there are a few things you must do to keep a producing block producing
 Knowing what's going on under the hood is essential to running a node. 
 
 ```
-# Watch the node service logs
-scripts/node.sh watch
-
-¢ Display the node service status
+# Display the node service status
 scripts/node.sh status
 
 # Run the gLiveView script
 scripts/node.sh view
+
+# Watch the node service logs
+scripts/node.sh watch
 
 # Read file contents from the node directories 
 scripts/query.sh config topology.json
@@ -677,7 +677,7 @@ scripts/pool.sh get_stats
 crontab -e
 
 # Get data from Cardanoscan every hour at 5 past the hour
-5 * * * * /home/upstream/Cardano/scripts/pool.sh get_stats
+5 * * * * /home/upstream/Cardano/scripts/pool.sh get_stats >> /home/upstream/Cardano/cardano-node/logs/crontab.log 2>&1
 ```
 
 ### Rotate your KES
@@ -697,7 +697,7 @@ scripts/pool.sh rotate_kes <kesPeriod>
 scripts/node.sh restart
 
 # PRODUCER: Check the updates have applied
-scripts/query.sh kes_state
+scripts/query.sh kes
 ```
 
 ### Leader schedule
@@ -939,7 +939,7 @@ scripts/tx.sh vote_raw
 
 # COPY: tx.raw to your cold node 
 # COLD: Sign the vote transaction tx.raw
-scripts/tx.sh vote_sign
+scripts/tx.sh vote_sign /home/upstream/Cardano/cardano-node/keys/keys/drep.skey
 
 # COPY: tx.signed to your producer node
 # PRODUCER: Submit the signed transaction 
@@ -1052,6 +1052,64 @@ scripts/tx.sh submit
 ```
 
 ---
+
+h2: ## BlockFrost SPO Icebreaker
+
+Installed on a Relay connected to your block producing SPOs topology.
+
+```
+# RELAY: Download blockfrost and init
+scripts/node/icebreaker.sh download
+
+# RELAY: Install blockfrost service and start
+scripts/node/icebreaker.sh install
+
+# Check installed version
+blockfrost-platform --version
+ ```
+
+You can review icebreaker status using the BlockFrost UI:
+- https://blockfrost.grafana.net/public-dashboards/8d618eda298d472a996ca3473ab36177
+- https://platform.blockfrost.io/verification
+
+## Midnight Validator
+
+```
+# Start and restarting containers
+docker compose -f ./compose-partner-chains.yml -f ./compose.yml -f ./proof-server.yml up -d
+docker compose -f ./compose-partner-chains.yml -f ./compose.yml -f ./proof-server.yml restart
+
+# Watch logs for each service
+docker logs -f --tail 100 cardano-ogmios
+docker logs -f --tail 100 cardano-db-sync
+docker logs -f --tail 100 db-sync-postgres
+docker logs -f --tail 100 cardano-node
+docker logs -f --tail 100 midnight-node
+
+# Launch wizard used for configurations
+./midnight-node.sh wizards --help
+
+# Enter the node shell
+./midnight-shell.sh
+```
+
+```
+# Query sidechain status
+curl -L -X POST -H "Content-Type: application/json" -d '{
+      "jsonrpc": "2.0",
+      "method": "sidechain_getStatus",
+      "params": [997],
+      "id": 1
+    }' https://rpc.testnet-02.midnight.network | jq
+    
+# Query validator committee for n + 2 epochs
+curl -L -X POST -H "Content-Type: application/json" -d '{
+      "jsonrpc": "2.0",
+      "method": "sidechain_getAriadneParameters",
+      "params": [997],
+      "id": 1
+    }' https://rpc.testnet-02.midnight.network | jq
+```
 
 ## Repository info
 

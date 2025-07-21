@@ -1,11 +1,11 @@
 #!/bin/bash
-# Usage: node/download.sh [
+# Usage: node/download.sh (
 #   download |
 #   arm |
 #   node |
 #   path |
-#   help [?-h]
-# ]
+#   help [-h <BOOLEAN>]
+# )
 #
 # Info:
 #

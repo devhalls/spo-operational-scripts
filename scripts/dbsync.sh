@@ -20,7 +20,7 @@
 #
 # Info:
 #
-#   - dependencies) Install db sync dependencies, eg postgresql. Creates a new pg user $DB_SYNC_PG_USER.
+#   - dependencies) Install db sync dependencies, eg postgresql. Creates a new pg user $POSTGRES_USER.
 #   - download) Download the db sync binaries.
 #   - install) Install the db sync service and create directories.
 #   - snapshot_download) Download the db sync snapshot from $DB_SYNC_PG_SNAPSHOT.
@@ -42,7 +42,8 @@ source "$(dirname "$0")/common.sh"
 
 dbsync_dependencies() {
     sudo $PACKAGER install postgresql postgresql-contrib -y
-    sudo -u postgres createuser -d -r -s $DB_SYNC_PG_USER
+    sudo -u postgres createuser -d -r -s $POSTGRES_USER
+    sudo -u postgres createuser -d -r -s $NODE_USER
 }
 
 dbsync_download() {
@@ -50,7 +51,7 @@ dbsync_download() {
     local target="downloads/$DB_SYNC_REMOTE_NAME"
     local extension=".tar.gz"
     mkdir -p $target
-    wget -O $target.tar.gz $DB_SYNC_REMOTE/$DB_SYNC_VERSION/$DB_SYNC_REMOTE_NAME
+    wget -O $target.tar.gz "${DB_SYNC_REMOTE}/${DB_SYNC_VERSION}/${DB_SYNC_REMOTE_NAME}${extension}"
     if [ $? -eq 0 ]; then
         tar -xvzf $target.tar.gz -C $target
         sudo cp -a $target/. $BIN_PATH/
@@ -68,11 +69,14 @@ dbsync_download() {
 dbsync_install() {
     print 'INSTALL' "Creating directories at $DB_SYNC_PATH"
     mkdir -p $DB_SYNC_PATH $DB_SYNC_PATH/schema $DB_SYNC_PATH/ledger-state
-    cp -p services/pgpass-mainnet $DB_SYNC_PATH/pgpass-mainnet
     cp -pr services/schema/. $DB_SYNC_PATH/schema
+    cp -p services/pgpass services/pgpass.temp
+    sed -i services/pgpass.temp \
+        -e "s|POSTGRES_DB|$POSTGRES_DB|g"
+    cp -p services/pgpass.temp $DB_SYNC_PATH/pgpass
 
     print 'INSTALL' 'Creating db-sync service'
-    cp -p services/$DB_SYNC_SERVICE services/$DB_SYNC_NAME.temp
+    cp -p services/cardano-db-sync.service services/$DB_SYNC_NAME.temp
     sed -i services/$DB_SYNC_NAME.temp \
         -e "s|NODE_HOME|$NODE_HOME|g" \
         -e "s|NODE_USER|$NODE_USER|g" \
@@ -125,7 +129,7 @@ dbsync_snapshot_restore() {
         pg_restore \
             --schema=public \
             --format=directory \
-            --dbname="$DB_SYNC_PG_DATABASE" \
+            --dbname="$POSTGRES_DB" \
             --jobs="$cores" \
             --exit-on-error \
             --no-owner \
@@ -136,7 +140,7 @@ dbsync_snapshot_restore() {
 }
 
 dbsync_run() {
-    export PGPASSFILE=$DB_SYNC_PATH/pgpass-mainnet
+    export PGPASSFILE=$DB_SYNC_PATH/pgpass
     $DB_SYNC \
         --config $NETWORK_PATH/db-sync-config.json \
         --socket-path $NETWORK_SOCKET_PATH \
@@ -173,16 +177,25 @@ dbsync_status() {
 }
 
 dbsync_create_db() {
-    createdb -T template0 --owner="${DB_SYNC_PG_USER}" --encoding=UTF8 "${DB_SYNC_PG_DATABASE}"
+    createdb -T template0 --owner="${POSTGRES_USER}" --encoding=UTF8 "${POSTGRES_DB}"
 }
 
 dbsync_drop_db() {
-    dropdb -f cexplorer
+    dropdb -f $POSTGRES_DB
 }
 
 dbsync_view_db() {
-    psql "${DB_SYNC_PG_DATABASE}" \
-        --command="select table_name from information_schema.views where table_catalog = '${DB_SYNC_PG_DATABASE}' and table_schema = 'public' ;"
+    psql "${POSTGRES_DB}" \
+        --command="select table_name from information_schema.views where table_catalog = '${POSTGRES_DB}' and table_schema = 'public' ;"
+}
+
+dbsync_get_block() {
+    latest_block=$(psql "$POSTGRES_DB" -t -A -c "SELECT MAX(block_no) FROM block;" 2>/dev/null)
+    if [[ $? -eq 0 && "$latest_block" =~ ^[0-9]+$ ]]; then
+        echo $latest_block
+    else
+        echo ""
+    fi
 }
 
 case $1 in
@@ -201,6 +214,7 @@ case $1 in
     create) dbsync_create_db ;;
     drop) dbsync_drop_db ;;
     view) dbsync_view_db ;;
+    get_block) dbsync_get_block ;;
     help) help "${2:-"--help"}" ;;
     *) help "${1:-"--help"}" ;;
 esac

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Usage: node/mithril.sh [
+# Usage: node/mithril.sh (
 #   download |
 #   sync |
 #   check_compatability |
@@ -19,8 +19,8 @@
 #   status_squid |
 #   verify_registration |
 #   verify_signature |
-#   help [?-h]
-# ]
+#   help [-h <BOOLEAN>]
+# )
 #
 # Info:
 #
@@ -293,13 +293,13 @@ mithril_status() {
 }
 
 mithril_start_squid() {
-    exit_if_not_producer
+    exit_if_not_relay
     sudo systemctl start $MITHRIL_SQUID_SERVICE
     print 'MITHRIL' "Squid service started" $green
 }
 
 mithril_stop_squid() {
-    exit_if_not_producer
+    exit_if_not_relay
     sudo systemctl stop $MITHRIL_SQUID_SERVICE
     print 'MITHRIL' "Squid service stopped" $green
 }

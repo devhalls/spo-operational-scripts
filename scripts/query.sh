@@ -1,23 +1,25 @@
 #!/bin/bash
-# Usage: query.sh [
+# Usage: query.sh (
 #   tip [name <STRING>] |
 #   params [name <STRING>] |
+#   state (name <STRING>) |
 #   metrics [name <STRING>] |
 #   config (name <STRING>) |
-#   key [name <STRING>] |
-#   keys |
+#   key (name <STRING>) |
+#   keys (format <STRING<'table'>>)|
 #   kes |
 #   kes_period |
-#   uxto [address <ADDRESS>] |
-#   leader [period <STRING>] |
+#   uxto [address <STRING>] |
+#   leader [period <STRING<'current'|'next'>>] |
 #   rewards [name <STRING>] |
-#   help [-h]
-# ]
+#   help [-h <BOOLEAN>]
+# )
 #
 # Info:
 #
 #   - tip) Query the blockchain tip. Optionally pass a param name to view only this value.
 #   - params) Query the blockchain protocol parameters and saves these to $NETWORK_PATH/params.json. Optionally pass a param name to view only this value.
+#   - state) Query the blockchain ledger-state and saves these to $NETWORK_PATH/ledger.json. Optionally pass a param name to view only this value. Very large so we only create it if it does not exist (will become out of date if left as is, you must periodically delete the ledger.json file.)
 #   - metrics) Query the prometheus metrics. Optionally pass a param name to view only this value.
 #   - config) Echo the contents of any config file located in $NETWORK_PATH. Pass the file name you wish to read.
 #   - key) Echo the contents of any file located in $NETWORK_PATH/keys. Pass the file name you wish to read.
@@ -53,6 +55,20 @@ query_params() {
     fi
 }
 
+query_state() {
+    exit_if_cold
+    # if [ ! -f $NETWORK_PATH/ledger.json ]; then
+        $CNCLI conway query ledger-state $NETWORK_ARG --socket-path $NETWORK_SOCKET_PATH > ledger.txt
+    # fi
+    exit 1
+    if [ "$1" ]; then
+        cat $NETWORK_PATH/ledger.txt | jq -r ".$1" | tr -d '\n\r'
+    else
+        cat $NETWORK_PATH/ledger.txt
+        echo ''
+    fi
+}
+
 query_metrics() {
     exit_if_cold
     if [ "$1" ]; then
@@ -75,13 +91,15 @@ query_key() {
 }
 
 query_keys() {
-    displayType=$1
-
+    local displayType=${1:-table}
     if [[ $displayType == "table" ]]; then
         printf "|%-22s|%-52s|\n" "$(printf '%.0s-' {1..22})" "$(printf '%.0s-' {1..52})"
         printf "| %-20s | %-50s |\n" "Filename" "Contents"
         printf "|%-22s|%-52s|\n" "$(printf '%.0s-' {1..22})" "$(printf '%.0s-' {1..52})"
         for file in $NETWORK_PATH/keys/*; do
+            if [[ ! -f "$file" ]]; then
+                continue
+            fi
             filename=$(basename "$file")
             raw_content=$(<"$file")
             if echo "$raw_content" | jq empty 2>/dev/null; then
@@ -97,12 +115,10 @@ query_keys() {
     fi
 
     if stat --version >/dev/null 2>&1; then
-        # GNU/Linux
         get_modified() { stat -c "%y" "$1" | cut -d'.' -f1; }
         get_perms()  { stat -c "%A" "$1"; }
         get_size()   { stat -c "%s" "$1"; }
     else
-        # macOS
         get_modified() { stat -f "%Sm" -t "%Y-%m-%d %H:%M:%S" "$1"; }
         get_perms()  { stat -f "%Sp" "$1"; }
         get_size()   { stat -f "%z" "$1"; }
@@ -111,26 +127,21 @@ query_keys() {
     for file in $NETWORK_PATH/keys/*; do
         [ -f "$file" ] || continue
 
-        filename=$(basename "$file")
-        modified=$(get_modified "$file")
-        perms=$(get_perms "$file")
-        size=$(get_size "$file")
-
-        echo "|==================================================="
-        echo "| 📄 $filename"
-        echo "| 📅 Last Modified: $modified"
-        echo "| 🔐 Permissions  : $perms"
-        echo "| 📦 Size         : $size bytes"
-        echo "|---------------------------------------------------"
-
-        content=$(<"$file")
-
+        local filename=$(basename "$file")
+        local modified=$(get_modified "$file")
+        local perms=$(get_perms "$file")
+        local size=$(get_size "$file")
+        local content=$(<"$file")
+        echo "|==============================================|"
+        echo "| 📄 $filename ($size bytes) ($modified)"
+        echo "| 🔐 $perms"
+        echo "|----------------------------------------------|"
+        echo
         if echo "$content" | jq empty 2>/dev/null; then
             echo "$content" | jq
         else
             echo "$content"
         fi
-
         echo
     done
 }
@@ -145,9 +156,9 @@ query_kes() {
 query_kes_period() {
     exit_if_cold
     exit_if_file_missing $NETWORK_PATH/shelley-genesis.json
-    slotsPerKESPeriod=$(cat $NETWORK_PATH/shelley-genesis.json | jq -r '.slotsPerKESPeriod')
-    slotNo=$(query_tip slot)
-    kesPeriod=$(($slotNo / $slotsPerKESPeriod))
+    local slotsPerKESPeriod=$(cat $NETWORK_PATH/shelley-genesis.json | jq -r '.slotsPerKESPeriod')
+    local slotNo=$(query_tip slot)
+    local kesPeriod=$(($slotNo / $slotsPerKESPeriod))
     echo "slotsPerKESPeriod: $slotsPerKESPeriod"
     echo "currentSlot: $slotNo"
     echo "kesPeriod: $kesPeriod"
@@ -174,11 +185,11 @@ query_leader() {
     if [ $period == '--next' ]; then targetEpoch=$(($targetEpoch + 1)); fi
 
     # Set file paths and get the poolId
-    outputPath=$NETWORK_PATH/logs
-    tempFilePath=$outputPath/$targetEpoch.txt
-    csvFile=$outputPath/slots.csv
-    grafanaLocation=/usr/share/grafana
-    poolId=$(<$POOL_ID)
+    local outputPath=$NETWORK_PATH/logs
+    local tempFilePath=$outputPath/$targetEpoch.txt
+    local csvFile=$outputPath/slots.csv
+    local grafanaLocation=/usr/share/grafana
+    local poolId=$(<$POOL_ID)
 
     # Run the leadership-schedule query
     print 'QUERY' "Leadership schedule starting, please wait..."
@@ -201,7 +212,7 @@ query_leader() {
     if [ -f $tempFilePath ]; then
         echo "$(tail -n +3 $tempFilePath)" >$tempFilePath
         sed -i "s/\$/ $targetEpoch/" $tempFilePath
-        content=$(awk '{print $2,$3","$1","NR","$5}' $tempFilePath)
+        local content=$(awk '{print $2,$3","$1","NR","$5}' $tempFilePath)
         grep -qxF "$content" $csvFile || echo "$content" >>$csvFile
         echo "$content"
         if [ -d $grafanaLocation ]; then
@@ -230,6 +241,7 @@ case $1 in
     sum) query_sum "${@:2}" ;;
     tip) query_tip "${@:2}" ;;
     params) query_params "${@:2}" ;;
+    state) query_state "${@:2}" ;;
     metrics) query_metrics "${@:2}" ;;
     config) query_config "${@:2}" ;;
     key) query_key "${@:2}" ;;

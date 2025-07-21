@@ -1,5 +1,5 @@
 #!/bin/bash
-# Usage: node/install.sh [
+# Usage: node/install.sh (
 #   install |
 #   validate |
 #   dependencies |
@@ -8,12 +8,12 @@
 #   download [...params] |
 #   configs |
 #   guild |
-#   prometheus_explorer [?monitoringIp] |
+#   prometheus_exporter [monitoringIp <STRING>] |
 #   grafana |
 #   service |
 #   clean |
-#   help [?-h]
-# ]
+#   help [-h <BOOLEAN>]
+# )
 #
 # Info:
 #
@@ -25,7 +25,7 @@
 #   - download) Download the node binaries.
 #   - configs) Download the node config files.
 #   - guild) Download the guild gLiveView script.
-#   - prometheus_explorer) Install Prometheus node exporter on the block producers and all relays. The monitoringIp is only used for producer nodes.
+#   - prometheus_exporter) Install Prometheus node exporter on the block producers and all relays. The monitoringIp is only used for producer nodes.
 #   - grafana) Install Grafana on Monitoring Node only - must be a relay.
 #   - service) Create the node systemctl service.
 #   - clean) Clean the installation and remove all files.
@@ -101,21 +101,20 @@ install_guild() {
         -e "s|\#CONFIG=\"\${CNODE_HOME}\/files\/config.json\"|CONFIG=\"${NETWORK_PATH}\/config.json\"|g" \
         -e "s|\#SOCKET=\"\${CNODE_HOME}\/sockets\/node.socket\"|SOCKET=\"${NETWORK_PATH}\/db\/socket\"|g" \
         -e "s|\#CNODE_PORT=6000|CNODE_PORT=\"${NODE_PORT}\"|g" \
-        -e "s|\#CNODEBIN=\"\${HOME}\/.local\/bin\/cardano-node\"|CNODEBIN=\"${BIN_PATH}\/cardano-node\"|g" \
-        -e "s|\#CCLI=\"\${HOME}\/.local\/bin\/cardano-cli\"|CCLI=\"${BIN_PATH}\/cardano-cli\"|g"
+        -e "s|\#CNODEBIN=\"\${HOME}\/.local\/bin\/cardano-node\"|CNODEBIN=\"${BIN_PATH}\/${NODE_NAME}\"|g" \
+        -e "s|\#CCLI=\"\${HOME}\/.local\/bin\/cardano-cli\"|CCLI=\"${BIN_PATH}\/${NODE_CLI_NAME}\"|g"
     print 'INSTALL' "Downloaded guild scripts" $green
     return 0
 }
 
-install_prometheus_explorer() {
+install_prometheus_exporter() {
     exit_if_cold
-    print 'INSTALL' 'Prometheus explorer'
-    monitoringIp=${1}
-    sudo $PACKAGER install -y prometheus-node-exporter
-    sudo systemctl enable prometheus-node-exporter.service
-    sed -i $CONFIG_PATH -e "s/127.0.0.1/0.0.0.0/g"
-    sudo systemctl restart prometheus-node-exporter.service
+    print 'INSTALL' 'Prometheus exporter'
+    local promPath=/usr/bin/prometheus-node-exporter
+    local servicePath=/lib/systemd/system/prometheus-node-exporter.service
+    local monitoringIp=${1}
 
+    # Expose ports if we are installing on a producer
     if [ $NODE_TYPE == 'producer' ] && [ $NODE_NETWORK == 'mainnet' ]; then
         if [ ! $monitoringIp ]; then
             print 'ERROR' 'Please supply your monitoring node IP address' $red
@@ -125,7 +124,16 @@ install_prometheus_explorer() {
         sudo ufw allow proto tcp from $monitoringIp to any port 12798
         sudo ufw reload
     fi
-    print 'INSTALL' 'Prometheus explorer installed' $green
+    sudo $PACKAGER install -y prometheus-node-exporter
+
+    # Add custom metrics to our exporter and adjust node configs
+    sudo sed -i "/^ExecStart=/c\\ExecStart=$promPath --collector.textfile.directory=$NETWORK_PATH/stats --collector.textfile" $servicePath
+    sed -i $CONFIG_PATH -e "s/127.0.0.1/0.0.0.0/g"
+
+    # Start the service
+    sudo systemctl enable prometheus-node-exporter.service
+    sudo systemctl restart prometheus-node-exporter.service
+    print 'INSTALL' 'Prometheus exporter installed' $green
 }
 
 install_grafana() {
@@ -144,7 +152,6 @@ install_grafana() {
     # Adjust the prometheus service command
     serviceDir="$(dirname "$0")/../../services"
     sudo cp -p $serviceDir/prometheus.yml /etc/prometheus/prometheus.yml
-    sudo sed -i "/^ExecStart=/c\\ExecStart=/usr/bin/prometheus-node-exporter --collector.textfile.directory=$NETWORK_PATH/stats --collector.textfile" /lib/systemd/system/prometheus-node-exporter.service
 
     # Edit grafana ini
     sudo sed -i "/# disable user signup \/ registration/{n;s/.*/allow_sign_up = false/}" "/etc/grafana/grafana.ini"
@@ -223,7 +230,7 @@ case $1 in
     download) bash $(dirname "$0")/download.sh "${@:2}" ;;
     configs) install_configs ;;
     guild) install_guild ;;
-    prometheus_explorer) install_prometheus_explorer ;;
+    prometheus_exporter) install_prometheus_exporter "${@:2}" ;;
     grafana) install_grafana ;;
     service) install_service ;;
     clean) install_clean ;;
