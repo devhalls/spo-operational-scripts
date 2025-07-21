@@ -697,7 +697,7 @@ scripts/pool.sh rotate_kes <kesPeriod>
 scripts/node.sh restart
 
 # PRODUCER: Check the updates have applied
-scripts/query.sh kes_state
+scripts/query.sh kes
 ```
 
 ### Leader schedule
