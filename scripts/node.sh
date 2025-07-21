@@ -125,7 +125,7 @@ node_status() {
             "$(print_state 1 "Network | $orange$NODE_NETWORK$nc | Type: $green$NODE_TYPE$nc")"
             "$(print_state 1 "Node Version | $orange$NODE_VERSION$nc | $nodeVersion")"
             "$(print_state 1 "Node Port | $orange$NODE_PORT$nc | State: $portState")"
-            "$(print_state 1 "Node Directory | $orange$NODE_HOME$nc | Perm: $green$(stat -c "%A" $NODE_HOME)$nc")"
+            "$(print_state 1 "Node Directory | $orange$NODE_HOME$nc | State: ${green}Installed${nc}")"
         )
         local serviceRows=(
             "$(echo -e "$green+$nc $red-$nc | NAME | RESULT | ?")"
