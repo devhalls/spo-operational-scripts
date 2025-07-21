@@ -677,7 +677,7 @@ scripts/pool.sh get_stats
 crontab -e
 
 # Get data from Cardanoscan every hour at 5 past the hour
-5 * * * * /home/upstream/Cardano/scripts/pool.sh get_stats
+5 * * * * /home/upstream/Cardano/scripts/pool.sh get_stats >> /home/upstream/Cardano/cardano-node/logs/crontab.log 2>&1
 ```
 
 ### Rotate your KES

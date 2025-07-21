@@ -106,123 +106,126 @@ node_status() {
         tput cup 0 0
         printf "\e[2J"
 
-        # Prepare the node port state
-        local portState
-        if ss -tuln | grep -q ":$NODE_PORT"; then
-          portState="${green}open${nc}"
-        else
-          portState="${red}closed${nc}"
-        fi
-
-        # Prepare the node version string
-        local nodeVersion=$(node_version)
-        if [[ -n "$nodeVersion" ]]; then
-          nodeVersion="Active: $green$nodeVersion$nc"
-        else
-          nodeVersion="${red}Inactive${nc}"
-        fi
-
-        # Prepare the extended data file check
-        local promNodeVersionExists
-        local promNodeVersionOutput
-        local prodDataPath=$NETWORK_PATH/stats/data-pool.prom
-        if [[ -f "$prodDataPath" ]] && grep -q "data_nodeVersion" "$prodDataPath"; then
-            promNodeVersionExists="yes"
-            promNodeVersionOutput="${green}$prodDataPath contains data_nodeVersion${nc} | ${green}-${nc}"
-        else
-            promNodeVersionExists=""
-            promNodeVersionOutput="${red}$prodDataPath${nc} | ${red}-${nc}"
-        fi
-
-        # Prepare the arrays to pass to table output
-        local overviewRows=(
-            "$(echo -e "$green+$nc $red-$nc | NAME | VALUE | DETAIL")"
-            "$(print_state 1 "Network | $orange$NODE_NETWORK$nc | Type: $green$NODE_TYPE$nc")"
-            "$(print_state 1 "Node Version | $orange$NODE_VERSION$nc | $nodeVersion")"
-            "$(print_state 1 "Node Port | $orange$NODE_PORT$nc | State: $portState")"
-            "$(print_state 1 "Node Directory | $orange$NODE_HOME$nc | State: ${green}Installed${nc}")"
-        )
-        local serviceRows=(
-            "$(echo -e "$green+$nc $red-$nc | NAME | RESULT | ?")"
-            "$(print_service_state $NETWORK_SERVICE "Cardano Node")"
-            "$(print_service_state $MITHRIL_SERVICE "Mithril Signer")"
-            "$(print_service_state $MITHRIL_SQUID_SERVICE "Mithril Squid Proxy")"
-            "$(print_service_state $PROMETHEUS_SCRAPER_SERVICE "Prometheus Scraper")"
-            "$(print_service_state $PROMETHEUS_EXPORTER_SERVICE "Prometheus Exporter")"
-            "$(print_crontab_state "$NODE_HOME/scripts/pool.sh get_stats" "Crontab get_stats()")"
-            "$(print_state "$promNodeVersionExists" "Crontab get_stats() Output | $promNodeVersionOutput")"
-            "$(print_service_state $GRAFANA_SERVICE "Grafana Dashboard")"
-            "$(print_service_state $NGROK_SERVICE "Ngrok Networking")"
-        )
-
-        # Read and prepare port data
-        local portInfo=$(sudo ss -tuln | awk '
-            NR == 1 { next }
-            {
-                proto = ($0 ~ /^tcp/) ? "tcp" : ($0 ~ /^udp/) ? "udp" : "?"
-                split($5, parts, ":")
-                port = parts[length(parts)]
-                sub(":" port "$", "", $5)
-                printf "%-7s | %-16s | %-5s | %s\n", $2, $5, port, proto
-            }')
-        IFS=$'\n' read -r -d '' -a portRows <<< "$portInfo"$'\0'
-        declare -A portConfigs=(
-            ["0.0.0.0:6000"]="Cardano Node"
-            ["0.0.0.0:12798"]="Cardano UI"
-            ["127.0.0.1:12788"]="Cardano EKG"
-            ["0.0.0.0:9091"]="Prometheus exporter"
-            ["0.0.0.0:9100"]="Prometheus Exporter"
-            ["*:9100"]="Prometheus Exporter"
-            ["0.0.0.0:22"]="SSH"
-            ["*:22"]="SSH"
-        )
-        for i in "${!portRows[@]}"; do
-            IFS='|' read -r state ip port proto <<< "${portRows[$i]}"
-            state=$(echo "$state" | xargs)
-            ip=$(echo "$ip" | xargs)
-            port=$(echo "$port" | xargs)
-            proto=$(echo "$proto" | xargs)
-            key="$ip:$port"
-            if [[ -n "${portConfigs["$key"]}" ]]; then
-                label="${green}${portConfigs["$key"]}${nc}"
-            else
-                label="?"
-            fi
-            portRows[$i]=$(echo -e "${portRows[$i]} | ${label}")
-        done
-
-        # Show the selected display
+        # Render the display title
         echo -e "\n${orange}UPSTREAM Stake Pool - ${selected}${nc} ($NODE_NETWORK:$NODE_TYPE)\n"
+
+        # Render the display based on selected view
         case $selected in
+
+            # 1. Process overview view
             Overview)
+                # Prepare the node port state
+                local portState
+                if ss -tuln | grep -q ":$NODE_PORT"; then
+                  portState="${green}open${nc}"
+                else
+                  portState="${red}closed${nc}"
+                fi
+
+                # Prepare the node version string
+                local nodeVersion=$(node_version)
+                if [[ -n "$nodeVersion" ]]; then
+                  nodeVersion="Active: $green$nodeVersion$nc"
+                else
+                  nodeVersion="${red}Inactive${nc}"
+                fi
+
+                # Prepare the array of table rows
+                local overviewRows=(
+                    "$(echo -e "$green+$nc $red-$nc | NAME | VALUE | DETAIL")"
+                    "$(print_state "yes" "Network | $orange$NODE_NETWORK$nc | Type: $green$NODE_TYPE$nc")"
+                    "$(print_state "yes" "Node Version | $orange$NODE_VERSION$nc | $nodeVersion")"
+                    "$(print_state "yes" "Node Port | $orange$NODE_PORT$nc | State: $portState")"
+                    "$(print_state "yes" "Node Directory | $orange$NODE_HOME$nc | State: ${green}Installed${nc}")"
+                )
+
                 # Display overview table output
                 print_table "${overviewRows[@]}"
                 ;;
+
+            # 2. Process services view
             Services)
+                # Prepare the extended data file check
+                local promNodeVersionExists
+                local promNodeVersionOutput
+                local prodDataPath=$NETWORK_PATH/stats/data-pool.prom
+                if [[ -f "$prodDataPath" ]] && grep -q "data_nodeVersion" "$prodDataPath"; then
+                    promNodeVersionExists="yes"
+                    promNodeVersionOutput="${green}$prodDataPath contains data_nodeVersion${nc} | ${green}-${nc}"
+                else
+                    promNodeVersionExists=""
+                    promNodeVersionOutput="${red}$prodDataPath${nc} | ${red}-${nc}"
+                fi
+
+                # Prepare the arrays to pass to table output
+                local serviceRows=(
+                    "$(echo -e "$green+$nc $red-$nc | NAME | RESULT | ?")"
+                    "$(print_service_state $NETWORK_SERVICE "Cardano Node")"
+                    "$(print_service_state $MITHRIL_SERVICE "Mithril Signer")"
+                    "$(print_service_state $MITHRIL_SQUID_SERVICE "Mithril Squid Proxy")"
+                    "$(print_service_state $PROMETHEUS_SCRAPER_SERVICE "Prometheus Scraper")"
+                    "$(print_service_state $PROMETHEUS_EXPORTER_SERVICE "Prometheus Exporter")"
+                    "$(print_crontab_state "$NODE_HOME/scripts/pool.sh get_stats" "Crontab get_stats()")"
+                    "$(print_state "$promNodeVersionExists" "Crontab get_stats() Output | $promNodeVersionOutput")"
+                    "$(print_service_state $GRAFANA_SERVICE "Grafana Dashboard")"
+                    "$(print_service_state $NGROK_SERVICE "Ngrok Networking")"
+                )
+
                 # Display service table output
                 print_table "${serviceRows[@]}"
                 ;;
+
+            # 3. Process ports view
             Ports)
+                # Read and prepare port data
+                local portInfo=$(sudo ss -tuln | awk '
+                    NR == 1 { next }
+                    {
+                        proto = ($0 ~ /^tcp/) ? "tcp" : ($0 ~ /^udp/) ? "udp" : "?"
+                        split($5, parts, ":")
+                        port = parts[length(parts)]
+                        sub(":" port "$", "", $5)
+                        printf "%-7s | %-16s | %-5s | %s\n", $2, $5, port, proto
+                    }')
+                IFS=$'\n' read -r -d '' -a portRows <<< "$portInfo"$'\0'
+                declare -A portConfigs=(
+                    ["0.0.0.0:6000"]="Cardano Node"
+                    ["0.0.0.0:12798"]="Cardano UI"
+                    ["127.0.0.1:12788"]="Cardano EKG"
+                    ["0.0.0.0:9091"]="Prometheus exporter"
+                    ["0.0.0.0:9100"]="Prometheus Exporter"
+                    ["*:9100"]="Prometheus Exporter"
+                    ["0.0.0.0:22"]="SSH"
+                    ["*:22"]="SSH"
+                )
+                for i in "${!portRows[@]}"; do
+                    IFS='|' read -r state ip port proto <<< "${portRows[$i]}"
+                    state=$(echo "$state" | xargs)
+                    ip=$(echo "$ip" | xargs)
+                    port=$(echo "$port" | xargs)
+                    proto=$(echo "$proto" | xargs)
+                    key="$ip:$port"
+                    if [[ -n "${portConfigs["$key"]}" ]]; then
+                        label="${green}${portConfigs["$key"]}${nc}"
+                    else
+                        label="?"
+                    fi
+                    portRows[$i]=$(echo -e "${portRows[$i]} | ${label}")
+                done
+
                 # Display port table output
                 print_table "${portRows[@]}"
                 ;;
+
+            # 4. Process keys view
             Keys)
                 # Display keys output
                 $(dirname "$0")/query.sh keys
                 ;;
-            All)
-                # Display all
-                echo -e "${orange}Overview${nc}\n"
-                print_table "${overviewRows[@]}"
-                echo -e "\n${orange}Services${nc}\n"
-                print_table "${serviceRows[@]}"
-                echo -e "\n${orange}Ports${nc}\n"
-                print_table "${portRows[@]}"
-                ;;
         esac
 
         # Display actions
-        echo -e "\no = ${orange}Overview${nc} | s = ${orange}Services${nc} | p = ${orange}Ports${nc} | k = ${orange}Keys${nc} | a = ${orange}All${nc}"
+        echo -e "\no = ${orange}Overview${nc} | s = ${orange}Services${nc} | p = ${orange}Ports${nc} | k = ${orange}Keys${nc}"
         echo -e "q = ${orange}Quit${nc}"
         echo -e "\nRefresh count: ${orange}${counter}${nc}"
 
