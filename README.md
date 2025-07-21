@@ -595,14 +595,14 @@ As an SPO there are a few things you must do to keep a producing block producing
 Knowing what's going on under the hood is essential to running a node. 
 
 ```
-# Watch the node service logs
-scripts/node.sh watch
-
-¢ Display the node service status
+# Display the node service status
 scripts/node.sh status
 
 # Run the gLiveView script
 scripts/node.sh view
+
+# Watch the node service logs
+scripts/node.sh watch
 
 # Read file contents from the node directories 
 scripts/query.sh config topology.json
@@ -1168,7 +1168,3 @@ Distributed under the GPL-3.0 License. See LICENSE.txt for more information.
 - [Upstream Twitter](https://x.com/Upstream_ada)
 
 ---
-
-
-How do I check if docker is installed and that a specific named container 'cardano-ogmios' is running, and if not fail gracefully if no docker of if the container is not running
-
