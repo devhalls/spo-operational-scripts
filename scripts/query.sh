@@ -97,6 +97,9 @@ query_keys() {
         printf "| %-20s | %-50s |\n" "Filename" "Contents"
         printf "|%-22s|%-52s|\n" "$(printf '%.0s-' {1..22})" "$(printf '%.0s-' {1..52})"
         for file in $NETWORK_PATH/keys/*; do
+            if [[ ! -f "$file" ]]; then
+                continue
+            fi
             filename=$(basename "$file")
             raw_content=$(<"$file")
             if echo "$raw_content" | jq empty 2>/dev/null; then
