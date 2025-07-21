@@ -1,6 +1,7 @@
 # Cardano Stake Pool Operator (SPO) scripts
 
-A collection of scripts and procedures for operating a Stake Pool, DRep or a Cardano node. Developed by Upstream Stake Pool [UPSTR](https://upstream.org.uk).
+A collection of scripts and procedures for operating a Stake Pool, DRep or a Cardano node. Developed by Upstream Stake
+Pool [UPSTR](https://upstream.org.uk).
 
 <details>
 <summary>File tree</summary>
@@ -37,16 +38,18 @@ tree --filesfirst -L 3
     ├── ngrok.service
     └── prometheus.yml
 ```
+
 </details>
 
 <details>
 <summary>Assumptions</summary>
 
-1. Your OS, LAN network, ports and user are already configured. 
+1. Your OS, LAN network, ports and user are already configured.
 2. The Ngrok script requires you to know how to set up your own ngrok account and endpoints.
-3. You are comfortable with cardano-node / cardano-cli and SPO requirements 
+3. You are comfortable with cardano-node / cardano-cli and SPO requirements
 4. You are comfortable with Linux and managing networks and servers
 5. You are able to setup your cold node by copying the binaries, scripts and keys securely as required.
+
 </details>
 
 ---
@@ -88,7 +91,8 @@ docker exec -it node bash
 
 ## Node setup
 
-This table describes the env variables you most likely need to adjust to suit your system and their available options. Read through these options before proceeding to the installation.
+This table describes the env variables you most likely need to adjust to suit your system and their available options.
+Read through these options before proceeding to the installation.
 
 <details>
 <summary>env variables</summary>
@@ -270,7 +274,8 @@ This table describes the env variables you most likely need to adjust to suit yo
 
 > IMPORTANT - Skip the node install steps for docker environments
 
-Get started by creating a directory and pulling this repo, and edit the env file (see table below for env descriptions and configure).
+Get started by creating a directory and pulling this repo, and edit the env file (see table below for env descriptions
+and configure).
 
 ```
 mkdir Cardano && cd Cardano
@@ -323,7 +328,8 @@ scripts/node.sh update
 
 ### Firewall
 
-This is an example of allowing the node port through a firewall, its expected you will secure your node as appropriate for mainnet releases.
+This is an example of allowing the node port through a firewall, its expected you will secure your node as appropriate
+for mainnet releases.
 
 ```
 # Allow SSH
@@ -482,7 +488,8 @@ To register a stake pool you must have a running **fully synced** node. We can t
 
 ### Generate stake pool keys and certificates
 
-Start your pool registration by generating node keys and a node operational certificate, along with your KES keys and VRF keys.
+Start your pool registration by generating node keys and a node operational certificate, along with your KES keys and
+VRF keys.
 
 ```
 # PRODUCER: Query network params and take note of the 'KES period'
@@ -501,7 +508,8 @@ scripts/pool.sh generate_vrf_keys
 
 ### Generate payment and stake keys
 
-Create payment keys, stake keys and generate addresses from the keys. Ensure you fund your payment addres and query the chain to confirm your have UXTOs.
+Create payment keys, stake keys and generate addresses from the keys. Ensure you fund your payment addres and query the
+chain to confirm your have UXTOs.
 
 ```
 # COLD: Generate payment and stake keys
@@ -592,7 +600,7 @@ As an SPO there are a few things you must do to keep a producing block producing
 
 ### Monitoring your pool
 
-Knowing what's going on under the hood is essential to running a node. 
+Knowing what's going on under the hood is essential to running a node.
 
 ```
 # Display the node service status
@@ -625,8 +633,9 @@ scripts/query.sh metrics cardano_node_metrics_peerSelection_warm
 
 ### Monitoring with Grafana
 
-View your node state via Grafana dashboards makes it easy to manage your nodes. Once you have installed the necessary packages and configs restart your nodes and you can visit the dashboard.
-Dashboard: MONITOR_NODE_IP:3000 
+View your node state via Grafana dashboards makes it easy to manage your nodes. Once you have installed the necessary
+packages and configs restart your nodes and you can visit the dashboard.
+Dashboard: MONITOR_NODE_IP:3000
 Username: admin
 Password: admin (change your password after first login)
 
@@ -718,7 +727,8 @@ sudo nano /usr/share/grafana/slots.csv
 
 ### Backing up your pool
 
-It's vitally import you make multiple backups of your node cold keys, this is what gives you control over your node. You can also backup your producer and relays to make redeployment simpler.
+It's vitally import you make multiple backups of your node cold keys, this is what gives you control over your node. You
+can also backup your producer and relays to make redeployment simpler.
 
 ```
 # COLD: Backup the keys.
@@ -734,7 +744,8 @@ It's vitally import you make multiple backups of your node cold keys, this is wh
 
 ### Regenerate pool certificates
 
-When you need to update your pool metadata, min cost or other pool params you must regenerate your pool.cert and deleg.cert using the same steps as when you first created these.
+When you need to update your pool metadata, min cost or other pool params you must regenerate your pool.cert and
+deleg.cert using the same steps as when you first created these.
 
 ```
 # PRODUCER: Generate your metadata hash and take note along with the min pool cost
@@ -760,7 +771,9 @@ scripts/tx.sh submit
 
 ### Delegating your voting power
 
-In order to withdraw your SPO rewards you will need to participate in Cardano Governance by delegating your voting power. You have 4 possibilities when choosing how you wish to participate, listed below. Along with these you can also register your stake address as a DRep and participate in Governance directly as your own representative.
+In order to withdraw your SPO rewards you will need to participate in Cardano Governance by delegating your voting
+power. You have 4 possibilities when choosing how you wish to participate, listed below. Along with these you can also
+register your stake address as a DRep and participate in Governance directly as your own representative.
 
 1. delegate to a DRep who can vote on your behalf
 1. delegate to a DRep script who can vote on your behalf
@@ -803,7 +816,8 @@ scripts/tx.sh submit
 
 ### Vote on a governance action as a SPO
 
-Running a Stake Pool requires participation in Cardano governance. From _time to time_ you will need to cast your SPO vote for various governance actions.
+Running a Stake Pool requires participation in Cardano governance. From _time to time_ you will need to cast your SPO
+vote for various governance actions.
 
 ```
 # PRODUCER: Query the govern action id then build the vote
@@ -824,8 +838,6 @@ scripts/tx.sh vote_sign
 # PRODUCER: Submit the signed transaction 
 scripts/tx.sh submit
 ```
-
----
 
 ### Retiring your Stake Pool
 
@@ -852,6 +864,8 @@ scripts/tx.sh sign --signing-key-file cardano-node/keys/payment.skey --signing-k
 # COPY: copy temp/tx.signed to cold
 
 ```
+
+---
 
 ## Registering a DRep
 
@@ -924,7 +938,8 @@ scripts/tx.sh submit
 
 ### Vote on a governance action as a DRep
 
-Being a DRep requires participation in Cardano governance. From _time to time_ you will need to cast your DRep vote for various governance actions.
+Being a DRep requires participation in Cardano governance. From _time to time_ you will need to cast your DRep vote for
+various governance actions.
 
 ```
 # PRODUCER: Query the govern action id then build the vote
@@ -945,6 +960,8 @@ scripts/tx.sh vote_sign /home/upstream/Cardano/cardano-node/keys/keys/drep.skey
 # PRODUCER: Submit the signed transaction 
 scripts/tx.sh submit
 ```
+
+---
 
 ## Registering a Committee member
 
@@ -1031,9 +1048,11 @@ scripts/tx.sh sign --signing-key-file "/home/upstream/Cardano/cardano-node/keys/
 scripts/tx.sh submit
 ```
 
+---
+
 ## Voting
 
-Although voting methods are detailed above the new process makes it easier to build transactions:
+Although voting methods are detailed above this updated process makes it easier to build transactions:
 
 ```
 # COPY: Create you public rational named rationale-GOV_ACTION_ID-GOV_ACTION_INDEX.jsonld and publish to a public location
@@ -1053,7 +1072,7 @@ scripts/tx.sh submit
 
 ---
 
-h2: ## BlockFrost SPO Icebreaker
+## BlockFrost SPO Icebreaker
 
 Installed on a Relay connected to your block producing SPOs topology.
 
@@ -1069,47 +1088,125 @@ blockfrost-platform --version
  ```
 
 You can review icebreaker status using the BlockFrost UI:
+
 - https://blockfrost.grafana.net/public-dashboards/8d618eda298d472a996ca3473ab36177
 - https://platform.blockfrost.io/verification
 
+---
+
 ## Midnight Validator
 
+If your running a block producing Stake Pool on the Preview network, you can opt to run a Midnight block producer.
+Following the current guides from Midnight testnet guides to deploy alongside the Cardano Preview network.
+
+- [Midnight Docs - How to become a Midnight Validator](https://docs.midnight.network/validate/run-a-validator/)
+- [Midnight GitHub - Docker compose](https://github.com/midnightntwrk/midnight-node-docker/tree/main)
+- [Midnight Monitoring - LiveView](https://github.com/Midnight-Scripts/Midnight-Live-View/blob/main/LiveView.sh)
+
+### Testnet Installation
+
+For installation within our toolchain, install the above dependencies, clone the Midnight repository and follow the
+setup docs.
+
+- [Install Docker Engine](https://docs.docker.com/engine/install/)
+- [Install Docker Compose](https://docs.docker.com/compose/install/)
+- [Install direnv](https://direnv.net/docs/installation.html)
+
 ```
-# Start and restarting containers
+# Setup directory and clone the repo
+source script/common.sh
+cd $NODE_HOME && mkdir cardano-midnight && cd cardano-midnight
+git clone https://github.com/midnightntwrk/midnight-node-docker.git .
+
+# Follow the midnight docs for full setup instructions
+# Launch wizard used for configurations once all partner services are up and running
+./midnight-node.sh wizards --help
+ 
+# Then you can start and restart containers
 docker compose -f ./compose-partner-chains.yml -f ./compose.yml -f ./proof-server.yml up -d
 docker compose -f ./compose-partner-chains.yml -f ./compose.yml -f ./proof-server.yml restart
+```
 
-# Watch logs for each service
+### Validate your Midnight node keys
+
+Once you have completed the registration steps and all services are operational, you can validate your node operations
+and registration by querying the local rpc.
+
+Note you MUST modify the APPEND_ARGS in `.envrc` or author RPC calls will fail:
+
+```
+export APPEND_ARGS="--validator --allow-private-ip --pool-limit 10 --trie-cache-size 0 --prometheus-external --unsafe-rpc-external --rpc-methods=Unsafe --rpc-cors all"
+```
+
+Example registration at epoch 997 will return the validator list with your sidechain_pub_key present. Search the results
+to ensure you are present and the 'isValid' parameter is true.
+
+```
+# Query sidechain status
+curl -L -X POST -H "Content-Type: application/json" -d '{
+    "jsonrpc": "2.0",
+    "method": "sidechain_getStatus",
+    "params": [997],
+    "id": 1
+}' http://127.0.0.1:9944 | jq
+
+# Query the validators and find your sidechain_pub_key
+curl -L -X POST -H "Content-Type: application/json" -d '{
+    "jsonrpc": "2.0",
+    "method": "sidechain_getAriadneParameters",
+    "params": [999],
+    "id": 1
+}' http://127.0.0.1:9944 | jq
+```
+
+To confirm your Midnight Validator keys are configure correctly query the author_hasKey for each key:
+
+```
+# Validate the sidechain_pub_key
+curl -L -X POST -H "Content-Type: application/json" -d '{
+    "jsonrpc": "2.0",
+    "method": "author_hasKey",
+    "params": ["<KEY>", "crch"],
+    "id": 1
+}' http://127.0.0.1:9944 | jq
+
+# Validate the aura_pub_key
+curl -L -X POST -H "Content-Type: application/json" -d '{
+    "jsonrpc": "2.0",
+    "method": "author_hasKey",
+    "params": ["<KEY>", "aura"],
+    "id": 1
+}' http://127.0.0.1:9944 | jq
+
+# Validate the grandpa_pub_key
+curl -L -X POST -H "Content-Type: application/json" -d '{
+    "jsonrpc": "2.0",
+    "method": "author_hasKey",
+    "params": ["<KEY>", "gran"],
+    "id": 1
+}' http://127.0.0.1:9944 | jq
+```
+
+### Monitoring Midnight node
+
+Once running you can monitor you midnight node using the docker logs and the community tool ./LiveView.sh linked above.
+
+```
+# Enter the node shell
+docker exec -it <CONTAINER_ID> bash
+
+# Watch logs for each midnight service
 docker logs -f --tail 100 cardano-ogmios
 docker logs -f --tail 100 cardano-db-sync
 docker logs -f --tail 100 db-sync-postgres
 docker logs -f --tail 100 cardano-node
 docker logs -f --tail 100 midnight-node
 
-# Launch wizard used for configurations
-./midnight-node.sh wizards --help
-
-# Enter the node shell
-./midnight-shell.sh
+# LiveView tool is our recommended way to monitor your Midnight producer
+./LiveView.sh
 ```
 
-```
-# Query sidechain status
-curl -L -X POST -H "Content-Type: application/json" -d '{
-      "jsonrpc": "2.0",
-      "method": "sidechain_getStatus",
-      "params": [997],
-      "id": 1
-    }' https://rpc.testnet-02.midnight.network | jq
-    
-# Query validator committee for n + 2 epochs
-curl -L -X POST -H "Content-Type: application/json" -d '{
-      "jsonrpc": "2.0",
-      "method": "sidechain_getAriadneParameters",
-      "params": [997],
-      "id": 1
-    }' https://rpc.testnet-02.midnight.network | jq
-```
+---
 
 ## Repository info
 
@@ -1144,9 +1241,11 @@ Usage: query.sh [
 
 ### Contributing
 
-Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are greatly appreciated.
+Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any
+contributions you make are greatly appreciated.
 
-If you have a suggestion that would make this plugin better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement". Don't forget to give the project a star! Thanks again!
+If you have a suggestion that would make this plugin better, please fork the repo and create a pull request. You can
+also simply open an issue with the tag "enhancement". Don't forget to give the project a star! Thanks again!
 
 1. Fork the Project
 2. Create your Feature Branch (git checkout -b feature/AmazingFeature)
