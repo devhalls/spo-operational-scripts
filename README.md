@@ -96,9 +96,19 @@ Read through these options before proceeding to the installation.
 
 <details>
 <summary>env variables</summary>
-
 <table>
     <tbody>
+        <tr>
+            <td>
+                <code>COMPOSE_PROJECT_NAME</code>
+            </td>
+            <td>
+                <code>cardano</code>
+            </td>
+            <td>
+                <p>Used to name the docker container (only required if using docker)</p>
+            </td>
+        </tr>
         <tr>
             <td>
                 <code>NODE_NETWORK</code>
@@ -118,7 +128,7 @@ Read through these options before proceeding to the installation.
                 <code>NODE_VERSION</code>
             </td>
             <td>
-                <code>10.1.4</code><br/>
+                <code>10.5.3</code><br/>
             </td>
             <td>
                 <p>The current node version. Must be &gt the version defined here.</p>
@@ -132,7 +142,7 @@ Read through these options before proceeding to the installation.
                 <code>"/home/upstream/Cardano"</code>
             </td>
             <td>
-                <p>The home folder for your node.</p>
+                <p>The home folder for your node, usually the root of this repository.</p>
             </td>
         </tr>
         <tr>
@@ -182,10 +192,10 @@ Read through these options before proceeding to the installation.
                 <code>NODE_PORT</code>
             </td>
             <td>
-                <code>6000</code>
+                <code>7777</code>
             </td>
             <td>
-                <p>The nodes local port number.</p>
+                <p>The local node port.</p>
             </td>
         </tr>
         <tr>
@@ -196,18 +206,40 @@ Read through these options before proceeding to the installation.
                 <code>0.0.0.0</code>
             </td>
             <td>
-                <p>The nodes local host address.</p>
+                <p>The local node host address.</p>
             </td>
         </tr>
         <tr>
             <td>
-                <code>NODE_CARDANOSCAN_API</code>
+                <code>NODE_KOIOS_API</code>
             </td>
             <td>
-                <code>API key</code>
+                <code>API endpoint</code>
             </td>
             <td>
-                <p>A Cardanoscan.io API key used to fetch pool data displayed in Grafana.</p>
+                <p>API endpoint for koios, used to fetch pool data.</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <code>NODE_SANCHO_CC_API</code>
+            </td>
+            <td>
+                <code>API endpoint</code>
+            </td>
+            <td>
+                <p>API endpoint for sanchonet, used to fetch pool data if using sanchonet, replaces the NODE_KOIOS_API.</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <code>MITHRIL_VERSION</code>
+            </td>
+            <td>
+                <code>2517.1</code>
+            </td>
+            <td>
+                <p>Your mithril version. Must be &gt the version defined here.</p>
             </td>
         </tr>
         <tr>
@@ -267,7 +299,6 @@ Read through these options before proceeding to the installation.
         </tr>
     </tbody>
 </table>
-
 </details>
 
 ### Node install
@@ -673,7 +704,7 @@ sudo usermod -a -G upstream prometheus
 sudo nano /lib/systemd/system/prometheus-node-exporter.service
 ```
 
-To enable metrics from Cardanoscan API, set the env API key in NODE_CARDANOSCAN_API, then run the following commands:
+To enable metrics from external APIs, set the env API key in NODE_KOIOS_API and NODE_SANCHO_CC_API (if using sanchonet), then run the following commands:
 
 ```
 # MONITOR: create the pool.id file and paste in your 'Pool ID' which you can get from https://cardanoscan.io (or generate it on your cold device)
@@ -1265,11 +1296,6 @@ Distributed under the GPL-3.0 License. See LICENSE.txt for more information.
 - [Db-sync snapshots](https://update-cardano-mainnet.iohk.io/cardano-db-sync/index.html)
 - [Upstream SPO website](https://upstream.org.uk)
 - [Upstream Twitter](https://x.com/Upstream_ada)
-
----
-
-
-
-[Midnight Monitoring - LiveView](https://github.com/Midnight-Scripts/Midnight-Live-View/blob/main/LiveView.sh)
-[Cardano Node Guild Operators LiveView](https://cardano-community.github.io/guild-operators/Scripts/gliveview/)
-[Upstream Cardano Devopp Scripts](https://github.com/devhalls/spo-operational-scripts)
+- [Midnight Monitoring - LiveView](https://github.com/Midnight-Scripts/Midnight-Live-View/blob/main/LiveView.sh)
+- [Cardano Node Guild Operators LiveView](https://cardano-community.github.io/guild-operators/Scripts/gliveview/)
+- [Upstream Cardano Devopp Scripts](https://github.com/devhalls/spo-operational-scripts)

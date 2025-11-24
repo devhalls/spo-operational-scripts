@@ -57,14 +57,13 @@ query_params() {
 
 query_state() {
     exit_if_cold
-    # if [ ! -f $NETWORK_PATH/ledger.json ]; then
-        $CNCLI conway query ledger-state $NETWORK_ARG --socket-path $NETWORK_SOCKET_PATH > ledger.txt
-    # fi
-    exit 1
+    if [ ! -f $NETWORK_PATH/ledger.json ]; then
+        $CNCLI conway query ledger-state $NETWORK_ARG --socket-path $NETWORK_SOCKET_PATH > $NETWORK_PATH/ledger.json
+    fi
     if [ "$1" ]; then
-        cat $NETWORK_PATH/ledger.txt | jq -r ".$1" | tr -d '\n\r'
+        cat $NETWORK_PATH/ledger.json | jq -r ".$1" | tr -d '\n\r'
     else
-        cat $NETWORK_PATH/ledger.txt
+        cat $NETWORK_PATH/ledger.json
         echo ''
     fi
 }
