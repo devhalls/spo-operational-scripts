@@ -83,7 +83,7 @@ docker exec -it node bash
 # Restart a container e.g. prometheus
 ./docker/run.sh restart prometheus
 
-# Rebuld containers f changes have been made to compose OR .env file
+# Rebuld containers if changes have been made to compose OR .env file
 ./docker/run.sh up -d --build 
 ```
 
@@ -236,7 +236,7 @@ Read through these options before proceeding to the installation.
                 <code>MITHRIL_VERSION</code>
             </td>
             <td>
-                <code>2517.1</code>
+                <code>2524.0</code>
             </td>
             <td>
                 <p>Your mithril version. Must be &gt the version defined here.</p>

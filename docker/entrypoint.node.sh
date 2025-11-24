@@ -2,10 +2,12 @@
 set -e
 
 echo "[ENTRYPOINT] Start container setup"
+echo "[ENTRYPOINT] Copy env.docker > env"
+cp $NODE_HOME/env.docker $NODE_HOME/env
+source $NODE_HOME/env
 
-if [[ ! -f "$NODE_HOME/env" ]]; then
-    cp $NODE_HOME/env.example $NODE_HOME/env
-    source $NODE_HOME/env
+if ! command -v $CNNODE >/dev/null 2>&1; then
+    echo "[ENTRYPOINT] Installing"
     $NODE_HOME/scripts/node.sh install
     if [ "$MITHRIL_VERSION" ]; then
         $NODE_HOME/scripts/node.sh mithril download
@@ -16,10 +18,10 @@ else
 fi
 
 echo "[ENTRYPOINT] Open metric endpoints"
-if [[ ! -f "$NODE_HOME/cardano-node/config.json" ]]; then
+if [[ -f "$NODE_HOME/cardano-node/config.json" ]]; then
     sed -i $NODE_HOME/cardano-node/config.json -e "s/127.0.0.1/0.0.0.0/g"
 fi
-if [[ ! -f "$NODE_HOME/cardano-node/config-bp.json" ]]; then
+if [[ -f "$NODE_HOME/cardano-node/config-bp.json" ]]; then
     sed -i $NODE_HOME/cardano-node/config-bp.json -e "s/127.0.0.1/0.0.0.0/g"
 fi
 

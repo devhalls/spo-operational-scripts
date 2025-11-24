@@ -10,7 +10,7 @@ services:
         container_name: node
         restart: unless-stopped
         env_file:
-            - ./../env.example
+            - ./../env.docker
         ports:
             - "${NODE_PORT}:${NODE_PORT}"
         networks:
@@ -19,7 +19,7 @@ services:
             - "./../metadata:${NODE_HOME}/metadata"
             - "./../scripts:${NODE_HOME}/scripts"
             - "./../services:${NODE_HOME}/services"
-            - "./../env.example:${NODE_HOME}/env.example"
+            - "./../env.docker:${NODE_HOME}/env.docker"
             - "./entrypoint.node.sh:${NODE_HOME}/entrypoint.node.sh"
             - "./bin:${BIN_PATH}"
             - "./node:${NODE_HOME}"
