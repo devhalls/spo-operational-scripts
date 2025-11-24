@@ -664,7 +664,7 @@ scripts/node.sh restart_grafana
 
 # MONITOR: Edit your prometheus config to collect data from all your replays, then restart
 sudo nano /etc/prometheus/prometheus.yml
-scripts/node.sh restart_prometheus
+scripts/node.sh restart_prom
 
 # MONITOR: You may need to add the prometheus user to the folders group to avoid permission issues
 sudo usermod -a -G upstream prometheus
@@ -854,7 +854,7 @@ echo latest epoch for retirement is: ${maxRetirementEpoch}
 scripts/pool.sh generate_pool_dreg_cert <epoch>
 
 # COPY: copy pool.dereg to producer
-# PRODUCER: bbuild a tx with the dregistration certificate 
+# PRODUCER: build a tx with the dregistration certificate 
 scripts/tx.sh build 0 --certificate-file cardano-node/keys/pool.dereg
 
 # COPY: copy temp/tx.raw to cold
@@ -1267,3 +1267,9 @@ Distributed under the GPL-3.0 License. See LICENSE.txt for more information.
 - [Upstream Twitter](https://x.com/Upstream_ada)
 
 ---
+
+
+
+[Midnight Monitoring - LiveView](https://github.com/Midnight-Scripts/Midnight-Live-View/blob/main/LiveView.sh)
+[Cardano Node Guild Operators LiveView](https://cardano-community.github.io/guild-operators/Scripts/gliveview/)
+[Upstream Cardano Devopp Scripts](https://github.com/devhalls/spo-operational-scripts)

@@ -8,6 +8,7 @@
 #   generate_pool_dreg_cert (epoch <INT>) |
 #   generate_metadata_hash (url <STRING>) |
 #   rotate_kes (startPeriod <INT>) |
+#   new_kes (startPeriod <INT>) |
 #   get_pool_id [format <STRING<'hex'|'bech32'>>] |
 #   get_stake |
 #   get_stats |
@@ -24,6 +25,7 @@
 #   - generate_pool_dreg_cert) Generate pool registration certificate.
 #   - generate_metadata_hash) Generate pools metadata hash from the metadata.json url.
 #   - rotate_kes) Rotate the pool KES keys. Requires KES startPeriod as the first parameter.
+#   - new_kes) Generate a new pool KES counter. Only use if you need to reset the counter to resolve KES number if incorrect.
 #   - get_pool_id) Output the pool ID to $POOL_ID and display it on screen. Optionally pass in the format, defaults to hex.
 #   - get_stake) Retrieve pool stats from the blockchain.
 #   - get_stats) Retrieve pool stats from js.cexplorer.io.
@@ -196,6 +198,16 @@ pool_rotate_kes() {
     print 'POOL' "Copy node.cert and kes.skey back to your block producer node and restart it" $green
 }
 
+pool_new_kes_counter() {
+    exit_if_not_cold
+    exit_if_file_missing $NODE_VKEY
+    local counterValue="${1}"
+    $CNCLI conway node new-counter \
+        --cold-verification-key-file $NODE_VKEY \
+        --counter-value $counterValue \
+        --operational-certificate-issue-counter-file $NODE_COUNTER
+}
+
 pool_get_pool_id() {
     exit_if_not_cold
     exit_if_file_missing $NODE_VKEY
@@ -278,6 +290,7 @@ case $1 in
     generate_pool_dreg_cert) pool_generate_pool_dreg_cert "${@:2}" ;;
     generate_pool_meta_hash) pool_generate_pool_meta_hash "${@:2}" ;;
     rotate_kes) pool_rotate_kes "${@:2}" ;;
+    new_kes) pool_new_kes_counter "${@:2}" ;;
     get_pool_id) pool_get_pool_id "${@:2}" ;;
     get_info) pool_get_info ;;
     get_stake) pool_get_stake ;;
