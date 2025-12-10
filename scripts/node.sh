@@ -97,7 +97,7 @@ node_watch() {
 
 node_status() {
     # Default view
-    local selected="Services"
+    local selected="${1:-Services}"
     local counter=1
 
     # Process and display output every x second(s)
@@ -329,7 +329,7 @@ case $1 in
     stop) node_stop ;;
     restart) node_restart ;;
     watch) node_watch ;;
-    status) node_status ;;
+    status) node_status "${@:2}" ;;
     view) node_view "${@:2}" ;;
     version) node_version ;;
     restart_prom) node_restart_prom ;;

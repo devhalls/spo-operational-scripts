@@ -167,7 +167,7 @@ tx_pool_reg_raw() {
         $NETWORK_ARG \
         --witness-count 3 \
         --byron-witness-count 0 \
-        --protocol-params-file $NETWORK_PATH/params.json | awk '{ print $1 }')
+        --protocol-params-file $NETWORK_PATH/params.json | jq '.fee')
 
     txOut=$((${totalBalance} - ${stakePoolDeposit} - ${fee}))
 
@@ -292,7 +292,6 @@ tx_vote_sign() {
 # scripts/tx.sh build 0 --certificate-file 1 --certificate-file 2
 
 tx_in() {
-    paymentAddress=$(<$PAYMENT_ADDR)
     outputPath=$NETWORK_PATH/temp
     totalBalance=0
     txCount=0
@@ -325,11 +324,12 @@ tx_in() {
 
 tx_out() {
     amount=${1}
-    totalBalance=${2}
-    txCount=${3}
-    witnessCount=${4}
-    txIn=$(get_option --tx-in "${@:5}")
-    params=${@:7}
+    destinationAddress=${2}
+    totalBalance=${3}
+    txCount=${4}
+    witnessCount=${5}
+    txIn=$(get_option --tx-in "${@:6}")
+    params=${@:8}
 
     paymentAddress=$(<$PAYMENT_ADDR)
     currentSlot=$(bash $(dirname "$0")/query.sh tip slot)
@@ -373,8 +373,9 @@ tx_out() {
 
 tx_build() {
     amount=${1:-0}
-    witnessCount=${2}
-    params="${@:3}"
+    destination=${2}
+    witnessCount=${3}
+    params="${@:4}"
 
     # Calculate tx input.
     txInput=$(tx_in)
@@ -383,7 +384,7 @@ tx_build() {
     txIn=$(get_param "$txInput" "txIn")
 
     # Calculate tx fee and tx.raw.
-    txOutput=$(tx_out $amount $totalBalance $txCount $witnessCount $txIn $params)
+    txOutput=$(tx_out $amount $destination $totalBalance $txCount $witnessCount $txIn $params)
 
     fee=$(get_param "$txOutput" "fee")
     txRaw=$(get_param "$txOutput" "txRaw")

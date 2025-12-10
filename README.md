@@ -587,9 +587,9 @@ scripts/pool.sh generate_pool_meta_hash
 scripts/query.sh params minPoolCost
 
 # COLD: Gerenate pool registration certificate and pool delegate certificate
-scripts/pool.sh generate_pool_reg_cert <pledge>, <cost>, <margin>, <relayAddr>, <relayPort>, <metaUrl>, <metaHash>
+scripts/pool.sh generate_pool_reg_cert <pledge> <cost> <margin> <metaUrl> --relay <relayAddr1>:<relayPort1> --relay <relayAddr2>:<relayPort2>
 scripts/address.sh generate_stake_del_cert 
-
+ 
 # COPY: pool.cert and deleg.cert to your producer node
 # PRODUCER: build you pool cert raw transaction
 scripts/tx.sh pool_reg_raw
@@ -784,7 +784,7 @@ scripts/pool.sh generate_pool_meta_hash
 scripts/query.sh params minPoolCost
 
 # COLD: Gerenate pool registration certificate and pool delegate certificate
-scripts/pool.sh generate_pool_reg_cert <pledge>, <cost>, <margin>, <relayAddr>, <relayPort>, <metaUrl>, <metaHash>
+scripts/pool.sh generate_pool_reg_cert <pledge> <cost> <margin> <metaUrl> --relay <relayAddr1>:<relayPort1> --relay <relayAddr2>:<relayPort2>
 scripts/address.sh generate_stake_del_cert 
 
 # COPY: pool.cert and deleg.cert to your producer node
@@ -1152,10 +1152,14 @@ git clone https://github.com/midnightntwrk/midnight-node-docker.git .
 # Follow the midnight docs for full setup instructions
 # Launch wizard used for configurations once all partner services are up and running
 ./midnight-node.sh wizards --help
- 
+
 # Then you can start and restart containers
 docker compose -f ./compose-partner-chains.yml -f ./compose.yml -f ./proof-server.yml up -d
 docker compose -f ./compose-partner-chains.yml -f ./compose.yml -f ./proof-server.yml restart
+
+# If you need to edit postgres container files:
+docker exec -it db-sync-postgres bash -c "echo 'host    all    all    172.22.0.0/16    scram-sha-256' >> /var/lib/postgresql/data/pg_hba.conf"
+docker exec -it db-sync-postgres bash -c "echo 'host    all    all    172.2=5.0.0/16    scram-sha-256' >> /var/lib/postgresql/data/pg_hba.conf" 
 ```
 
 ### Validate your Midnight node keys
@@ -1173,19 +1177,22 @@ Example registration at epoch 997 will return the validator list with your sidec
 to ensure you are present and the 'isValid' parameter is true.
 
 ```
+# Query the Obmios service health
+curl -s localhost:1337/health | jq '.'
+
 # Query sidechain status
 curl -L -X POST -H "Content-Type: application/json" -d '{
     "jsonrpc": "2.0",
     "method": "sidechain_getStatus",
-    "params": [997],
+    "params": [],
     "id": 1
 }' http://127.0.0.1:9944 | jq
 
-# Query the validators and find your sidechain_pub_key
+# Query the validators a`nd find your sidechain_pub_key
 curl -L -X POST -H "Content-Type: application/json" -d '{
     "jsonrpc": "2.0",
     "method": "sidechain_getAriadneParameters",
-    "params": [999],
+    "params": [1127],
     "id": 1
 }' http://127.0.0.1:9944 | jq
 ```
@@ -1197,7 +1204,7 @@ To confirm your Midnight Validator keys are configure correctly query the author
 curl -L -X POST -H "Content-Type: application/json" -d '{
     "jsonrpc": "2.0",
     "method": "author_hasKey",
-    "params": ["<KEY>", "crch"],
+    "params": ["0x0207ccc3fd24dea709e98094d3593387ce5e9c58e51b5a0b41ac871570bd43530d", "crch"],
     "id": 1
 }' http://127.0.0.1:9944 | jq
 
@@ -1205,7 +1212,7 @@ curl -L -X POST -H "Content-Type: application/json" -d '{
 curl -L -X POST -H "Content-Type: application/json" -d '{
     "jsonrpc": "2.0",
     "method": "author_hasKey",
-    "params": ["<KEY>", "aura"],
+    "params": ["0xe65bd97af534423a866762dc54056170843b8085845f2bb11d76f7879e204650", "aura"],
     "id": 1
 }' http://127.0.0.1:9944 | jq
 
@@ -1213,17 +1220,36 @@ curl -L -X POST -H "Content-Type: application/json" -d '{
 curl -L -X POST -H "Content-Type: application/json" -d '{
     "jsonrpc": "2.0",
     "method": "author_hasKey",
-    "params": ["<KEY>", "gran"],
+    "params": ["0x01e2d8469d29736acc6f7e01aae9a8e0022dc2200d257f4a51bb3886740053d8", "gran"],
+    "id": 1
+}' http://127.0.0.1:9944 | jq
+
+curl -L -X POST -H "Content-Type: application/json" -d '{
+    "jsonrpc": "2.0",
+    "method": "system_peers",
+    "params": [],
+    "id": 1
+}' http://127.0.0.1:9944 | jq
+
+curl -L -X POST -H "Content-Type: application/json" -d '{
+    "jsonrpc": "2.0",
+    "method": "sidechain_getEpochCommittee",
+    "params": [245148],
     "id": 1
 }' http://127.0.0.1:9944 | jq
 ```
 
 ### Monitoring Midnight node
 
-Once running you can monitor you midnight node using the docker logs and the community tool ./LiveView.sh linked above.
+Once running, you can monitor the midnight node using the docker logs and the community tool ./LiveView.sh linked above.
 
 ```
-# Enter the node shell
+# Manage containers using the provided script to enter the container
+./midnight-shell.sh
+./cardano-cli.sh
+./reset-midnight.sh
+
+# Mannually enter the node shell
 docker exec -it <CONTAINER_ID> bash
 
 # Watch logs for each midnight service
