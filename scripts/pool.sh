@@ -92,8 +92,6 @@ pool_generate_pool_reg_cert() {
     exit_if_file_missing $VRF_VKEY
     exit_if_file_missing $STAKE_VKEY
     exit_if_file_missing $STAKE_VKEY
-    exit_if_file_missing $NODE_HOME/metadata/metadata.json
-    exit_if_file_missing $NODE_HOME/metadata/metadataHash.txt
     exit_if_empty "${1}" "1 pledge"
     exit_if_empty "${2}" "2 cost"
     exit_if_empty "${3}" "3 margin"
@@ -106,13 +104,18 @@ pool_generate_pool_reg_cert() {
     local cost="${2}"
     local margin="${3}"
     local metaUrl="${4}"
+    local relayType=$(get_option --type "$@")
+
+    pool_generate_pool_meta_hash $metaUrl
+    exit_if_file_missing $NODE_HOME/metadata/metadata.json
+    exit_if_file_missing $NODE_HOME/metadata/metadataHash.txt
     local metaLocal=$NODE_HOME/metadata/metadata.json
     local metaHash=$(cat $NODE_HOME/metadata/metadataHash.txt)
-    local relayType=$(get_option --type "$@")
 
     # Format the relays
     local relayArg=''
     local relays=$(get_option --relay "$@")
+    echo $relays
     read -ra relayParts <<< "$relays"
     if [ "${#relayParts[@]}" -eq 2 ]; then
         IFS=':' read -r ip port <<< "${relays[0]}"
@@ -167,7 +170,7 @@ pool_generate_pool_dreg_cert() {
 
 pool_generate_pool_meta_hash() {
     exit_if_not_producer
-    exit_if_empty "${1}" "1 urls"
+    exit_if_empty "${1}" "1 url"
     local outputFileJson="$(dirname "$0")/../metadata/metadata.json"
     local outputFileHash="$(dirname "$0")/../metadata/metadataHash.txt"
     wget -O $outputFileJson ${1}
