@@ -3,6 +3,7 @@
 #   install [...params] |
 #   update [...params] |
 #   mithril [...params] |
+#   exec [...params] |
 #   run |
 #   start |
 #   stop |
@@ -27,6 +28,7 @@
 #   - install) Installs a Cardano node and all dependencies. Pass additional params to this command to call specific install functions.
 #   - update) Updates the current node version. Pass additional params to this command to call specific install functions.
 #   - mithril) Download binaries and sync your node. Pass additional params to this command to call specific install functions.
+#   - exec) Run $CNCLI with all passed args.
 #   - run) Run the cardano node based on the $NODE_TYPE.
 #   - start) Start the node systemctl service.
 #   - stop) Stop the node systemctl service.
@@ -46,6 +48,10 @@
 #   - help) View this files help. Default value if no option is passed.
 
 source "$(dirname "$0")/common.sh"
+
+node_exec() {
+    $CNCLI "${@}"
+}
 
 node_run() {
     if [ "${NODE_TYPE}" == "relay" ]; then
@@ -107,7 +113,7 @@ node_status() {
         printf "\e[2J"
 
         # Render the display title
-        echo -e "\n${orange}UPSTREAM Stake Pool - ${selected}${nc} ($NODE_NETWORK:$NODE_TYPE)\n"
+        echo -e "\n${orange}Stake Pool - ${selected}${nc} ($NODE_NETWORK:$NODE_TYPE)\n"
 
         # Render the display based on selected view
         case $selected in
@@ -324,6 +330,7 @@ case $1 in
     install) bash $(dirname "$0")/node/install.sh "${@:2}" ;;
     update) bash $(dirname "$0")/node/update.sh "${@:2}" ;;
     mithril) bash $(dirname "$0")/node/mithril.sh "${@:2}" ;;
+    exec) node_exec "${@:2}" ;;
     run) node_run ;;
     start) node_start ;;
     stop) node_stop ;;

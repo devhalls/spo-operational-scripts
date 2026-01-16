@@ -1,5 +1,5 @@
 #!/bin/bash
-# Usage: tx.sh [
+# Usage: tx.sh (
 #   stake_reg_raw |
 #   stake_reg_sign |
 #   stake_vote_reg_raw |
@@ -8,11 +8,11 @@
 #   pool_withdraw_raw |
 #   drep_reg_raw |
 #   drep_reg_sign |
-#   vote_raw |
-#   vote_sign [?voteKey] |
+#   vote_raw [witnesses <INT>] |
+#   vote_sign [voteKey <STRING<'node'|'drep'|'cc'>>] |
 #   submit |
 #   help [?-h]
-# ]
+# )
 #
 # Info:
 #
@@ -258,34 +258,55 @@ tx_drep_reg_sign() {
 
 tx_vote_raw() {
     exit_if_not_producer
-    votePath=$NETWORK_PATH/temp/vote.raw
+    local witnesses=${1:-2}
+    local tempPath=$NETWORK_PATH/temp
+    local votePath=$tempPath/vote.raw
+    local outPath=$tempPath/tx.signed
+    exit_if_file_missing $votePath
 
     $CNCLI conway transaction build \
         $NETWORK_ARG --socket-path $NETWORK_SOCKET_PATH \
         --tx-in $($CNCLI query utxo --address $(<$PAYMENT_ADDR) $NETWORK_ARG --socket-path $NETWORK_SOCKET_PATH --output-json | jq -r 'keys[0]') \
         --change-address $(<$PAYMENT_ADDR) \
         --vote-file $votePath \
-        --witness-override 2 \
+        --witness-override $witnesses \
         --out-file $NETWORK_PATH/temp/tx.raw
 
-    rm $votePath
-    print 'TX' "File output: $NETWORK_PATH/temp/tx.raw" $green
+    if [[ $? -eq 0 ]]; then
+        rm $votePath
+        print 'TX' "File output: $outPath" $green
+    else
+        print 'TX' "Failed to build transaction from $votePath" $red
+    fi
 }
 
 tx_vote_sign() {
     exit_if_not_cold
-    keyFile=${1}
-    tempPath=$NETWORK_PATH/temp
-    votePath=$NETWORK_PATH/temp/tx.raw
+    local keyFile=${1:-'node'}
+    local tempPath=$NETWORK_PATH/temp
+    local votePath=$tempPath/tx.raw
+    local outPath=$tempPath/tx.signed
+    exit_if_file_missing $votePath
+
+    local verificationArg=
+        case $keyFile in
+            "node") verificationArg="--signing-key-file $NODE_KEY" ;;
+            "drep") verificationArg="--signing-key-file $DREP_KEY" ;;
+            "cc") verificationArg="--signing-key-file $CC_HOT_KEY" ;;
+        esac
 
     $CNCLI conway transaction sign \
-        --tx-body-file $tempPath/tx.raw \
-        --signing-key-file $keyFile \
+        --tx-body-file $votePath \
+        $verificationArg \
         --signing-key-file $PAYMENT_KEY \
-        --out-file $tempPath/tx.signed
+        --out-file $outPath
 
-    rm $tempPath/tx.raw
-    print 'TX' "File output: $tempPath/tx.signed" $green
+    if [[ $? -eq 0 ]]; then
+        rm $votePath
+        print 'TX' "File output: $outPath" $green
+    else
+        print 'TX' "Failed to sign transaction at $outPath" $red
+    fi
 }
 
 # @todo complete new functions for tx building below
@@ -429,7 +450,7 @@ case $1 in
     pool_withdraw_raw) tx_pool_withdraw_raw ;;
     drep_reg_raw) tx_drep_reg_raw ;;
     drep_reg_sign) tx_drep_reg_sign ;;
-    vote_raw) tx_vote_raw ;;
+    vote_raw) tx_vote_raw "${@:2}" ;;
     vote_sign) tx_vote_sign "${@:2}" ;;
     in) tx_in "${@:2}" ;;
     out) tx_out "${@:2}" ;;

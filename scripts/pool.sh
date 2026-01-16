@@ -96,6 +96,7 @@ pool_generate_pool_reg_cert() {
     exit_if_empty "${2}" "2 cost"
     exit_if_empty "${3}" "3 margin"
     exit_if_empty "${4}" "4 metaUrl"
+    exit_if_empty "${5}" "5 metaHash"
     exit_if_empty "$(get_option --relay "$@")" "--relay metaUrl"
     if [ -f $POOL_CERT ]; then
         confirm "Certificate already exist! 'yes' to overwrite, 'no' to cancel"
@@ -104,13 +105,8 @@ pool_generate_pool_reg_cert() {
     local cost="${2}"
     local margin="${3}"
     local metaUrl="${4}"
+    local metaHash="${5}"
     local relayType=$(get_option --type "$@")
-
-    pool_generate_pool_meta_hash $metaUrl
-    exit_if_file_missing $NODE_HOME/metadata/metadata.json
-    exit_if_file_missing $NODE_HOME/metadata/metadataHash.txt
-    local metaLocal=$NODE_HOME/metadata/metadata.json
-    local metaHash=$(cat $NODE_HOME/metadata/metadataHash.txt)
 
     # Format the relays
     local relayArg=''

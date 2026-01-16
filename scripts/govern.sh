@@ -1,10 +1,11 @@
 #!/bin/bash
 # Usage: govern.sh (
 #   action (govActionId <STRING>) |
-#   vote (govActionId <STRING>) (govActionIndex <INT>) (decision <STRING>) [keyFile <STRING>] |
-#   vote_json (govActionId <STRING>) (govActionIndex <INT>) (decision <STRING>) (url <STRING>) |
+#   vote (govActionId <STRING>) (govActionIndex <INT>) (decision <STRING>) [anchorUrl <STRING>] [anchorHash <STRING>] [keyFile <'node'|'drep'|'cc'>] |
+#   hash (anchorUrl <STRING>) |
+#   id_CIP129 [type <STRING<'drep1'|'drep_script1'|'cc_hot1'|'cc_hot_script1'|'cc_cold1'|'cc_cold_script1'>>]
 #   drep_id [format <STRING<'--output-bech32'|'--output-hex'>>] |
-#   drep_id_CIP129 [type <STRING<'drep1'|'drep_script1'|'cc_hot1'|'cc_hot_script1'|'cc_cold1'|'cc_cold_script1'>>]
+#   drep_state |
 #   drep_keys |
 #   drep_cert (url <STRING>) [deposit <BOOLEAN>] |
 #   cc_cold_keys |
@@ -17,9 +18,11 @@
 # Info:
 #
 #   - action) Query the blockchain for a gov action info by its tx ID. Expects a govActionId param.
-#   - vote) Cast a vote for the passed params. keyFile defaults to 'node' assuming a pool vote. Can be 'node' | 'drep' | 'cc'.
-#   - vote_json) Cast a vote for the passed params. Same as vote but includes anchor url and json format submission.
-#   - drep_id) Retrieve the DReps id. Optionally pass the format, defaults to bech32.
+#   - vote) Cast a vote for the passed params, keyFile defaults to 'node' assuming a pool vote. Can be 'node' | 'drep' | 'cc'.
+#   - hash) Hash a CIP108 file from its anchor URL, to use when you vote.
+#   - id_CIP129) Retrieve CIP129 for DRep or cc hot / cold keys.
+#   - drep_id) Retrieve the DReps id. Optionally pass the format '--output-bech32'|'--output-hex', defaults to bech32.
+#   - drep_state) Retrieve your DRep state.
 #   - drep_keys) Generate DRep keys.
 #   - drep_cert) Generate DRep certificate expecting the passed url for the drep metadata json. Optionally pass second param to update-certificate.
 #   - cc_cold_keys) Generate CC cold keys.
@@ -39,11 +42,6 @@ govern_action() {
         jq -r --arg govActionId "$govActionId" '.proposals | to_entries[] | select(.value.actionId.txId | contains($govActionId)) | .value'
 }
 
-govern_state() {
-    exit_if_cold
-    $CNCLI conway query drep-state --drep-key-hash $(govern_drep_id hex) $NETWORK_ARG --socket-path $NETWORK_SOCKET_PATH
-}
-
 govern_vote() {
     exit_if_not_cold
     exit_if_empty "${1}" "1 govActionId"
@@ -52,97 +50,54 @@ govern_vote() {
     local govActionId=${1}
     local govActionIndex=${2}
     local decision=${3}
-    local keyFile=${4:-'node'}
+    local anchor=${4}
+    local anchorHash=${5}
+    local keyFile=${6:-'node'}
     local outputPath=$NETWORK_PATH/temp/vote.raw
+    local anchorArg
     if [ "$decision" != "yes" ] && [ "$decision" != "no" ] && [ "$decision" != "abstain" ]; then
         print 'GOVERN' "Incorrect decision value $decision: allowed values 'yes' | 'no' | 'abstain'" $red
         exit 1
     fi
 
-    local verification_arg=
+    if [[ -n "$anchor" ]]; then
+        anchorArg="--anchor-url $anchor --anchor-data-hash $anchorHash"
+    fi
+
+    local verificationArg=
         case $keyFile in
-            "node") verification_arg="--cold-verification-key-file $NODE_VKEY" ;;
-            "drep") verification_arg="--drep-verification-key-file $DREP_VKEY" ;;
-            "cc") verification_arg="--cc-hot-verification-key-file $CC_HOT_VKEY" ;;
+            "node") verificationArg="--cold-verification-key-file $NODE_VKEY" ;;
+            "drep") verificationArg="--drep-verification-key-file $DREP_VKEY" ;;
+            "cc") verificationArg="--cc-hot-verification-key-file $CC_HOT_VKEY" ;;
         esac
 
     $CNCLI conway governance vote create \
         --$decision \
         --governance-action-tx-id "$govActionId" \
         --governance-action-index "$govActionIndex" \
-        $verification_arg \
+        $verificationArg \
+        $anchorArg \
         --out-file $outputPath
 
     print 'GOVERN' "Vote created for $keyFile. Voted: $decision. Output: $outputPath" $green
 }
 
-govern_vote_json() {
-    # @todo test this vote json function?
-    exit_if_not_cold
-    exit_if_empty "${1}" "1 govActionId"
-    exit_if_empty "${2}" "2 govActionIndex"
-    exit_if_empty "${3}" "3 decision"
-    exit_if_empty "${4}" "4 url"
-    local govActionId=${1}
-    local govActionIndex=${2}
-    local decision=${3}
-    local url=${4}
-    local urlFile=$NETWORK_PATH/temp/rationale.jsonld
-    local voteJson=$NETWORK_PATH/temp/vote.json
-    local outputPath=$NETWORK_PATH/temp/vote.wit
-    curl -L -o "$urlFile" "$url"
-    local actionType=$(govern_action "$govActionId" | jq -r '.proposalProcedure.govAction.tag')
-    local urlHash=$($CNCLI hash anchor-data --file-text "$urlFile")
-    case "$actionType" in
-      MotionNoConfidence)  actionType="motion_no_confidence" ;;
-      CommitteeChange)     actionType="committee_update" ;;
-      ConstitutionUpdate)  actionType="constitution_update" ;;
-      HardForkInitiation)  actionType="hard_fork_initiation" ;;
-      ParameterChange)     actionType="parameter_change" ;;
-      TreasuryWithdrawals) actionType="treasury_withdrawal" ;;
-      InfoAction)          actionType="info" ;;
-    esac
+govern_hash() {
+    exit_if_cold
+    exit_if_empty "${1}" "1 anchor url"
+    local outputFileJson="$NETWORK_PATH/temp/anchor.json"
+    local outputFileHash="$NETWORK_PATH/temp/anchor.txt"
+    wget -O $outputFileJson ${1}
+    exit_if_file_missing $outputFileJson
 
-    # Make the json file
-    jq -n \
-      --arg drep "$(govern_drep_id hex)" \
-      --arg txid "$govActionId" \
-      --argjson index $govActionIndex \
-      --arg vote "$decision" \
-      --arg type "$actionType" \
-      --arg url "$url" \
-      --arg hash "$urlHash" \
-      '{
-        "61284": [
-          {
-            "govActionId": {
-              "type": $type,
-              "txId": $txid,
-              "govActionIndex": $index
-            },
-            "vote": $vote,
-            "anchor": {
-              "url": $url,
-              "dataHash": $hash
-            }
-          }
-        ]
-      }' > $voteJson
+    $CNCLI hash anchor-data \
+         --file-text "${outputFileJson}" >"${outputFileHash}"
 
-      cat $voteJson
+    rm $outputFileJson
+    print 'GOVERN' "Anchor metadata hash created at $outputFileHash" $green
 }
 
-govern_drep_id() {
-    exit_if_not_producer
-    local format="${1:-"--output-bech32"}"
-    $CNCLI conway governance drep id \
-        --drep-verification-key-file $DREP_VKEY \
-        $format \
-        --out-file $DREP_ID
-    cat $DREP_ID
-}
-
-govern_drep_id_CIP129() {
+govern_id_CIP129() {
     exit_if_not_producer
     local type=${1:-drep1}
 	local hexId=$($CNBECH32 <<< "$(govern_drep_id)")
@@ -156,6 +111,21 @@ govern_drep_id_CIP129() {
 		*) print "ERROR" "Unable to convert ${type}"; exit 1 ;;
 	esac
     echo "${formatted}"
+}
+
+govern_drep_id() {
+    exit_if_not_producer
+    local format="${1:-"--output-bech32"}"
+    $CNCLI conway governance drep id \
+        --drep-verification-key-file $DREP_VKEY \
+        $format \
+        --out-file $DREP_ID
+    cat $DREP_ID
+}
+
+govern_drep_state() {
+    exit_if_cold
+    $CNCLI conway query drep-state --drep-key-hash $(govern_drep_id hex) $NETWORK_ARG --socket-path $NETWORK_SOCKET_PATH
 }
 
 govern_generate_drep_keys() {
@@ -259,6 +229,7 @@ case $1 in
     action) govern_action "${@:2}" ;;
     state) govern_state ;;
     vote) govern_vote "${@:2}" ;;
+    hash) govern_hash "${@:2}" ;;
     vote_json) govern_vote_json "${@:2}" ;;
     drep_id) govern_drep_id "${@:2}" ;;
     drep_id_CIP129) govern_drep_id_CIP129 "${@:2}" ;;

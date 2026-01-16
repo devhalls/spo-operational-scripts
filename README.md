@@ -1,24 +1,50 @@
 # Cardano Stake Pool Operator (SPO) scripts
 
-A collection of scripts and procedures for operating a Stake Pool, DRep or a Cardano node. Developed by Upstream Stake
-Pool [UPSTR](https://upstream.org.uk).
+Scripts and procedures for installing and managing a Cardano node, Mithril node, Midnight node and operating credentials
+for a Stake Pool, DRep or Constitutional Committee member.
+
+[![Upstream][Upstream-shield]][Upstream-url]
+[![Cardano][Cardano-shield]][Cardano-url]
+[![Mithril][Mithril-shield]][Mithril-url]
+[![Midnight][Midnight-shield]][Midnight-url]
+
+For the community by Upstream Stake Pool [UPSTR](https://upstream.org.uk). Delegate to Upstream to help support our work.
+
+---
+
+### Get started
 
 <details>
-<summary>File tree</summary>
+<summary>Repository file tree</summary>
 
 ```
 tree --filesfirst -L 3
-.
+
 ├── LICENSE
 ├── README.md
+├── env.docker
 ├── env.example
+├── docker
+│   ├── config.prometheus.yml
+│   ├── docker-compose.yaml
+│   ├── Dockerfile.node
+│   ├── entrypoint.node.sh
+│   ├── exec.sh
+│   ├── fixture.sh
+│   ├── postgresql.conf
+│   ├── run.sh
+│   ├── script.sh
+│   └── test.sh
 ├── metadata
+│   ├── anchor.example.json
 │   ├── drep.example.json
-│   └── metadata.example.json
+│   └── spo.example.json
 ├── scripts
 │   ├── address.sh
 │   ├── common.sh
+│   ├── dbsync.sh
 │   ├── govern.sh
+│   ├── midnight.sh
 │   ├── network.sh
 │   ├── node.sh
 │   ├── pool.sh
@@ -27,75 +53,58 @@ tree --filesfirst -L 3
 │   └── node
 │       ├── build.sh
 │       ├── download.sh
+│       ├── icebreaker.sh
 │       ├── install.sh
 │       ├── mithril.sh
 │       └── update.sh
 └── services
+    ├── schema
+│       ├── migration-1-0000-20190730.sql
+│       ├── ...
+│       └── migration-4-0008-20240604.sql
+    ├── blockfrost-platform.service
     ├── cardano-node.service
+    ├── cardano-db-sync.service
     ├── grafana-mithril-dashboard.json
     ├── grafana-node-dashboard.json
     ├── mithril.service
     ├── ngrok.service
-    └── prometheus.yml
+    ├── pgpass
+    ├── prometheus.yml
+    └── squid.service
 ```
 
 </details>
-
 <details>
 <summary>Assumptions</summary>
 
 1. Your OS, LAN network, ports and user are already configured.
 2. The Ngrok script requires you to know how to set up your own ngrok account and endpoints.
-3. You are comfortable with cardano-node / cardano-cli and SPO requirements
-4. You are comfortable with Linux and managing networks and servers
-5. You are able to setup your cold node by copying the binaries, scripts and keys securely as required.
+3. You are comfortable with cardano-node / cardano-cli and general SPO requirements.
+4. You are comfortable with Linux and managing networks and servers.
+5. You are able to set up your cold node by copying the binaries, scripts and keys securely as required.
 
 </details>
 
----
-
-## Docker
-
-We use a docker container to run a local node simulation on testnets. This should not be used for mainnet.
-
-```
-# Build and start the docker containers
-./docker/run.sh up -d --build 
-
-# OPTIONAL: run fixtures to generate address credentials
-./docker/fixture.sh addresses
-```
-
-Once your containers are running you can run node operation scripts as usual:
-
-```
-# Run scripts in the container, e.g.
-./docker/script.sh node.sh view
-./docker/exec.sh node scripts/query.sh uxto
-
-# OR Connect to the cardano node container
-docker exec -it node bash
-```
-
-### Managing the containers
-
-```
-# Restart a container e.g. prometheus
-./docker/run.sh restart prometheus
-
-# Rebuld containers if changes have been made to compose OR .env file
-./docker/run.sh up -d --build 
-```
+1. [Node Installation](#node-installation)
+2. [Docker installation](#docker-installation)
+3. [Registering a Stake Pool](#registering-a-stake-pool)
+4. [Managing a Stake Pool](#managing-a-stake-pool)
+5. [Registering a DRep](#registering-a-drep)
+6. [Registering a Constitutional Committee member](#registering-a-constitutional-committee-member)
+7. [Mithril node](#mithril-node)
+7. [BlockFrost Icebreaker](#blockfrost-icebreaker)
+7. [Midnight Validator](#midnight-validator)
 
 ---
 
-## Node setup
+## Node Installation
 
 This table describes the env variables you most likely need to adjust to suit your system and their available options.
-Read through these options before proceeding to the installation.
+Read through these options before proceeding to the Node installation.
 
 <details>
-<summary>env variables</summary>
+<summary>ENV variables</summary>
 <table>
     <tbody>
         <tr>
@@ -303,46 +312,42 @@ Read through these options before proceeding to the installation.
 
 ### Node install
 
-> IMPORTANT - Skip the node install steps for docker environments
+> IMPORTANT - Skip the node install and mithril steps for local docker environments.
 
 Get started by creating a directory and pulling this repo, and edit the env file (see table below for env descriptions
 and configure).
 
-```
+```shell
 mkdir Cardano && cd Cardano
 git clone https://github.com/devhalls/spo-operational-scripts.git . 
 ```
 
 Create and edit your env file:
 
-```
+```shell
 cp -p env.example env && nano env
 ```
 
 When your env is configured, run the installation.
 
-```
+```shell
 scripts/node.sh install
 ```
 
-### Mithril db sync
-
-> IMPORTANT - Mithril snapshots are downloaded during docker installation and can be skipped for docker environments.
+### Mithril sync
 
 Once installation is complete, download the mithril binaries and run mithril sync.
 
-```
+```shell
 scripts/node.sh mithril download
 scripts/node.sh mithril sync
 ```
 
 ### Node start, stop and restart
 
-> IMPORTANT - Skip this step for docker environments and use docker scripts to start and stop the node.
+After installation is complete, you can start, stop or restart the node service.
 
-After installation is complete you can start, stop or restart the node service.
-
-```
+```shell
 scripts/node.sh start
 scripts/node.sh stop
 scripts/node.sh restart
@@ -351,18 +356,19 @@ scripts/node.sh restart
 ### Node update
 
 When you would like to update the node, edit the env with your new target NODE_VERSION and run the node update script.
+It's not recommended to 'downgrade' a node unless you are confident you know what you are doing.
 
-```
+```shell
 nano env
 scripts/node.sh update 
 ```
 
 ### Firewall
 
-This is an example of allowing the node port through a firewall, its expected you will secure your node as appropriate
+This is an example of allowing the node port through a firewall; it's expected you will secure your node as appropriate
 for mainnet releases.
 
-```
+```shell
 # Allow SSH
 sudo ufw allow OpenSSH
 
@@ -376,9 +382,45 @@ sudo ufw enable
 
 ---
 
+## Docker installation
+
+We use docker containers to run a local node simulations on Cardano testnets. Docker should not be used for your mainnet
+deployments.
+
+```shell
+# Build and start the docker containers
+./docker/run.sh up -d --build 
+
+# OPTIONAL: run fixtures to generate address credentials
+./docker/fixture.sh addresses
+```
+
+Once your containers are running, you can run any node operation scripts using the docker wrapper script:
+
+```shell
+# Run scripts in the container, e.g.
+./docker/script.sh node.sh view
+./docker/exec.sh node scripts/query.sh uxto
+
+# OR Connect to the cardano node container
+docker exec -it node bash
+```
+
+### Managing the containers
+
+```shell
+# Restart a container e.g. prometheus
+./docker/run.sh restart prometheus
+
+# Rebuld containers if changes have been made to compose OR .env file
+./docker/run.sh up -d --build 
+```
+
+---
+
 ## Registering a Stake Pool
 
-To register a stake pool you must have a running **fully synced** node. We can then generate the following assets:
+To register a stake pool, you must have a running **fully synced** node. We can then generate the following assets:
 
 <details>
 <summary>pool assets</summary>
@@ -522,12 +564,12 @@ To register a stake pool you must have a running **fully synced** node. We can t
 Start your pool registration by generating node keys and a node operational certificate, along with your KES keys and
 VRF keys.
 
-```
+```shell
 # PRODUCER: Query network params and take note of the 'KES period'
 scripts/query.sh params
 scripts/query.sh kes_period
 
-# COLD: Genreate node keys and operational certificate
+# COLD: Generate node keys and operational certificate
 scripts/pool.sh generate_kes_keys
 scripts/pool.sh generate_node_keys
 scripts/pool.sh generate_node_op_cert <KES period>
@@ -539,10 +581,10 @@ scripts/pool.sh generate_vrf_keys
 
 ### Generate payment and stake keys
 
-Create payment keys, stake keys and generate addresses from the keys. Ensure you fund your payment addres and query the
-chain to confirm your have UXTOs.
+Create payment keys, stake keys and generate addresses from the keys. Ensure you fund your payment address and query the
+chain to confirm you have UXTOs.
 
-```
+```shell
 # COLD: Generate payment and stake keys
 scripts/address.sh generate_payment_keys
 scripts/address.sh generate_stake_keys
@@ -559,7 +601,7 @@ scripts/query.sh uxto
 
 Create a stake address certificate and submit the transaction to complete the registration.
 
-```
+```shell
 # COLD: Get the stakeAddressDeposit value then generate a stake certificate
 scripts/query.sh params stakeAddressDeposit
 scripts/address.sh generate_stake_reg_cert <lovelace>
@@ -579,15 +621,15 @@ scripts/tx.sh submit
 
 ### Registering your stake pool
 
-Create a pool registration certificates and submit the transaction to complete the registration.
+Create a pool registration certificate and submit the transaction to complete the registration.
 
-```
+```shell
 # PRODUCER: Generate your metadata hash and take note along with the min pool cost
-scripts/pool.sh generate_pool_meta_hash
+scripts/pool.sh generate_pool_meta_hash <metaUrl>
 scripts/query.sh params minPoolCost
 
-# COLD: Gerenate pool registration certificate and pool delegate certificate
-scripts/pool.sh generate_pool_reg_cert <pledge> <cost> <margin> <metaUrl> --relay <relayAddr1>:<relayPort1> --relay <relayAddr2>:<relayPort2>
+# COLD: Generate pool registration certificate and pool delegate certificate
+scripts/pool.sh generate_pool_reg_cert <pledge> <cost> <margin> <metaUrl> <metaHash> --relay <relayAddr1>:<relayPort1> --relay <relayAddr2>:<relayPort2>
 scripts/address.sh generate_stake_del_cert 
  
 # COPY: pool.cert and deleg.cert to your producer node
@@ -605,14 +647,14 @@ scripts/tx.sh submit
 # COLD: Now you have registered your pool, get your pool.id
 scripts/pool.sh get_pool_id
 
-# COPY: pool.id to your producer node, and to your replay node 
+# COPY: pool.id to your producer node, and to your replay node for convince later. 
 ```
 
 ### Edit topology and restart the producer
 
-To complete pool registration edit your topology to suit your replay configuration and restart your producer node.
+To complete pool registration, edit your topology to suit your replay configuration and restart your producer node.
 
-```
+```shell
 # PRODUCER: Edit your typology and add your relay configuration
 nano cardano-node/topology.json
 
@@ -627,13 +669,17 @@ scripts/node.sh restart
 
 ## Managing a Stake Pool
 
-As an SPO there are a few things you must do to keep a producing block producing pool.
+As a Stake Pool Operator, there are a few things you must do to keep a producing block producing pool.
+
+When operating multiple nodes and networks, try
+our [SPO Monitoring Scripts](https://github.com/devhalls/spo-monitor-scripts) solution for easier day-to-day monitoring.
 
 ### Monitoring your pool
 
-Knowing what's going on under the hood is essential to running a node.
+Knowing what's going on under the hood is essential to running a node. The below commands offer a variety of data points
+to monitor.
 
-```
+```shell
 # Display the node service status
 scripts/node.sh status
 
@@ -665,12 +711,12 @@ scripts/query.sh metrics cardano_node_metrics_peerSelection_warm
 ### Monitoring with Grafana
 
 View your node state via Grafana dashboards makes it easy to manage your nodes. Once you have installed the necessary
-packages and configs restart your nodes and you can visit the dashboard.
+packages and configs, restart your nodes, and you can visit the dashboard.
 Dashboard: MONITOR_NODE_IP:3000
 Username: admin
 Password: admin (change your password after first login)
 
-```
+```shell
 # ALL NODES: Install prometheus explorer on all nodes
 scripts/node.sh install prometheus_explorer
 
@@ -704,9 +750,10 @@ sudo usermod -a -G upstream prometheus
 sudo nano /lib/systemd/system/prometheus-node-exporter.service
 ```
 
-To enable metrics from external APIs, set the env API key in NODE_KOIOS_API and NODE_SANCHO_CC_API (if using sanchonet), then run the following commands:
+To enable metrics from external APIs, set the env API key in NODE_KOIOS_API and NODE_SANCHO_CC_API (if using sanchonet),
+then run the following commands:
 
-```
+```shell
 # MONITOR: create the pool.id file and paste in your 'Pool ID' which you can get from https://cardanoscan.io (or generate it on your cold device)
 nano cardano-node/keys/pool.id
 
@@ -716,15 +763,15 @@ scripts/pool.sh get_stats
 # If successful (you see stats output) setup a crontab to fetch data periodically
 crontab -e
 
-# Get data from Cardanoscan every hour at 5 past the hour
+# Get data from external api every hour at 5 past the hour
 5 * * * * /home/upstream/Cardano/scripts/pool.sh get_stats >> /home/upstream/Cardano/cardano-node/logs/crontab.log 2>&1
 ```
 
 ### Rotate your KES
 
-You must rotate your KES keys every 90 days or you will not be able to produce blocks.
+You must rotate your KES keys every 90 days, or you will not be able to produce blocks.
 
-```
+```shell
 # PRODUCER: Check the current status and take note of the 'kesPeriod'
 scripts/query.sh kes
 scripts/query.sh kes_period
@@ -744,11 +791,11 @@ scripts/query.sh kes
 
 Checking when you are due to mint blocks is essential to running your stake pool.
 
-```
-# PRODUER: Check the next epoch leader schedule
+```shell
+# PRODUCER: Check the next epoch leader schedule
 scripts/query.sh leader next 
 
-# PRODUER: OR you can check the current epoch if needed
+# PRODUCER: OR you can check the current epoch if needed
 scripts/query.sh leader current
 
 # COPY: Copy the out put ready to past to your monitor nodes grafana csv file
@@ -758,8 +805,8 @@ sudo nano /usr/share/grafana/slots.csv
 
 ### Backing up your pool
 
-It's vitally import you make multiple backups of your node cold keys, this is what gives you control over your node. You
-can also backup your producer and relays to make redeployment simpler.
+It's vitally import you make multiple backups of your node cold keys. You can also back up your producer and relays to
+simplify redeployment.
 
 ```
 # COLD: Backup the keys.
@@ -775,17 +822,15 @@ can also backup your producer and relays to make redeployment simpler.
 
 ### Regenerate pool certificates
 
-When you need to update your pool metadata, min cost or other pool params you must regenerate your pool.cert and
-deleg.cert using the same steps as when you first created these.
+When you need to update your pool metadata, min cost or other pool params, you must regenerate your `pool.cert` using
+the same steps as when you first created these.
 
-```
+```shell
 # PRODUCER: Generate your metadata hash and take note along with the min pool cost
-scripts/pool.sh generate_pool_meta_hash
-scripts/query.sh params minPoolCost
+scripts/pool.sh generate_pool_meta_hash <metaUrl>
 
-# COLD: Gerenate pool registration certificate and pool delegate certificate
-scripts/pool.sh generate_pool_reg_cert <pledge> <cost> <margin> <metaUrl> --relay <relayAddr1>:<relayPort1> --relay <relayAddr2>:<relayPort2>
-scripts/address.sh generate_stake_del_cert 
+# COLD: Generate pool registration certificate with a cost=0
+scripts/pool.sh generate_pool_reg_cert <pledge> <cost> <margin> <metaUrl> <metaHash> --relay <relayAddr1>:<relayPort1> --relay <relayAddr2>:<relayPort2>
 
 # COPY: pool.cert and deleg.cert to your producer node
 # PRODUCER: build you pool cert raw transaction passing in 0 as a deposit for renewals
@@ -802,16 +847,15 @@ scripts/tx.sh submit
 
 ### Delegating your voting power
 
-In order to withdraw your SPO rewards you will need to participate in Cardano Governance by delegating your voting
-power. You have 4 possibilities when choosing how you wish to participate, listed below. Along with these you can also
-register your stake address as a DRep and participate in Governance directly as your own representative.
+You have four possibilities when choosing how you wish to participate, listed below. Along with these you can also
+register your stake address as a DRep and participate in Governance directly as your own representative:
 
 1. delegate to a DRep who can vote on your behalf
-1. delegate to a DRep script who can vote on your behalf
-2. delegate your voting power to auto abstain
-3. delegate your voting power to a vote of on-confidence
+2. delegate to a DRep script who can vote on your behalf
+3. delegate your voting power to auto abstain
+4. delegate your voting power to a vote of on-confidence
 
-```
+```shell
 # COLD: Generate your vote delegation certificate using one of the 4 options:
 scripts/address.sh generate_stake_vote_cert drep <drepId>
 scripts/address.sh generate_stake_vote_cert script <scriptHash>
@@ -832,7 +876,10 @@ scripts/tx.sh submit
 
 ### Withdrawing stake pool rewards
 
-```
+To withdraw your SPO rewards, you will need to participate in Cardano Governance by delegating your stake address
+voting power.
+
+```shell
 # PRODUCER: build you pool cert raw transaction
 scripts/tx.sh pool_withdraw_raw
 
@@ -850,12 +897,15 @@ scripts/tx.sh submit
 Running a Stake Pool requires participation in Cardano governance. From _time to time_ you will need to cast your SPO
 vote for various governance actions.
 
-```
+```shell
 # PRODUCER: Query the govern action id then build the vote
 scripts/govern.sh action <govActionId>
 
+# PRODUCER: Optionally generate your vote anchor hash.
+scripts/govern.sh hash <anchorUrl>
+
 # COLD: cast your vote on your cold machine
-scripts/govern.sh vote <govActionId> <govActionIndex> <'yes' | 'no' | 'abstain'>
+scripts/govern.sh vote <govActionId> <govActionIndex> <'yes' | 'no' | 'abstain'> <anchorUrl> <anchorHash>
 
 # COPY: vote.raw to your producer node
 # PRODUCER: build the raw transaction with vote.raw as input 
@@ -872,7 +922,9 @@ scripts/tx.sh submit
 
 ### Retiring your Stake Pool
 
-```
+If you decide you no longer wish to operate a stake pool, you can retire and claim back the registration deposit.
+
+```shell
 # PRODUCER: Get the retirement epoch window
 poolRetireMaxEpoch=$(scripts/query.sh params poolRetireMaxEpoch)
 epoch=$(scripts/query.sh tip epoch)
@@ -892,8 +944,8 @@ scripts/tx.sh build 0 --certificate-file cardano-node/keys/pool.dereg
 # COLD: sign the transaction with your payment and node keys
 scripts/tx.sh sign --signing-key-file cardano-node/keys/payment.skey --signing-key-file cardano-node/keys/node.skey
 
-# COPY: copy temp/tx.signed to cold
-
+# COPY: copy temp/tx.signed to cold and submit
+scripts/tx.sh submit 
 ```
 
 ---
@@ -947,7 +999,7 @@ To register as a DRep you must have a running **fully synced** node. We can then
 
 Start your DRep registration by generating keys and a DRep certificate.
 
-```
+```shell
 # PRODUCER: Generate DRep keys and ID
 scripts/govern.sh drep_keys
 scripts/govern.sh drep_id 
@@ -972,12 +1024,12 @@ scripts/tx.sh submit
 Being a DRep requires participation in Cardano governance. From _time to time_ you will need to cast your DRep vote for
 various governance actions.
 
-```
+```shell
 # PRODUCER: Query the govern action id then build the vote
 scripts/govern.sh action <govActionId>
 
 # COLD: cast your vote on your cold machine - to vote as a DRep ensure you pass the last param: 'drep'
-scripts/govern.sh vote <govActionId> <govActionIndex> <'yes' | 'no' | 'abstain'> drep
+scripts/govern.sh vote <govActionId> <govActionIndex> <'yes' | 'no' | 'abstain'> <anchorUrl> <anchorHash> drep
 
 # COPY: vote.raw to your producer node
 # PRODUCER: build the raw transaction with vote.raw as input 
@@ -985,7 +1037,7 @@ scripts/tx.sh vote_raw
 
 # COPY: tx.raw to your cold node 
 # COLD: Sign the vote transaction tx.raw
-scripts/tx.sh vote_sign /home/upstream/Cardano/cardano-node/keys/keys/drep.skey
+scripts/tx.sh vote_sign drep
 
 # COPY: tx.signed to your producer node
 # PRODUCER: Submit the signed transaction 
@@ -994,9 +1046,10 @@ scripts/tx.sh submit
 
 ---
 
-## Registering a Committee member
+## Registering a Constitutional Committee member
 
-To register as a DRep you must have a running **fully synced** node. We can then generate the following assets:
+To register as a Constitutional Committee member, you must have a running **fully synced** node. We can then generate
+the following assets:
 
 <details>
 <summary>Committee member assets</summary>
@@ -1081,58 +1134,46 @@ scripts/tx.sh submit
 
 ---
 
-## Voting
+## Mithril node
 
-Although voting methods are detailed above this updated process makes it easier to build transactions:
+To operate as a mithril signer, you must have a synced block producer and relay. Mithril signers must operate using a
+sentry architecture, where a mithril relay connects to the wider network and the mithril signer connects to the relay.
+However, on testnets we operate the Mithril signer directly and do not install a relay.
 
+### Mithril signer
+
+```shell
+# Check compatability with your nodes version
+scripts/node.sh mithril check_compatability
+
+# Edit the MITHRIL_VERSION in your env file
+nano env
+
+# Download the binaries
+scripts/node.sh mithril download
+
+# Install the signer env and service
+scripts/node.sh mithril install_signer_env
+scripts/node.sh mithril install_signer_service
 ```
-# COPY: Create you public rational named rationale-GOV_ACTION_ID-GOV_ACTION_INDEX.jsonld and publish to a public location
-# COLD: Then create the vote.json file as a DRep or SPO:
-scripts/govern.sh vote_json $GOV_ACTION_HEX $GOV_ACTION_INDEX abstain $RATIONALE_URL.jsonld 
 
-# COPY: vote.json to producer
-# PRODUCER: build your raw transaction
-scripts/tx.sh build 0 2 --metadata-json-file ~/Cardano/cardano-node/temp/vote.json
+### Mithril relay
 
-# COLD: sign the transaction
-scripts/tx.sh sign --signing-key-file ~/Cardano/cardano-node/keys/node.skey --signing-key-file ~/Cardano/cardano-node/keys/payment.skey
-
-# PRODUCER: send the transaction
-scripts/tx.sh submit
+```shell
+scripts/node.sh mithril install_squid
+scripts/node.sh mithril configure_squid
 ```
-
----
-
-## BlockFrost SPO Icebreaker
-
-Installed on a Relay connected to your block producing SPOs topology.
-
-```
-# RELAY: Download blockfrost and init
-scripts/node/icebreaker.sh download
-
-# RELAY: Install blockfrost service and start
-scripts/node/icebreaker.sh install
-
-# Check installed version
-blockfrost-platform --version
- ```
-
-You can review icebreaker status using the BlockFrost UI:
-
-- https://blockfrost.grafana.net/public-dashboards/8d618eda298d472a996ca3473ab36177
-- https://platform.blockfrost.io/verification
-
----
 
 ## Midnight Validator
 
-If your running a block producing Stake Pool on the Preview network, you can opt to run a Midnight block producer.
-Following the current guides from Midnight testnet guides to deploy alongside the Cardano Preview network.
+If you're running a block producing Stake Pool on the Preview network, you can opt to run as a Midnight validator.
+We will add full scripts here to cover Midnight installation soon. For now, you can follow the current guides from
+Midnight
+testnet documentation and the overview steps below.
 
-- [Midnight Docs - How to become a Midnight Validator](https://docs.midnight.network/validate/run-a-validator/)
-- [Midnight GitHub - Docker compose](https://github.com/midnightntwrk/midnight-node-docker/tree/main)
-- [Midnight Monitoring - LiveView](https://github.com/Midnight-Scripts/Midnight-Live-View/blob/main/LiveView.sh)
+- [Midnight Docs: How to become a Midnight Validator](https://docs.midnight.network/validate/run-a-validator/)
+- [Midnight GitHub: Docker compose](https://github.com/midnightntwrk/midnight-node-docker/tree/main)
+- [Midnight Monitoring: LiveView](https://github.com/Midnight-Scripts/Midnight-Live-View/blob/main/LiveView.sh)
 
 ### Testnet Installation
 
@@ -1144,7 +1185,7 @@ setup docs.
 - [Install direnv](https://direnv.net/docs/installation.html)
 
 ```
-# Setup directory and clone the repo
+# Setup directory and clone the midnight repo
 source script/common.sh
 cd $NODE_HOME && mkdir cardano-midnight && cd cardano-midnight
 git clone https://github.com/midnightntwrk/midnight-node-docker.git .
@@ -1157,7 +1198,7 @@ git clone https://github.com/midnightntwrk/midnight-node-docker.git .
 docker compose -f ./compose-partner-chains.yml -f ./compose.yml -f ./proof-server.yml up -d
 docker compose -f ./compose-partner-chains.yml -f ./compose.yml -f ./proof-server.yml restart
 
-# If you need to edit postgres container files:
+# If you need to edit postgres container files, e.g:
 docker exec -it db-sync-postgres bash -c "echo 'host    all    all    172.22.0.0/16    scram-sha-256' >> /var/lib/postgresql/data/pg_hba.conf"
 docker exec -it db-sync-postgres bash -c "echo 'host    all    all    172.2=5.0.0/16    scram-sha-256' >> /var/lib/postgresql/data/pg_hba.conf" 
 ```
@@ -1167,14 +1208,13 @@ docker exec -it db-sync-postgres bash -c "echo 'host    all    all    172.2=5.0.
 Once you have completed the registration steps and all services are operational, you can validate your node operations
 and registration by querying the local rpc.
 
-Note you MUST modify the APPEND_ARGS in `.envrc` or author RPC calls will fail:
+You MUST modify the APPEND_ARGS in `.envrc` or author RPC calls will fail:
 
 ```
 export APPEND_ARGS="--validator --allow-private-ip --pool-limit 10 --trie-cache-size 0 --prometheus-external --unsafe-rpc-external --rpc-methods=Unsafe --rpc-cors all"
 ```
 
-Example registration at epoch 997 will return the validator list with your sidechain_pub_key present. Search the results
-to ensure you are present and the 'isValid' parameter is true.
+Query the services and search the results to ensure you are present, and the 'isValid' parameter is true.
 
 ```
 # Query the Obmios service health
@@ -1188,23 +1228,23 @@ curl -L -X POST -H "Content-Type: application/json" -d '{
     "id": 1
 }' http://127.0.0.1:9944 | jq
 
-# Query the validators a`nd find your sidechain_pub_key
+# Query the validators and find your sidechain_pub_key
 curl -L -X POST -H "Content-Type: application/json" -d '{
     "jsonrpc": "2.0",
     "method": "sidechain_getAriadneParameters",
-    "params": [1127],
+    "params": [<EPOCH_NUMBER>],
     "id": 1
 }' http://127.0.0.1:9944 | jq
 ```
 
-To confirm your Midnight Validator keys are configure correctly query the author_hasKey for each key:
+To confirm your Midnight Validator keys are configured correctly, query the author_hasKey for each key:
 
 ```
 # Validate the sidechain_pub_key
 curl -L -X POST -H "Content-Type: application/json" -d '{
     "jsonrpc": "2.0",
     "method": "author_hasKey",
-    "params": ["0x0207ccc3fd24dea709e98094d3593387ce5e9c58e51b5a0b41ac871570bd43530d", "crch"],
+    "params": ["<YOUR_KEY>", "crch"],
     "id": 1
 }' http://127.0.0.1:9944 | jq
 
@@ -1212,7 +1252,7 @@ curl -L -X POST -H "Content-Type: application/json" -d '{
 curl -L -X POST -H "Content-Type: application/json" -d '{
     "jsonrpc": "2.0",
     "method": "author_hasKey",
-    "params": ["0xe65bd97af534423a866762dc54056170843b8085845f2bb11d76f7879e204650", "aura"],
+    "params": ["<YOUR_KEY>", "aura"],
     "id": 1
 }' http://127.0.0.1:9944 | jq
 
@@ -1220,10 +1260,12 @@ curl -L -X POST -H "Content-Type: application/json" -d '{
 curl -L -X POST -H "Content-Type: application/json" -d '{
     "jsonrpc": "2.0",
     "method": "author_hasKey",
-    "params": ["0x01e2d8469d29736acc6f7e01aae9a8e0022dc2200d257f4a51bb3886740053d8", "gran"],
+    "params": ["<YOUR_KEY>", "gran"],
     "id": 1
 }' http://127.0.0.1:9944 | jq
+```
 
+```
 curl -L -X POST -H "Content-Type: application/json" -d '{
     "jsonrpc": "2.0",
     "method": "system_peers",
@@ -1265,6 +1307,28 @@ docker logs -f --tail 100 midnight-node
 
 ---
 
+## BlockFrost Icebreaker
+
+Installed on a Relay connected to your block producing SPOs topology.
+
+```shell
+# RELAY: Download BlockFrost and init
+scripts/node/icebreaker.sh download
+
+# RELAY: Install BlockFrost service and start
+scripts/node/icebreaker.sh install
+
+# Check installed version
+blockfrost-platform --version
+```
+
+You can review icebreaker status using the BlockFrost UI:
+
+- https://blockfrost.grafana.net/public-dashboards/8d618eda298d472a996ca3473ab36177
+- https://platform.blockfrost.io/verification
+
+---
+
 ## Repository info
 
 ### Script notation
@@ -1275,26 +1339,17 @@ docker logs -f --tail 100 midnight-node
 * ` | ` Bar = Choice between several options.
 
 ```
-Usage: query.sh [
+Usage: query.sh (
   tip [name <STRING>] |
   params [name <STRING>] |
-  metrics [name <STRING>] |
-  config (name <STRING>) |
-  key [name <STRING>] |
-  kes |
-  kes_period |
-  uxto [address <ADDRESS>] |
-  leader [period <INT>] |
-  rewards [name <STRING>] |
-  help [-h]
-]
+  config (name <STRING>) [key <STRING>] |
+)
 ```
 
 ### Contributors
 
 * Upstream SPO - @upstream_ada
 * Devhalls - @devhalls
-* Grafana dashboard and leader slot query initially used from https://github.com/sanskys/SNSKY
 
 ### Contributing
 
@@ -1308,9 +1363,7 @@ also simply open an issue with the tag "enhancement". Don't forget to give the p
 2. Create your Feature Branch (git checkout -b feature/AmazingFeature)
 3. Commit your Changes (git commit -m 'Add some AmazingFeature')
 4. Push to the Branch (git push origin feature/AmazingFeature)
-5. Open a Pull Request
-
-[#BuildingTogether](https://x.com/search?q=buildingtogether)
+5. Open a Pull Request [#BuildingTogether](https://x.com/search?q=buildingtogether)
 
 ### License
 
@@ -1325,3 +1378,19 @@ Distributed under the GPL-3.0 License. See LICENSE.txt for more information.
 - [Midnight Monitoring - LiveView](https://github.com/Midnight-Scripts/Midnight-Live-View/blob/main/LiveView.sh)
 - [Cardano Node Guild Operators LiveView](https://cardano-community.github.io/guild-operators/Scripts/gliveview/)
 - [Upstream Cardano Devopp Scripts](https://github.com/devhalls/spo-operational-scripts)
+
+[Cardano-shield]: https://img.shields.io/badge/cardano-000000?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyBpZD0iTGF5ZXJfMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgMzIgMzIiPjxkZWZzPjxzdHlsZT4uY2xzLTF7ZmlsbDojZmZmZmZmO308L3N0eWxlPjwvZGVmcz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0xNS42MiwxLjI1Yy40Ni0uMTkuOTkuMDIsMS4xOC40OC4xLjIyLjEuNDgsMCwuNy0uMTkuNDYtLjcyLjY4LTEuMTguNDgtLjQ2LS4xOS0uNjgtLjcyLS40OC0xLjE4LjA5LS4yMi4yNi0uMzkuNDgtLjQ4Wk04LjExLDIuMDZjLjM3LS4xMS43Ni4xLjg3LjQ3LjExLjM3LS4xLjc2LS40Ny44Ny0uMTYuMDUtLjM0LjA0LS40OS0uMDQtLjM1LS4xOC0uNDgtLjYyLS4zLS45Ny4wOC0uMTYuMjItLjI4LjM5LS4zNFpNMjMuNDksMy4zOGMtLjM4LS4wOS0uNjEtLjQ2LS41Mi0uODQuMDUtLjIxLjItLjM5LjQtLjQ4LjUtLjI1Ljk1LjIsMS4wMS42Ny0uMDQuNDEtLjQxLjcxLS44Mi42Ni0uMDIsMC0uMDQsMC0uMDcsMFpNOS43OCw1LjI1Yy41My0uMjksMS4xOS0uMSwxLjQ4LjQzcy4xLDEuMTktLjQzLDEuNDhjLS4zOS4yMS0uODYuMTctMS4yMS0uMS0uNDctLjM5LS41My0xLjA5LS4xNC0xLjU2LjA4LS4xLjE4LS4xOC4zLS4yNVpNMjAuNjgsNS43M2MuMjgtLjU0Ljk1LS43NSwxLjQ5LS40Ny4yLjEuMzcuMjcuNDcuNDcuMjguNTQuMDcsMS4yMS0uNDcsMS40OS0uNTQuMjgtMS4yMS4wNy0xLjQ5LS40Ny0uMTctLjMyLS4xNy0uNywwLTEuMDJaTTE0Ljc2LDcuMjljMC0uNy41NS0xLjI4LDEuMjUtMS4zMi40Ny4wNC44OC4zMSwxLjExLjcyLjMyLjYzLjA4LDEuNC0uNTUsMS43Mi0uMDIsMC0uMDMuMDItLjA1LjAyLS4zMS4xLS42NC4xLS45NSwwLS40OS0uMi0uODMtLjY3LS44Ni0xLjJsLjA1LjA2Wk0zLjU0LDguMjFjLjQ0LS4yMi45Ny0uMDUsMS4yLjM4LjEuMi4xMy40My4wNy42NS0uMTMuNDctLjYyLjc1LTEuMDkuNjJzLS43NS0uNjItLjYyLTEuMDljLjA3LS4yNC4yMy0uNDQuNDUtLjU1Wk0yNy41NCw4LjIxYy40Mi0uMjYuOTYtLjEzLDEuMjIuMjhzLjEzLjk2LS4yOCwxLjIyYy0uMjYuMTYtLjU3LjE4LS44NS4wNS0uNDQtLjIxLS42NC0uNzQtLjQzLTEuMTguMDctLjE2LjE5LS4yOS4zMy0uMzhaTTE3Ljg1LDkuNDdjMS4xMy0uMzgsMi4zNi4yMywyLjc0LDEuMzYuMzgsMS4xMy0uMjMsMi4zNi0xLjM2LDIuNzQtMS4xMS4zNy0yLjMyLS4yLTIuNzItMS4zLS4zOC0xLjEzLjIxLTIuMzYsMS4zNC0yLjc2di0uMDVaTTEyLjUzLDkuNThjMS4wOC0uNTEsMi4zNy0uMDUsMi44OCwxLjA0cy4wNSwyLjM3LTEuMDQsMi44OGMtMS4wNi41LTIuMzMuMDYtMi44Ni0uOTktLjUxLTEuMDgtLjA2LTIuMzYsMS4wMS0yLjg4di0uMDVaTTcuMjEsMTEuNDFjLjExLS42My42NS0xLjEsMS4yOS0xLjEyLjY3LjA4LDEuMi42MSwxLjI4LDEuMjgtLjAzLjY5LS41NywxLjI1LTEuMjYsMS4zMS0uNy4wMy0xLjI5LS41MS0xLjMyLTEuMiwwLS4wNywwLS4xNCwwLS4yMXYtLjA1Wk0yMi45NCwxMC40MmMuNjMtLjMzLDEuNC0uMDgsMS43Mi41NC4zMy42My4wOCwxLjQtLjU0LDEuNzItLjQuMjEtLjg5LjE5LTEuMjctLjA1LS41OC0uNDItLjcyLTEuMjItLjMtMS44LjEtLjE1LjI0LS4yNy4zOS0uMzZ2LS4wNVpNMTAuMzcsMTMuODVjMS4xNi0uMzEsMi4zNC4zOCwyLjY1LDEuNTRzLS4zOCwyLjM0LTEuNTQsMi42NWMtMS4wMS4yNy0yLjA2LS4yMi0yLjUxLTEuMTYtLjQ5LTEuMDksMC0yLjM3LDEuMDktMi44Ni4xLS4wNS4yMS0uMDguMzEtLjExdi0uMDVaTTIwLjQ3LDEzLjg1Yy45My0uMjcsMS45My4xLDIuNDUuOTIuNjMuOTkuMzYsMi4zLS42MSwyLjk2LTEsLjY1LTIuMzQuMzctMy0uNjQtLjY1LTEtLjM3LTIuMzQuNjQtMywuMTYtLjEuMzQtLjE5LjUyLS4yNVpNNC4zNywxNC45M2MuNTctLjE4LDEuMTkuMTMsMS4zNy43LjE4LjU3LS4xMywxLjE5LS43LDEuMzctLjM3LjEyLS43Ny4wMy0xLjA2LS4yMi0uNDMtLjQzLS40NC0xLjEzLDAtMS41Ni4xMS0uMTEuMjUtLjIuNC0uMjZ2LS4wM1pNMjYuMTgsMTYuMWMtLjA0LS42Ny40OC0xLjI1LDEuMTUtMS4yOS41OC4wNiwxLjAzLjU0LDEuMDQsMS4xMi0uMDEuNi0uNTEsMS4wOC0xLjExLDEuMDctLjE2LDAtLjMxLS4wNC0uNDUtLjExLS4zLS4xNy0uNTItLjQ0LS42NC0uNzZ2LS4wM1pNLjQzLDE1LjM2Yy4zNi0uMTUuNzcuMDIuOTIuMzcuMTUuMzYtLjAyLjc3LS4zNy45Mi0uMjkuMTItLjYzLjA0LS44My0uMjItLjI0LS4zMS0uMTgtLjc1LjEyLS45OC4wNS0uMDQuMS0uMDcuMTYtLjA5Wk0zMC45NywxNS4zNmMuMzMtLjE5Ljc1LS4wOC45NC4yNXMuMDguNzUtLjI1Ljk0Yy0uMTEuMDYtLjIzLjA5LS4zNS4wOS0uMzguMDItLjctLjI2LS43My0uNjQtLjAyLS4yNy4xMy0uNTMuMzctLjY1bC4wMi4wMlpNMTIuOTksMTguMjZjMS4yLS4yNSwyLjM3LjUxLDIuNjIsMS43MS4wMi4xMS4wNC4yMy4wNC4zNS4xLDEuMi0uNzksMi4yNi0xLjk5LDIuMzZzLTIuMjYtLjc5LTIuMzYtMS45OWMtLjAxLS4xMi0uMDEtLjI1LDAtLjM3LjA0LS45OC43My0xLjgyLDEuNjgtMi4wNlpNMTguMDQsMTguMjZjMS4xNi0uMjksMi4zNC40MiwyLjYzLDEuNThzLS40MiwyLjM0LTEuNTgsMi42M2MtLjI5LjA3LS41OS4wOC0uODguMDQtMS4xOC0uMi0xLjk4LTEuMzEtMS43OC0yLjQ5LjE0LS44NS43Ny0xLjU0LDEuNjEtMS43NVpNOC4zMSwxOS4xMmMuNy0uMDksMS4zNC40LDEuNDQsMS4xcy0uNCwxLjM0LTEuMSwxLjQ0Yy0uNDMuMDYtLjg1LS4xLTEuMTQtLjQzLS40Ni0uNTUtLjM4LTEuMzcuMTctMS44Mi4xOC0uMTUuNC0uMjUuNjMtLjI4Wk0yMy4xMiwxOS4xMmMuNjUtLjI1LDEuMzguMDgsMS42My43My4wNi4xNi4wOS4zMi4wOC40OSwwLC43MS0uNTksMS4yNy0xLjI5LDEuMjYtLjcxLDAtMS4yNy0uNTktMS4yNi0xLjI5LDAtLjUzLjM0LTEsLjg0LTEuMTlaTTI3LjI0LDIzLjI2Yy0uMi0uNDUsMC0uOTcuNDUtMS4xNy4xNC0uMDYuMy0uMDkuNDYtLjA3LjMxLjA0LjU4LjIxLjc2LjQ3LDAsLjM0LjExLjc1LS4xOSwxLjAxLS4zMi4zNy0uODkuNC0xLjI1LjA4LS4xLS4wOS0uMTctLjE5LS4yMy0uMzFaTTMuNTQsMjIuMjRjLjQzLS4yNS45OC0uMTEsMS4yNC4zMi4yNS40My4xMS45OC0uMzIsMS4yNC0uMjguMTctLjYzLjE3LS45MiwwLS40My0uMjUtLjU3LS44MS0uMzItMS4yNC4wOC0uMTMuMTktLjI0LjMyLS4zMlpNMTUuNSwyMy41NGMuNjYtLjI1LDEuNC4wOSwxLjY1Ljc1LjI1LjY2LS4wOSwxLjQtLjc1LDEuNjUtLjM4LjE0LS44LjEtMS4xMy0uMTItLjYyLS4zNi0uODMtMS4xNS0uNDctMS43Ny4xNS0uMjcuNC0uNDcuNjktLjU3bC4wMi4wNlpNOS45NiwyNC44NGMuNTMtLjI3LDEuMTgtLjA1LDEuNDQuNDguMDguMTcuMTIuMzUuMTEuNTQsMCwuNTktLjQ3LDEuMDYtMS4wNSwxLjA3LS4wNSwwLS4xLDAtLjE1LDAtLjU5LS4wNS0xLjA0LS41Ni0uOTktMS4xNS4wMy0uNDEuMjktLjc3LjY4LS45MmgtLjA1Wk0yMS4xNywyNC44NGMuNTMtLjI5LDEuMTktLjExLDEuNDguNDIuMjkuNTMuMTEsMS4xOS0uNDIsMS40OC0uMzguMjEtLjg0LjE4LTEuMTktLjA4LS41LS4zNS0uNjEtMS4wNS0uMjYtMS41NC4xLS4xNC4yMi0uMjUuMzctLjMzbC4wMi4wNVpNMjMuMTIsMjkuNjVjLS4yLS4zOC0uMDYtLjg1LjMyLTEuMDUuMDgtLjA0LjE2LS4wNy4yNC0uMDguMzkuMDguODMuMzkuNzMuODYtLjA4LjM5LS40Ni42NC0uODUuNTUtLjE5LS4wNC0uMzYtLjE2LS40Ni0uMzJsLjAyLjA1Wk03LjY0LDI5LjI1Yy4xMi0uMzcuNDItLjczLjg2LS42NC4zOC4wNS42NS40MS41OS43OS0uMDMuMjEtLjE1LjM5LS4zMy41LS41NS4zLTEuMDktLjE3LTEuMTQtLjdsLjAyLjA1Wk0xNS4xMSwyOS42N2MuMTQtLjQ3LjY0LS43NCwxLjExLS41OS4wNy4wMi4xMy4wNS4xOS4wOC4zMS4xMi40MS40Ny40OC43NnMtLjA4LjMxLS4xMS40N2MtLjE4LjI1LS40Ni40MS0uNzYuNDQtLjQ5LjA1LS45Mi0uMzEtLjk3LS43OS0uMDEtLjE0LDAtLjI4LjA1LS40MWwuMDIuMDVaIi8+PC9zdmc+Cg==
+
+[Cardano-url]: https://developers.cardano.org/docs/integrate-cardano/user-wallet-authentication/
+
+[Mithril-shield]: https://img.shields.io/badge/mithril-000000?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyBpZD0iTGF5ZXJfMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgNjguOCA2OC44MiI+PGRlZnM+PHN0eWxlPi5jbHMtMXtmaWxsOiNmZmY7fTwvc3R5bGU+PC9kZWZzPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTM0LjQxLDM5LjA4cy01LjA1LDExLjc5LTE0LjQ2LDE3LjFjMy45OCw0LjM0LDguNzQsOC42MSwxNC40NiwxMi42NCw1LjcyLTQuMDMsMTAuNDgtOC4zLDE0LjQ2LTEyLjY0LTkuNDEtNS4zMS0xNC40Ni0xNy4xLTE0LjQ2LTE3LjFaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMzQuNDEsMTIuNzljLTQuNTgsOS45LTE3LjI0LDE2Ljg1LTI5LjI5LDIwLjA0LDIuMTcsNS4zOCw1LjI2LDExLjIxLDkuNjUsMTcuMDhsMi45LTguNTFjNi42My0zLjk1LDEzLjc0LTguMzIsMTYuNzUtMTQuODQsMy4wMSw2LjUyLDEwLjEyLDEwLjg5LDE2Ljc1LDE0Ljg0bDIuODksOC41MWM0LjM4LTUuODcsNy40Ny0xMS43LDkuNjUtMTcuMDgtMTIuMDUtMy4xOS0yNC43MS0xMC4xNC0yOS4yOS0yMC4wNGgtLjAxWiIvPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTY4LjgsNy44MVM1My4zMywwLDM0LjQxLDAsLjAyLDcuODEuMDIsNy44MUMuMDIsNy44MS0uNDEsMTUuNjcsMi45MywyNi42N2w1LjYzLTguODhjMTAuMzgtMi45OSwyMC43OC03LjMzLDI1Ljg0LTE1LjE3LDUuMDYsNy44NCwxNS40NiwxMi4xOCwyNS44NCwxNS4xN2w1LjYzLDguODhjMy4zNC0xMC45OSwyLjkxLTE4Ljg2LDIuOTEtMTguODZoLjAyWiIvPjwvc3ZnPg==
+
+[Mithril-url]: https://mithril.network/
+
+[Midnight-shield]: https://img.shields.io/badge/midnight-000000?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyBpZD0iTGF5ZXJfMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgMjY2Ljg2IDI2Ni44NiI+PGRlZnM+PHN0eWxlPi5jbHMtMXtmaWxsOiNmZmY7fTwvc3R5bGU+PC9kZWZzPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTEzMy40MywwQzU5LjcsMCwwLDU5LjgxLDAsMTMzLjQzczU5LjgxLDEzMy40MywxMzMuNDMsMTMzLjQzLDEzMy40My01OS44MSwxMzMuNDMtMTMzLjQzUzIwNy4xNiwwLDEzMy40MywwWk0xMzMuNDMsMjQyLjMyYy02MC4wMiwwLTEwOC44OS00OC44Ny0xMDguODktMTA4Ljg5UzczLjQxLDI0LjU0LDEzMy40MywyNC41NHMxMDguODksNDguODcsMTA4Ljg5LDEwOC44OS00OC44NywxMDguODktMTA4Ljg5LDEwOC44OWgwWiIvPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTE0NS45NywxMjAuODloLTI1LjA3djI1LjA3aDI1LjA3di0yNS4wN1oiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0xNDUuOTcsODEuMzhoLTI1LjA3djI1LjA3aDI1LjA3di0yNS4wN1oiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0xNDUuOTcsNDEuNzVoLTI1LjA3djI1LjA3aDI1LjA3di0yNS4wN1oiLz48L3N2Zz4=
+
+[Midnight-url]: https://midnight.network/
+
+[Upstream-shield]: https://img.shields.io/badge/upstream-000000?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyBpZD0iTGF5ZXJfMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgdmlld0JveD0iMCAwIDU3LjIzIDU3LjIzIj48ZGVmcz48c3R5bGU+LmNscy0xe2ZpbHRlcjp1cmwoI2Ryb3Atc2hhZG93LTEpO30uY2xzLTJ7ZmlsbDp1cmwoI2xpbmVhci1ncmFkaWVudC0zKTt9LmNscy0ze2ZpbGw6dXJsKCNsaW5lYXItZ3JhZGllbnQtMik7fS5jbHMtNHtmaWxsOnVybCgjbGluZWFyLWdyYWRpZW50KTt9PC9zdHlsZT48ZmlsdGVyIGlkPSJkcm9wLXNoYWRvdy0xIiB4PSIuMjUiIHk9Ii4yNSIgd2lkdGg9IjU2LjczIiBoZWlnaHQ9IjU2LjczIiBmaWx0ZXJVbml0cz0idXNlclNwYWNlT25Vc2UiPjxmZU9mZnNldCBkeD0iMCIgZHk9IjAiLz48ZmVHYXVzc2lhbkJsdXIgcmVzdWx0PSJibHVyIiBzdGREZXZpYXRpb249IjIwIi8+PGZlRmxvb2QgZmxvb2QtY29sb3I9IiMwMTAxMDEiIGZsb29kLW9wYWNpdHk9Ii4yIi8+PGZlQ29tcG9zaXRlIGluMj0iYmx1ciIgb3BlcmF0b3I9ImluIi8+PGZlQ29tcG9zaXRlIGluPSJTb3VyY2VHcmFwaGljIi8+PC9maWx0ZXI+PGxpbmVhckdyYWRpZW50IGlkPSJsaW5lYXItZ3JhZGllbnQiIHgxPSIyNS42NSIgeTE9IjQwIiB4Mj0iNDAuODIiIHkyPSI0MCIgZ3JhZGllbnRVbml0cz0idXNlclNwYWNlT25Vc2UiPjxzdG9wIG9mZnNldD0iLjMzIiBzdG9wLWNvbG9yPSIjZWJiMzU5Ii8+PHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjZjM5NzZhIi8+PC9saW5lYXJHcmFkaWVudD48bGluZWFyR3JhZGllbnQgaWQ9ImxpbmVhci1ncmFkaWVudC0yIiB4MT0iLjI1IiB5MT0iMjguNjIiIHgyPSI1Ni45OCIgeTI9IjI4LjYyIiB4bGluazpocmVmPSIjbGluZWFyLWdyYWRpZW50Ii8+PGxpbmVhckdyYWRpZW50IGlkPSJsaW5lYXItZ3JhZGllbnQtMyIgeDE9IjE5LjU3IiB5MT0iMzAuNTUiIHgyPSIyOS42OSIgeTI9IjMwLjU1IiB4bGluazpocmVmPSIjbGluZWFyLWdyYWRpZW50Ii8+PC9kZWZzPjxnIGNsYXNzPSJjbHMtMSI+PHBhdGggY2xhc3M9ImNscy00IiBkPSJNMzYuNDEsMzcuMjFjLS4wNywwLS4xNC4wMi0uMjEuMDQtLjEyLjAyLS4yMi4wNS0uMzUuMDctLjEzLjAzLS4yNi4wNy0uNC4xLS4yNy4wOC0uNTUuMTctLjgzLjI4LS4xNC4wNi0uMjkuMS0uNDMuMTctLjUuMjEtMS4wMS40NS0xLjUuNy0uOTQuNDUtMS45Mi45Mi0yLjk3LDEuMjMtMS4zMy4zOC0yLjcuNDktNC4wNy4zMS43My41OSwxLjM1LDEuMDEsMS45NSwxLjM0LDEuMDMuNTcsMi4wNi45LDMuNDUsMS4wOSwzLjY5LjU1LDUuOTguMjUsNy4zOC0uMy41OC0uMjIsMS4wMS0uNDksMS4zMy0uNzUuMjMtLjE5LjQxLS4zOC41NS0uNTcuMDItLjAyLjA1LS4wNi4wNy0uMDguMjYtLjM1LjM2LS42OC40Mi0uODd2LS4yM2wuMDMuMDJjMC0uMTMtLjAzLS4yNi0uMDgtLjQtLjEyLS4zOC0uMzYtLjc4LS43LTEuMTMtLjQzLS40NC0uOTktLjc4LTEuNTUtLjkzLS4wNi0uMDEtLjEzLS4wMi0uMTktLjAzLS4xNi0uMDQtLjMzLS4wNy0uNDktLjA4LS4yNi0uMDItLjUyLS4wNC0uODItLjAxaC0uM2MtLjA2LDAtLjEyLjAxLS4xNy4wMi0uMDMsMC0uMDgsMC0uMTIuMDFaIi8+PHBhdGggY2xhc3M9ImNscy0zIiBkPSJNMzguMDgsNDkuMjVjLTEuMjIsMS4yMi0yLjY2LDIuMTktNC4yNSwyLjg3LTEuNjYuNy0zLjQsMS4wNS01LjIxLDEuMDVzLTMuNTctLjM1LTUuMjItMS4wNWMtMS42LS42OC0zLjAzLTEuNjQtNC4yNS0yLjg3cy0yLjItMi42Ny0yLjg3LTQuMjVjLS43LTEuNjYtMS4wNS0zLjQtMS4wNS01LjIxLDAtLjc5LjA3LTEuNi4yMS0yLjM3aC0uMDFzMC0uMDcuMDItLjA5Yy4yMS0uNjUuNDgtMS4xNi43OS0xLjU1LjM0LS40LjcyLS42NiwxLjE4LS43OS43Ni0uMjEsMS42MiwwLDIuNjcuNTkuOTQuNTUsMS45NiwxLjM5LDIuNzMsMi4wNy4zMy4yOC42NS41OC45Ny44Ni4wNCwwLC4wOS4wMi4xNS4wNS4yNi4wOC41LjE1Ljc1LjIyLDEuNTUuNDEsMy4xOS4zOCw0LjczLS4wNi45Ni0uMjgsMS44NC0uNywyLjc5LTEuMTUuNS0uMjUsMS4wMy0uNDksMS41NS0uNzEsMS45Ni0uODMsMy42MS0xLjA0LDUuMDUtLjY1LDEuMzkuMzcsMi45MiwxLjY2LDMuMTUsMy4zMi4wNC4wOC4wNi4xNi4wNi4yNiwwLDEuODEtLjM1LDMuNTYtMS4wNSw1LjIxLS42OCwxLjYtMS42NCwzLjAzLTIuODcsNC4yNVpNMTguODMsMjcuNzVjLjA0LS4wOC4wOC0uMTcuMS0uMjYuMDQtLjA4LjA3LS4xNi4wOS0uMjYuMDktLjI1LjE5LS41Mi4zMS0uNzhMMjguMDcsMy4yOGMuMDgtLjIyLjMtLjM3LjU0LS4zN3MuNDUuMTUuNTQuMzdsOS42OSwyNS42OSwxLjEyLDIuOTZzLjAxLjA2LjAyLjA4Yy4xNi43OC0uMTUsMS4yNy0uNDQsMS41NS0uNTIuNTEtMS40My43Ni0yLjc3Ljc2aC0uMzljLTEuMjYtLjA1LTIuODItLjI4LTQuNjUtLjcxbC0xLjUuNDljLTEuMzMuNDMtMi42OS44Ny00LjE2Ljk1aC0uMzRjLTIuNiwwLTUuMTUtMS4yOS02LjU4LTMuMzQtLjMzLS40Ny0uNzYtMS4xNy0uNzYtMS45NywwLS45Ni4yNi0xLjU2LjQ0LTJ2LjAyWk0yOC42MS4yNUMxMi45NS4yNS4yNSwxMi45NS4yNSwyOC42MXMxMi43LDI4LjM3LDI4LjM2LDI4LjM3LDI4LjM3LTEyLjcsMjguMzctMjguMzdTNDQuMjguMjUsMjguNjEuMjVaIi8+PHBhdGggY2xhc3M9ImNscy0yIiBkPSJNMjAuMDMsMjcuOTJjLS4wNC4wOS0uMDguMi0uMTIuMjktLjE3LjQxLS4zNS44My0uMzUsMS41NiwwLC4xNS4wMi4zNi4xNy42OWgtLjAyYy4wOC4xNi4xOS4zNi4zNi42MS42Mi44OSwxLjUyLDEuNjMsMi41OCwyLjE1LDEuMDYuNTEsMi4yMy43NiwzLjM3LjcsMS4wNi0uMDUsMi4xMS0uMzMsMy4xNS0uNjUuMTYtLjA1LjM0LS4xLjUtLjE2aC4wMnMtLjA1LDAtLjA3LS4wMmMtLjg4LS4yNy0xLjcxLS41Ny0yLjUyLS45OC0xLjE4LS42MS0yLjMzLTEuNDMtMy43My0yLjY5bC0uMDYtLjA2Yy0uNDItLjM3LS44NC0uNzYtMS4yNS0xLjEyLS4zMi0uMjctLjY4LS41Ny0xLjAzLS43OC0uNDgtLjMtLjY2LS4yNy0uNjktLjI2LS4wNCwwLS4wNy4wOC0uMTEuMTgtLjAyLjA2LS4wNS4xLS4wOC4xNS0uMDEuMDUtLjAzLjA5LS4wNS4xNC0uMDMuMDgtLjA3LjE3LS4wOS4yN1oiLz48L2c+PC9zdmc+
+
+[Upstream-url]: https://upstream.org.uk/

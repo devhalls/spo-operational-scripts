@@ -141,11 +141,16 @@ dbsync_snapshot_restore() {
 
 dbsync_run() {
     export PGPASSFILE=$DB_SYNC_PATH/pgpass
+    local rollbackSlot
+    if [[ "$DB_SYNC_ROLLBACK_SLOT" =~ ^[0-9]+$ ]]; then
+        rollbackSlot="--rollback-to-slot $DB_SYNC_ROLLBACK_SLOT"
+    fi
     $DB_SYNC \
         --config $NETWORK_PATH/db-sync-config.json \
         --socket-path $NETWORK_SOCKET_PATH \
         --state-dir $DB_SYNC_PATH/ledger-state \
-        --schema-dir $DB_SYNC_PATH/schema/
+        --schema-dir $DB_SYNC_PATH/schema/ \
+        $rollbackSlot
 }
 
 dbsync_start() {
@@ -190,7 +195,7 @@ dbsync_view_db() {
 }
 
 dbsync_get_block() {
-    latest_block=$(psql "$POSTGRES_DB" -t -A -c "SELECT MAX(block_no) FROM block;" 2>/dev/null)
+    latest_block=$(psql "$POSTGRES_DB" -t -A -c "SELECT * FROM block;" 2>/dev/null)
     if [[ $? -eq 0 && "$latest_block" =~ ^[0-9]+$ ]]; then
         echo $latest_block
     else
