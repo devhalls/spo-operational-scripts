@@ -4,7 +4,7 @@
 #   arm |
 #   node |
 #   path |
-#   help [-h <BOOLEAN>]
+#   help [-h]
 # )
 #
 # Info:
@@ -19,7 +19,7 @@ source "$(dirname "$0")/../common.sh"
 
 download_arm() {
     print 'DOWNLOAD' "Downloading node arm binaries"
-    local filename="cardano-${NODE_VERSION//./_}-aarch64-static-musl-ghc_9101"
+    local filename="cardano-${NODE_VERSION//./_}${NODE_REMOTE_ARM_FILE_SUFFIX}"
     mkdir -p downloads
     wget -O downloads/$filename $NODE_REMOTE_ARM/$filename.tar.zst
     if [ $? -eq 0 ]; then

@@ -12,7 +12,7 @@
 #   grafana |
 #   service |
 #   clean |
-#   help [-h <BOOLEAN>]
+#   help [-h]
 # )
 #
 # Info:

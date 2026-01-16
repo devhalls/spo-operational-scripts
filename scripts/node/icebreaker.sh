@@ -8,7 +8,7 @@
 #   restart |
 #   watch |
 #   status |
-#   help [-h <BOOLEAN>]
+#   help [-h]
 # )
 #
 # Info:

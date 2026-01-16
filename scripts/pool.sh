@@ -8,10 +8,11 @@
 #   generate_pool_dreg_cert (epoch <INT>) |
 #   generate_metadata_hash (url <STRING>) |
 #   rotate_kes (startPeriod <INT>) |
+#   new_kes (startPeriod <INT>) |
 #   get_pool_id [format <STRING<'hex'|'bech32'>>] |
 #   get_stake |
 #   get_stats |
-#   help [-h <BOOLEAN>]
+#   help [-h]
 # )
 #
 # Info:
@@ -24,6 +25,7 @@
 #   - generate_pool_dreg_cert) Generate pool registration certificate.
 #   - generate_metadata_hash) Generate pools metadata hash from the metadata.json url.
 #   - rotate_kes) Rotate the pool KES keys. Requires KES startPeriod as the first parameter.
+#   - new_kes) Generate a new pool KES counter. Only use if you need to reset the counter to resolve KES number if incorrect.
 #   - get_pool_id) Output the pool ID to $POOL_ID and display it on screen. Optionally pass in the format, defaults to hex.
 #   - get_stake) Retrieve pool stats from the blockchain.
 #   - get_stats) Retrieve pool stats from js.cexplorer.io.
@@ -90,12 +92,11 @@ pool_generate_pool_reg_cert() {
     exit_if_file_missing $VRF_VKEY
     exit_if_file_missing $STAKE_VKEY
     exit_if_file_missing $STAKE_VKEY
-    exit_if_file_missing $NODE_HOME/metadata/metadata.json
-    exit_if_file_missing $NODE_HOME/metadata/metadataHash.txt
     exit_if_empty "${1}" "1 pledge"
     exit_if_empty "${2}" "2 cost"
     exit_if_empty "${3}" "3 margin"
     exit_if_empty "${4}" "4 metaUrl"
+    exit_if_empty "${5}" "5 metaHash"
     exit_if_empty "$(get_option --relay "$@")" "--relay metaUrl"
     if [ -f $POOL_CERT ]; then
         confirm "Certificate already exist! 'yes' to overwrite, 'no' to cancel"
@@ -104,13 +105,13 @@ pool_generate_pool_reg_cert() {
     local cost="${2}"
     local margin="${3}"
     local metaUrl="${4}"
-    local metaLocal=$NODE_HOME/metadata/metadata.json
-    local metaHash=$(cat $NODE_HOME/metadata/metadataHash.txt)
+    local metaHash="${5}"
     local relayType=$(get_option --type "$@")
 
     # Format the relays
     local relayArg=''
     local relays=$(get_option --relay "$@")
+    echo $relays
     read -ra relayParts <<< "$relays"
     if [ "${#relayParts[@]}" -eq 2 ]; then
         IFS=':' read -r ip port <<< "${relays[0]}"
@@ -165,7 +166,7 @@ pool_generate_pool_dreg_cert() {
 
 pool_generate_pool_meta_hash() {
     exit_if_not_producer
-    exit_if_empty "${1}" "1 urls"
+    exit_if_empty "${1}" "1 url"
     local outputFileJson="$(dirname "$0")/../metadata/metadata.json"
     local outputFileHash="$(dirname "$0")/../metadata/metadataHash.txt"
     wget -O $outputFileJson ${1}
@@ -194,6 +195,16 @@ pool_rotate_kes() {
         --kes-period $startPeriod \
         --out-file $NODE_CERT
     print 'POOL' "Copy node.cert and kes.skey back to your block producer node and restart it" $green
+}
+
+pool_new_kes_counter() {
+    exit_if_not_cold
+    exit_if_file_missing $NODE_VKEY
+    local counterValue="${1}"
+    $CNCLI conway node new-counter \
+        --cold-verification-key-file $NODE_VKEY \
+        --counter-value $counterValue \
+        --operational-certificate-issue-counter-file $NODE_COUNTER
 }
 
 pool_get_pool_id() {
@@ -278,6 +289,7 @@ case $1 in
     generate_pool_dreg_cert) pool_generate_pool_dreg_cert "${@:2}" ;;
     generate_pool_meta_hash) pool_generate_pool_meta_hash "${@:2}" ;;
     rotate_kes) pool_rotate_kes "${@:2}" ;;
+    new_kes) pool_new_kes_counter "${@:2}" ;;
     get_pool_id) pool_get_pool_id "${@:2}" ;;
     get_info) pool_get_info ;;
     get_stake) pool_get_stake ;;

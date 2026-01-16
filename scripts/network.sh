@@ -2,7 +2,7 @@
 # Usage: network.sh (
 #   ngrok |
 #   set_ip [ipAddress <STRING>] |
-#   help [-h <BOOLEAN>]
+#   help [-h]
 # )
 #
 # Info:

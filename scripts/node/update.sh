@@ -7,7 +7,7 @@
 #   binaries |
 #   build [...params] |
 #   download [...params] |
-#   help [-h <BOOLEAN>]
+#   help [-h]
 # )
 #
 # Info:

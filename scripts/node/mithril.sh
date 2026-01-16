@@ -19,7 +19,7 @@
 #   status_squid |
 #   verify_registration |
 #   verify_signature |
-#   help [-h <BOOLEAN>]
+#   help [-h]
 # )
 #
 # Info:
@@ -289,7 +289,7 @@ mithril_watch() {
 
 mithril_status() {
     exit_if_not_producer
-    sudo systemctl status mithril
+    sudo systemctl status $MITHRIL_SERVICE
 }
 
 mithril_start_squid() {

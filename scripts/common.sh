@@ -212,6 +212,11 @@ print_table() {
   done
 }
 
+print_json_error() {
+    local msg="$1"
+    echo "{ \"error\": \"${msg//\"/\\\"}\" }"
+}
+
 confirm() {
     read -p "$1 ([y]es or [N]o): "
     case $(echo $REPLY | tr '[A-Z]' '[a-z]') in
@@ -259,7 +264,7 @@ get_option() {
     while [[ $# -gt 1 ]]; do
         case "$1" in
             "$option_name")
-                option_value="$option_value $1 $2"
+                option_value="$option_value $2"
                 shift 2 # move past the option and its value
                 ;;
             *)

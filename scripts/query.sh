@@ -12,7 +12,7 @@
 #   uxto [address <STRING>] |
 #   leader [period <STRING<'current'|'next'>>] |
 #   rewards [name <STRING>] |
-#   help [-h <BOOLEAN>]
+#   help [-h]
 # )
 #
 # Info:
@@ -57,14 +57,13 @@ query_params() {
 
 query_state() {
     exit_if_cold
-    # if [ ! -f $NETWORK_PATH/ledger.json ]; then
-        $CNCLI conway query ledger-state $NETWORK_ARG --socket-path $NETWORK_SOCKET_PATH > ledger.txt
-    # fi
-    exit 1
+    if [ ! -f $NETWORK_PATH/ledger.json ]; then
+        $CNCLI conway query ledger-state $NETWORK_ARG --socket-path $NETWORK_SOCKET_PATH > $NETWORK_PATH/ledger.json
+    fi
     if [ "$1" ]; then
-        cat $NETWORK_PATH/ledger.txt | jq -r ".$1" | tr -d '\n\r'
+        cat $NETWORK_PATH/ledger.json | jq -r ".$1" | tr -d '\n\r'
     else
-        cat $NETWORK_PATH/ledger.txt
+        cat $NETWORK_PATH/ledger.json
         echo ''
     fi
 }
@@ -209,18 +208,29 @@ query_leader() {
     fi
 
     # Process the output file adding values to $csvFile, echo the result, and copy to grafana folder if it exists
-    if [ -f $tempFilePath ]; then
-        echo "$(tail -n +3 $tempFilePath)" >$tempFilePath
-        sed -i "s/\$/ $targetEpoch/" $tempFilePath
-        local content=$(awk '{print $2,$3","$1","NR","$5}' $tempFilePath)
-        grep -qxF "$content" $csvFile || echo "$content" >>$csvFile
+    if [ -f "$tempFilePath" ]; then
+        content=$(jq -r --arg epoch "$targetEpoch" '
+          to_entries[]
+          | .value as $v
+          | ($v.slotTime
+             | strptime("%Y-%m-%dT%H:%M:%SZ")
+             | strftime("%Y-%m-%d %H:%M:%S")) as $dt
+          | "\($dt),\($v.slotNumber),\(.key + 1),\($epoch)"
+        ' "$tempFilePath")
+
+        # Append each line if not already in CSV
+        while IFS= read -r line; do
+            [ -z "$line" ] && continue
+            grep -qxF "$line" "$csvFile" || echo "$line" >>"$csvFile"
+        done <<< "$content"
+
         echo "$content"
-        if [ -d $grafanaLocation ]; then
-            sudo cp $csvFile $grafanaLocation/slots.csv
+        if [ -d "$grafanaLocation" ]; then
+            sudo cp "$csvFile" "$grafanaLocation/slots.csv"
         fi
-        rm $tempFilePath
+        rm "$tempFilePath"
     else
-        print 'ERROR' "Leadership schedule failed to run" $red
+        print 'ERROR' "Leadership schedule failed to run" "$red"
         exit 0
     fi
 }

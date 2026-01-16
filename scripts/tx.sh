@@ -1,18 +1,19 @@
 #!/bin/bash
-# Usage: tx.sh [
+# Usage: tx.sh (
 #   stake_reg_raw |
 #   stake_reg_sign |
 #   stake_vote_reg_raw |
-#   pool_reg_raw [?stakePoolDeposit] |
+#   pool_reg_raw [stakePoolDeposit <INT>] |
 #   pool_reg_sign |
 #   pool_withdraw_raw |
 #   drep_reg_raw |
 #   drep_reg_sign |
-#   vote_raw |
-#   vote_sign [?voteKey] |
+#   vote_raw [witnesses <INT>] |
+#   vote_sign [voteKey <STRING<'node'|'drep'|'cc'>>] |
+#   build (amount <INT>) (address <STRING>) [witnesses <INT>] [...params<MIXED>] |
 #   submit |
-#   help [?-h]
-# ]
+#   help [-h]
+# )
 #
 # Info:
 #
@@ -167,7 +168,7 @@ tx_pool_reg_raw() {
         $NETWORK_ARG \
         --witness-count 3 \
         --byron-witness-count 0 \
-        --protocol-params-file $NETWORK_PATH/params.json | awk '{ print $1 }')
+        --protocol-params-file $NETWORK_PATH/params.json | jq '.fee')
 
     txOut=$((${totalBalance} - ${stakePoolDeposit} - ${fee}))
 
@@ -258,41 +259,58 @@ tx_drep_reg_sign() {
 
 tx_vote_raw() {
     exit_if_not_producer
-    votePath=$NETWORK_PATH/temp/vote.raw
+    local witnesses=${1:-2}
+    local tempPath=$NETWORK_PATH/temp
+    local votePath=$tempPath/vote.raw
+    local outPath=$tempPath/tx.signed
+    exit_if_file_missing $votePath
 
     $CNCLI conway transaction build \
         $NETWORK_ARG --socket-path $NETWORK_SOCKET_PATH \
         --tx-in $($CNCLI query utxo --address $(<$PAYMENT_ADDR) $NETWORK_ARG --socket-path $NETWORK_SOCKET_PATH --output-json | jq -r 'keys[0]') \
         --change-address $(<$PAYMENT_ADDR) \
         --vote-file $votePath \
-        --witness-override 2 \
+        --witness-override $witnesses \
         --out-file $NETWORK_PATH/temp/tx.raw
 
-    rm $votePath
-    print 'TX' "File output: $NETWORK_PATH/temp/tx.raw" $green
+    if [[ $? -eq 0 ]]; then
+        rm $votePath
+        print 'TX' "File output: $outPath" $green
+    else
+        print 'TX' "Failed to build transaction from $votePath" $red
+    fi
 }
 
 tx_vote_sign() {
     exit_if_not_cold
-    keyFile=${1}
-    tempPath=$NETWORK_PATH/temp
-    votePath=$NETWORK_PATH/temp/tx.raw
+    local keyFile=${1:-'node'}
+    local tempPath=$NETWORK_PATH/temp
+    local votePath=$tempPath/tx.raw
+    local outPath=$tempPath/tx.signed
+    exit_if_file_missing $votePath
+
+    local verificationArg=
+        case $keyFile in
+            "node") verificationArg="--signing-key-file $NODE_KEY" ;;
+            "drep") verificationArg="--signing-key-file $DREP_KEY" ;;
+            "cc") verificationArg="--signing-key-file $CC_HOT_KEY" ;;
+        esac
 
     $CNCLI conway transaction sign \
-        --tx-body-file $tempPath/tx.raw \
-        --signing-key-file $keyFile \
+        --tx-body-file $votePath \
+        $verificationArg \
         --signing-key-file $PAYMENT_KEY \
-        --out-file $tempPath/tx.signed
+        --out-file $outPath
 
-    rm $tempPath/tx.raw
-    print 'TX' "File output: $tempPath/tx.signed" $green
+    if [[ $? -eq 0 ]]; then
+        rm $votePath
+        print 'TX' "File output: $outPath" $green
+    else
+        print 'TX' "Failed to sign transaction at $outPath" $red
+    fi
 }
 
-# @todo complete new functions for tx building below
-# scripts/tx.sh build 0 --certificate-file 1 --certificate-file 2
-
 tx_in() {
-    paymentAddress=$(<$PAYMENT_ADDR)
     outputPath=$NETWORK_PATH/temp
     totalBalance=0
     txCount=0
@@ -325,11 +343,12 @@ tx_in() {
 
 tx_out() {
     amount=${1}
-    totalBalance=${2}
-    txCount=${3}
-    witnessCount=${4}
-    txIn=$(get_option --tx-in "${@:5}")
-    params=${@:7}
+    destinationAddress=${2}
+    totalBalance=${3}
+    txCount=${4}
+    witnessCount=${5}
+    txIn=$(get_option --tx-in "${@:6}")
+    params=${@:8}
 
     paymentAddress=$(<$PAYMENT_ADDR)
     currentSlot=$(bash $(dirname "$0")/query.sh tip slot)
@@ -373,8 +392,9 @@ tx_out() {
 
 tx_build() {
     amount=${1:-0}
-    witnessCount=${2}
-    params="${@:3}"
+    destination=${2}
+    witnessCount=${3}
+    params="${@:4}"
 
     # Calculate tx input.
     txInput=$(tx_in)
@@ -383,7 +403,7 @@ tx_build() {
     txIn=$(get_param "$txInput" "txIn")
 
     # Calculate tx fee and tx.raw.
-    txOutput=$(tx_out $amount $totalBalance $txCount $witnessCount $txIn $params)
+    txOutput=$(tx_out $amount $destination $totalBalance $txCount $witnessCount $txIn $params)
 
     fee=$(get_param "$txOutput" "fee")
     txRaw=$(get_param "$txOutput" "txRaw")
@@ -428,10 +448,8 @@ case $1 in
     pool_withdraw_raw) tx_pool_withdraw_raw ;;
     drep_reg_raw) tx_drep_reg_raw ;;
     drep_reg_sign) tx_drep_reg_sign ;;
-    vote_raw) tx_vote_raw ;;
+    vote_raw) tx_vote_raw "${@:2}" ;;
     vote_sign) tx_vote_sign "${@:2}" ;;
-    in) tx_in "${@:2}" ;;
-    out) tx_out "${@:2}" ;;
     build) tx_build "${@:2}" ;;
     sign) tx_sign "${@:2}" ;;
     submit) tx_submit ;;
