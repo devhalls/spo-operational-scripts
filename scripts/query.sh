@@ -12,7 +12,7 @@
 #   uxto [address <STRING>] |
 #   leader [period <STRING<'current'|'next'>>] |
 #   rewards [name <STRING>] |
-#   help [-h <BOOLEAN>]
+#   help [-h]
 # )
 #
 # Info:

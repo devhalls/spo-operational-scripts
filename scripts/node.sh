@@ -1,16 +1,16 @@
 #!/bin/bash
 # Usage: node.sh (
-#   install [...params] |
-#   update [...params] |
-#   mithril [...params] |
-#   exec [...params] |
+#   install [...params<MIXED>] |
+#   update [...params<MIXED>] |
+#   mithril [...params<MIXED>] |
+#   exec [...params<MIXED>] |
 #   run |
 #   start |
 #   stop |
 #   restart |
 #   watch |
 #   status |
-#   view [...params] |
+#   view [...params<MIXED>] |
 #   version |
 #   restart_prom |
 #   watch_prom |
@@ -20,7 +20,7 @@
 #   restart_grafana |
 #   watch_grafana |
 #   status_grafana |
-#   help [-h <BOOLEAN>]
+#   help [-h]
 # )
 #
 # Info:

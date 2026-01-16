@@ -12,7 +12,7 @@
 #   get_pool_id [format <STRING<'hex'|'bech32'>>] |
 #   get_stake |
 #   get_stats |
-#   help [-h <BOOLEAN>]
+#   help [-h]
 # )
 #
 # Info:

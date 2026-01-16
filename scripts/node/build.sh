@@ -6,7 +6,7 @@
 #   secp |
 #   blst |
 #   node |
-#   help [-h <BOOLEAN>]
+#   help [-h]
 # )
 #
 # Info:

@@ -1,7 +1,7 @@
 #!/bin/bash
 # Usage: govern.sh (
 #   action (govActionId <STRING>) |
-#   vote (govActionId <STRING>) (govActionIndex <INT>) (decision <STRING>) [anchorUrl <STRING>] [anchorHash <STRING>] [keyFile <'node'|'drep'|'cc'>] |
+#   vote (govActionId <STRING>) (govActionIndex <INT>) (decision <STRING>) [anchorUrl <STRING>] [anchorHash <STRING>] [keyFile <STRING<'node'|'drep'|'cc'>>] |
 #   hash (anchorUrl <STRING>) |
 #   id_CIP129 [type <STRING<'drep1'|'drep_script1'|'cc_hot1'|'cc_hot_script1'|'cc_cold1'|'cc_cold_script1'>>]
 #   drep_id [format <STRING<'--output-bech32'|'--output-hex'>>] |
@@ -12,7 +12,7 @@
 #   cc_cold_hash |
 #   cc_hot_keys |
 #   cc_cert |
-#   help [-h <BOOLEAN>]
+#   help [-h]
 # )
 #
 # Info:

@@ -19,7 +19,7 @@
 #   status_squid |
 #   verify_registration |
 #   verify_signature |
-#   help [-h <BOOLEAN>]
+#   help [-h]
 # )
 #
 # Info:

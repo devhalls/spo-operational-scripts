@@ -4,7 +4,7 @@
 #   arm |
 #   node |
 #   path |
-#   help [-h <BOOLEAN>]
+#   help [-h]
 # )
 #
 # Info:

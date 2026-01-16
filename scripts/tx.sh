@@ -3,15 +3,16 @@
 #   stake_reg_raw |
 #   stake_reg_sign |
 #   stake_vote_reg_raw |
-#   pool_reg_raw [?stakePoolDeposit] |
+#   pool_reg_raw [stakePoolDeposit <INT>] |
 #   pool_reg_sign |
 #   pool_withdraw_raw |
 #   drep_reg_raw |
 #   drep_reg_sign |
 #   vote_raw [witnesses <INT>] |
 #   vote_sign [voteKey <STRING<'node'|'drep'|'cc'>>] |
+#   build (amount <INT>) (address <STRING>) [witnesses <INT>] [...params<MIXED>] |
 #   submit |
-#   help [?-h]
+#   help [-h]
 # )
 #
 # Info:
@@ -309,9 +310,6 @@ tx_vote_sign() {
     fi
 }
 
-# @todo complete new functions for tx building below
-# scripts/tx.sh build 0 --certificate-file 1 --certificate-file 2
-
 tx_in() {
     outputPath=$NETWORK_PATH/temp
     totalBalance=0
@@ -452,8 +450,6 @@ case $1 in
     drep_reg_sign) tx_drep_reg_sign ;;
     vote_raw) tx_vote_raw "${@:2}" ;;
     vote_sign) tx_vote_sign "${@:2}" ;;
-    in) tx_in "${@:2}" ;;
-    out) tx_out "${@:2}" ;;
     build) tx_build "${@:2}" ;;
     sign) tx_sign "${@:2}" ;;
     submit) tx_submit ;;
