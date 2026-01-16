@@ -712,9 +712,10 @@ scripts/query.sh metrics cardano_node_metrics_peerSelection_warm
 
 View your node state via Grafana dashboards makes it easy to manage your nodes. Once you have installed the necessary
 packages and configs, restart your nodes, and you can visit the dashboard.
-Dashboard: MONITOR_NODE_IP:3000
-Username: admin
-Password: admin (change your password after first login)
+
+- Dashboard: MONITOR_NODE_IP:3000
+- Username: admin
+- Password: admin (change your password after login)
 
 ```shell
 # ALL NODES: Install prometheus explorer on all nodes
@@ -1348,8 +1349,8 @@ Usage: query.sh (
 
 ### Contributors
 
-* Upstream SPO - @upstream_ada
-* Devhalls - @devhalls
+* Upstream SPO - [@upstream_ada](https://x.com/Upstream_ada)
+* Devhalls - [@devhalls](https://github.com/devhalls)
 
 ### Contributing
 
@@ -1371,13 +1372,13 @@ Distributed under the GPL-3.0 License. See LICENSE.txt for more information.
 
 ### Links
 
-- [Cardano testnet faucet](https://docs.cardano.org/cardano-testnets/tools/faucet/)
-- [Db-sync snapshots](https://update-cardano-mainnet.iohk.io/cardano-db-sync/index.html)
-- [Upstream SPO website](https://upstream.org.uk)
-- [Upstream Twitter](https://x.com/Upstream_ada)
-- [Midnight Monitoring - LiveView](https://github.com/Midnight-Scripts/Midnight-Live-View/blob/main/LiveView.sh)
-- [Cardano Node Guild Operators LiveView](https://cardano-community.github.io/guild-operators/Scripts/gliveview/)
-- [Upstream Cardano Devopp Scripts](https://github.com/devhalls/spo-operational-scripts)
+- <a href="https://docs.cardano.org/cardano-testnets/tools/faucet/" target="_blank" title="Cardano testnet faucet">Cardano testnet faucet</a>
+- <a href="https://update-cardano-mainnet.iohk.io/cardano-db-sync/index.html" target="_blank" title="Db-sync snapshots">Db-sync snapshots</a>
+- <a href="https://upstream.org.uk" target="_blank" title="Upstream SPO website">Upstream SPO website</a>
+- <a href="https://x.com/Upstream_ada" target="_blank" title="Upstream Twitter">Upstream Twitter</a>
+- <a href="https://github.com/devhalls/spo-operational-scripts" target="_blank" title="Upstream Cardano Monitor Scripts">Upstream Cardano Monitor Scripts</a>
+- <a href="https://github.com/Midnight-Scripts/Midnight-Live-View/blob/main/LiveView.sh" target="_blank" title="Midnight Monitoring - LiveView">Midnight Monitoring - LiveView</a>
+- <a href="https://cardano-community.github.io/guild-operators/Scripts/gliveview/" target="_blank" title="Cardano Node Guild Operators LiveView">Cardano Node Guild Operators LiveView</a>
 
 [Cardano-shield]: https://img.shields.io/badge/cardano-000000?style=for-the-badge&logo=cardano
 
