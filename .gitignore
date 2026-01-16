@@ -4,6 +4,7 @@ cardano-db-sync
 cardano-mithril
 downloads
 metadata
+!metadata/anchor.example.json
 !metadata/drep.example.json
 !metadata/metadata.example.json
 docker/node
