@@ -111,6 +111,7 @@ pool_generate_pool_reg_cert() {
     # Format the relays
     local relayArg=''
     local relays=$(get_option --relay "$@")
+    echo $relays
     read -ra relayParts <<< "$relays"
     if [ "${#relayParts[@]}" -eq 2 ]; then
         IFS=':' read -r ip port <<< "${relays[0]}"

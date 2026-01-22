@@ -1,8 +1,7 @@
 # Cardano Stake Pool Operator (SPO) scripts
 
 Scripts and procedures for installing and managing a Cardano node, Mithril node, Midnight node, and operating
-credentials
-for a Stake Pool, DRep or Constitutional Committee member.
+credentials for a Stake Pool, DRep or Constitutional Committee member.
 
 [![Upstream][Upstream-shield]][Upstream-url]
 [![Cardano][Cardano-shield]][Cardano-url]
@@ -1417,7 +1416,7 @@ scripts/node/icebreaker.sh install
 blockfrost-platform --version
 ```
 
-When running you can monitor the processes:
+When running, you can monitor the processes:
 
 ```shell
 scripts/node/icebreaker.sh watch
