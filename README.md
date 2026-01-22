@@ -1,18 +1,19 @@
 # Cardano Stake Pool Operator (SPO) scripts
 
-Scripts and procedures for installing and managing a Cardano node, Mithril node, Midnight node and operating credentials
+Scripts and procedures for installing and managing a Cardano node, Mithril node, Midnight node, and operating
+credentials
 for a Stake Pool, DRep or Constitutional Committee member.
 
 [![Upstream][Upstream-shield]][Upstream-url]
 [![Cardano][Cardano-shield]][Cardano-url]
-[![Mithril][Mithril-shield]][Mithril-url]
 [![Midnight][Midnight-shield]][Midnight-url]
+[![Mithril][Mithril-shield]][Mithril-url]
+[![DBSync][DBSync-shield]][DBSync-url]
 
-For the community by Upstream Stake Pool [UPSTR](https://upstream.org.uk). Delegate to Upstream to help support our work.
+For the community by Upstream Stake Pool [UPSTR](https://upstream.org.uk/cardano-staking/). Delegate to Upstream to help
+support our work.
 
 ---
-
-### Get started
 
 <details>
 <summary>Repository file tree</summary>
@@ -59,9 +60,9 @@ tree --filesfirst -L 3
 │       └── update.sh
 └── services
     ├── schema
-│       ├── migration-1-0000-20190730.sql
-│       ├── ...
-│       └── migration-4-0008-20240604.sql
+        ├── migration-1-0000-20190730.sql
+        ├── ...
+        └── migration-4-0008-20240604.sql
     ├── blockfrost-platform.service
     ├── cardano-node.service
     ├── cardano-db-sync.service
@@ -78,27 +79,57 @@ tree --filesfirst -L 3
 <details>
 <summary>Assumptions</summary>
 
-1. Your OS, LAN network, ports and user are already configured.
+1. Your OS, LAN network, ports, and user are already configured.
 2. The Ngrok script requires you to know how to set up your own ngrok account and endpoints.
 3. You are comfortable with cardano-node / cardano-cli and general SPO requirements.
 4. You are comfortable with Linux and managing networks and servers.
-5. You are able to set up your cold node by copying the binaries, scripts and keys securely as required.
+5. You are able to set up your cold node by copying the binaries, scripts, and keys securely as required.
 
 </details>
 
-1. [Node Installation](#node-installation)
-2. [Docker installation](#docker-installation)
-3. [Registering a Stake Pool](#registering-a-stake-pool)
-4. [Managing a Stake Pool](#managing-a-stake-pool)
-5. [Registering a DRep](#registering-a-drep)
-6. [Registering a Constitutional Committee member](#registering-a-constitutional-committee-member)
-7. [Mithril node](#mithril-node)
-7. [BlockFrost Icebreaker](#blockfrost-icebreaker)
-7. [Midnight Validator](#midnight-validator)
+---
+
+## Getting started
+
+We divide our workflow in two main branches; **deployment**, covering node dependencies, configs and installs, and
+**registrations**, covering stake pool, mithril, midnight, and other services requiring certificates.
+
+**Deployment**
+
+1. [Cardano Node installation](#node-installation)
+2. [Mithril Node installation](#mithril-installation)
+3. [Cardano DBSync installation](#dbsync-installation)
+4. [Midnight Node installation](#midnight-installation)
+5. [Midnight DBSync installation](#midnight-dbsync-installation)
+6. [Local Docker](#docker-installation)
+
+**Registrations**
+
+1. [Registering a Stake Pool](#registering-a-stake-pool)
+2. [Managing a Stake Pool](#managing-a-stake-pool)
+3. [Registering a DRep](#registering-a-drep)
+4. [Registering a Constitutional Committee member](#registering-a-constitutional-committee-member)
+5. [BlockFrost Icebreaker](#blockfrost-icebreaker)
+6. [Registering a Midnight Validator](#registering-a-midnight-validator)
+
+**Overview**
+
+Scripts are executed via their relative path (likely to change to a single executable)
+
+```shell
+scripts/address.sh help
+scripts/dbync.sh help
+scripts/govern.sh help
+scripts/network.sh help
+scripts/node.sh help
+scripts/pool.sh help
+scripts/query.sh help
+scripts/tx.sh help
+```
 
 ---
 
-## Node Installation
+## Node installation
 
 This table describes the env variables you most likely need to adjust to suit your system and their available options.
 Read through these options before proceeding to the Node installation.
@@ -319,7 +350,8 @@ and configure).
 
 ```shell
 mkdir Cardano && cd Cardano
-git clone https://github.com/devhalls/spo-operational-scripts.git . 
+git clone https://github.com/devhalls/spo-operational-scripts.git .
+git checkout v1.0.2 
 ```
 
 Create and edit your env file:
@@ -343,9 +375,9 @@ scripts/node.sh mithril download
 scripts/node.sh mithril sync
 ```
 
-### Node start, stop and restart
+### Node start, stop, and restart
 
-After installation is complete, you can start, stop or restart the node service.
+After installation is complete, you can start, stop, or restart the node service.
 
 ```shell
 scripts/node.sh start
@@ -382,27 +414,176 @@ sudo ufw enable
 
 ---
 
+## Mithril installation
+
+To operate as a mithril signer, you must have a synced block producer and relay. Mithril signers must operate using a
+sentry architecture, where a mithril relay connects to the wider network and the mithril signer connects to the relay.
+However, on testnets we operate the Mithril signer directly and do not install a relay.
+
+### Mithril signer
+
+```shell
+# Check compatability with your nodes version
+scripts/node.sh mithril check_compatability
+
+# Edit the MITHRIL_VERSION in your env file
+nano env
+
+# Download the binaries
+scripts/node.sh mithril download
+
+# Install the signer env and service
+scripts/node.sh mithril install_signer_env
+scripts/node.sh mithril install_signer_service
+```
+
+### Mithril relay
+
+```shell
+scripts/node.sh mithril install_squid
+scripts/node.sh mithril configure_squid
+```
+
+## DBSync installation
+
+DBSync runs alongside a cardano node and manages a postgres database populated with historical blockchain data. To
+operate a DBSync instance, your node must first be fully synced.
+
+With a synced Cardano node, run the setup to install postgres, create the database and create users
+for `$POSTGRES_USER` and `$NODE_USER`.
+
+```shell
+scripts/dbsync.sh dependencies
+scripts/dbsync.sh create
+```
+
+Next, download the dbsync binaries, then install and run the service. This will start dbsync and run the migrations for
+a new installation.
+
+```shell
+scripts/dbsync.sh download
+scripts/dbsync.sh install
+```
+
+When running, you can review the status and progress with the commands below, to see a full list of commands to manage
+the instance review the help info for `scripts/dbsync.sh help`,
+
+```shell
+scripts/dbsync.sh watch
+scripts/dbsync.sh status
+```
+
+---
+
+## Midnight installation
+
+Operating a midnight node requires operating additional partner chain services. For midnight testnet this repository
+contains a docker deployment separate from other stake pool node services.
+
+Install docker and docker compose if needed:
+
+- [Install Docker Engine](https://docs.docker.com/engine/install/)
+- [Install Docker Compose](https://docs.docker.com/compose/install/)
+
+```shell
+# Enter the directory
+cd midnight
+
+# Start / restart containers
+docker compose -f ./compose-partner-chains.yml -f ./compose.yml -f ./proof-server.yml up -d
+docker compose -f ./compose-partner-chains.yml -f ./compose.yml -f ./proof-server.yml restart
+
+# Monitor the logs
+docker logs -f --tail 100 cardano-ogmios
+docker logs -f --tail 100 cardano-db-sync
+docker logs -f --tail 100 db-sync-postgres
+docker logs -f --tail 100 cardano-node
+docker logs -f --tail 100 midnight-node
+
+# Query the Ogmios service health
+curl -s localhost:1337/health | jq '.'
+
+# Query the sidechain status
+curl -L -X POST -H "Content-Type: application/json" -d '{
+    "jsonrpc": "2.0",
+    "method": "sidechain_getStatus",
+    "params": [],
+    "id": 1
+}' http://127.0.0.1:9944 | jq
+
+# Query your node peers
+curl -L -X POST -H "Content-Type: application/json" -d '{
+    "jsonrpc": "2.0",
+    "method": "system_peers",
+    "params": [],
+    "id": 1
+}' http://127.0.0.1:9944 | jq
+
+# Query the committee
+curl -L -X POST -H "Content-Type: application/json" -d '{
+    "jsonrpc": "2.0",
+    "method": "sidechain_getEpochCommittee",
+    "params": [245148],
+    "id": 1
+}' http://127.0.0.1:9944 | jq
+```
+
+## Midnight DBSync installation
+
+For midnight DBSync testnet we extend our existing docker compose
+with [compose-indexer.yml](midnight/compose-indexer.yml).
+This contains the additional services required to operate a Midnights archive node and Midnight DBSync, while keeping
+our
+validator node separate.
+
+The only dependency with the other midnight docker services is Cardano DBSync postgres, which is necessary for an
+archive node. 
+
+```shell
+# Enter the directory
+cd midnight
+
+# Make the .env and set the variables
+cp .env.example .env
+nano .env
+
+# Start / restart containers
+docker compose -f ./compose-partner-chains.yml up -d
+docker compose -f ./compose-partner-chains.yml restart
+```
+
+You can then monitor the docker containers:
+
+```shell
+docker logs -f midnight-indexer-node
+docker logs -f midnight-indexer-chain
+docker logs -f midnight-indexer-wallet
+docker logs -f midnight-indexer-nats
+docker logs -f midnight-indexer-postgres
+docker logs -f midnight-indexer-api
+```
+
 ## Docker installation
 
-We use docker containers to run a local node simulations on Cardano testnets. Docker should not be used for your mainnet
+We use docker containers to run local node simulations on Cardano testnets. Docker should not be used for your mainnet
 deployments.
 
 ```shell
 # Build and start the docker containers
 ./docker/run.sh up -d --build 
-
-# OPTIONAL: run fixtures to generate address credentials
-./docker/fixture.sh addresses
 ```
 
-Once your containers are running, you can run any node operation scripts using the docker wrapper script:
+Once your containers are running, you can run the fixtures and any node operation scripts using the docker wrapper:
 
 ```shell
+# View fixtures help to generate address credentials
+./docker/fixture.sh help
+
 # Run scripts in the container, e.g.
 ./docker/script.sh node.sh view
 ./docker/exec.sh node scripts/query.sh uxto
 
-# OR Connect to the cardano node container
+# OR Connect to the cardano node container and work directly from there
 docker exec -it node bash
 ```
 
@@ -823,7 +1004,7 @@ simplify redeployment.
 
 ### Regenerate pool certificates
 
-When you need to update your pool metadata, min cost or other pool params, you must regenerate your `pool.cert` using
+When you need to update your pool metadata, min cost, or other pool params, you must regenerate your `pool.cert` using
 the same steps as when you first created these.
 
 ```shell
@@ -867,7 +1048,7 @@ scripts/address.sh generate_stake_vote_cert no-confidence
 scripts/tx.sh stake_vote_reg_raw
 
 # COPY: tx.raw to your cold node 
-# COLD: Sign the withdraw transaction tx.raw
+# COLD: Sign the transaction tx.raw
 scripts/tx.sh stake_reg_sign
 
 # COPY: tx.signed to your producer node
@@ -1135,64 +1316,15 @@ scripts/tx.sh submit
 
 ---
 
-## Mithril node
-
-To operate as a mithril signer, you must have a synced block producer and relay. Mithril signers must operate using a
-sentry architecture, where a mithril relay connects to the wider network and the mithril signer connects to the relay.
-However, on testnets we operate the Mithril signer directly and do not install a relay.
-
-### Mithril signer
-
-```shell
-# Check compatability with your nodes version
-scripts/node.sh mithril check_compatability
-
-# Edit the MITHRIL_VERSION in your env file
-nano env
-
-# Download the binaries
-scripts/node.sh mithril download
-
-# Install the signer env and service
-scripts/node.sh mithril install_signer_env
-scripts/node.sh mithril install_signer_service
-```
-
-### Mithril relay
-
-```shell
-scripts/node.sh mithril install_squid
-scripts/node.sh mithril configure_squid
-```
-
-## Midnight Validator
+## Registering a Midnight Validator
 
 If you're running a block producing Stake Pool on the Preview network, you can opt to run as a Midnight validator.
-We will add full scripts here to cover Midnight installation soon. For now, you can follow the current guides from
-Midnight
-testnet documentation and the overview steps below.
-
-- [Midnight Docs: How to become a Midnight Validator](https://docs.midnight.network/validate/run-a-validator/)
-- [Midnight GitHub: Docker compose](https://github.com/midnightntwrk/midnight-node-docker/tree/main)
-- [Midnight Monitoring: LiveView](https://github.com/Midnight-Scripts/Midnight-Live-View/blob/main/LiveView.sh)
-
-### Testnet Installation
-
-For installation within our toolchain, install the above dependencies, clone the Midnight repository and follow the
-setup docs.
-
-- [Install Docker Engine](https://docs.docker.com/engine/install/)
-- [Install Docker Compose](https://docs.docker.com/compose/install/)
-- [Install direnv](https://direnv.net/docs/installation.html)
+When you have the midnight docker container installed and running (see above Midnight installation), you can run the
+installation wizards (defined here in
+the [midnight documentation](https://docs.midnight.network/validate/run-a-validator/step-3)):
 
 ```
-# Setup directory and clone the midnight repo
-source script/common.sh
-cd $NODE_HOME && mkdir cardano-midnight && cd cardano-midnight
-git clone https://github.com/midnightntwrk/midnight-node-docker.git .
-
-# Follow the midnight docs for full setup instructions
-# Launch wizard used for configurations once all partner services are up and running
+# View wizard used for configurations once all partner services are up and running
 ./midnight-node.sh wizards --help
 
 # Then you can start and restart containers
@@ -1209,27 +1341,10 @@ docker exec -it db-sync-postgres bash -c "echo 'host    all    all    172.2=5.0.
 Once you have completed the registration steps and all services are operational, you can validate your node operations
 and registration by querying the local rpc.
 
-You MUST modify the APPEND_ARGS in `.envrc` or author RPC calls will fail:
-
-```
-export APPEND_ARGS="--validator --allow-private-ip --pool-limit 10 --trie-cache-size 0 --prometheus-external --unsafe-rpc-external --rpc-methods=Unsafe --rpc-cors all"
-```
-
 Query the services and search the results to ensure you are present, and the 'isValid' parameter is true.
 
-```
-# Query the Obmios service health
-curl -s localhost:1337/health | jq '.'
-
-# Query sidechain status
-curl -L -X POST -H "Content-Type: application/json" -d '{
-    "jsonrpc": "2.0",
-    "method": "sidechain_getStatus",
-    "params": [],
-    "id": 1
-}' http://127.0.0.1:9944 | jq
-
-# Query the validators and find your sidechain_pub_key
+```shell
+# EPOCH_NUMBER = preview network registration epoch
 curl -L -X POST -H "Content-Type: application/json" -d '{
     "jsonrpc": "2.0",
     "method": "sidechain_getAriadneParameters",
@@ -1240,7 +1355,7 @@ curl -L -X POST -H "Content-Type: application/json" -d '{
 
 To confirm your Midnight Validator keys are configured correctly, query the author_hasKey for each key:
 
-```
+```shell
 # Validate the sidechain_pub_key
 curl -L -X POST -H "Content-Type: application/json" -d '{
     "jsonrpc": "2.0",
@@ -1266,32 +1381,11 @@ curl -L -X POST -H "Content-Type: application/json" -d '{
 }' http://127.0.0.1:9944 | jq
 ```
 
-```
-curl -L -X POST -H "Content-Type: application/json" -d '{
-    "jsonrpc": "2.0",
-    "method": "system_peers",
-    "params": [],
-    "id": 1
-}' http://127.0.0.1:9944 | jq
-
-curl -L -X POST -H "Content-Type: application/json" -d '{
-    "jsonrpc": "2.0",
-    "method": "sidechain_getEpochCommittee",
-    "params": [245148],
-    "id": 1
-}' http://127.0.0.1:9944 | jq
-```
-
 ### Monitoring Midnight node
 
 Once running, you can monitor the midnight node using the docker logs and the community tool ./LiveView.sh linked above.
 
 ```
-# Manage containers using the provided script to enter the container
-./midnight-shell.sh
-./cardano-cli.sh
-./reset-midnight.sh
-
 # Mannually enter the node shell
 docker exec -it <CONTAINER_ID> bash
 
@@ -1321,6 +1415,13 @@ scripts/node/icebreaker.sh install
 
 # Check installed version
 blockfrost-platform --version
+```
+
+When running you can monitor the processes:
+
+```shell
+scripts/node/icebreaker.sh watch
+scripts/node/icebreaker.sh status
 ```
 
 You can review icebreaker status using the BlockFrost UI:
@@ -1372,17 +1473,22 @@ Distributed under the GPL-3.0 License. See LICENSE.txt for more information.
 
 ### Links
 
-- <a href="https://docs.cardano.org/cardano-testnets/tools/faucet/" target="_blank" title="Cardano testnet faucet">Cardano testnet faucet</a>
-- <a href="https://update-cardano-mainnet.iohk.io/cardano-db-sync/index.html" target="_blank" title="Db-sync snapshots">Db-sync snapshots</a>
+- <a href="https://docs.cardano.org/cardano-testnets/tools/faucet/" target="_blank" title="Cardano testnet faucet">
+  Cardano testnet faucet</a>
+- <a href="https://update-cardano-mainnet.iohk.io/cardano-db-sync/index.html" target="_blank" title="Db-sync snapshots">
+  Db-sync snapshots</a>
 - <a href="https://upstream.org.uk" target="_blank" title="Upstream SPO website">Upstream SPO website</a>
 - <a href="https://x.com/Upstream_ada" target="_blank" title="Upstream Twitter">Upstream Twitter</a>
-- <a href="https://github.com/devhalls/spo-operational-scripts" target="_blank" title="Upstream Cardano Monitor Scripts">Upstream Cardano Monitor Scripts</a>
-- <a href="https://github.com/Midnight-Scripts/Midnight-Live-View/blob/main/LiveView.sh" target="_blank" title="Midnight Monitoring - LiveView">Midnight Monitoring - LiveView</a>
-- <a href="https://cardano-community.github.io/guild-operators/Scripts/gliveview/" target="_blank" title="Cardano Node Guild Operators LiveView">Cardano Node Guild Operators LiveView</a>
+- <a href="https://github.com/devhalls/spo-operational-scripts" target="_blank" title="Upstream Cardano Monitor Scripts">
+  Upstream Cardano Monitor Scripts</a>
+- <a href="https://github.com/Midnight-Scripts/Midnight-Live-View/blob/main/LiveView.sh" target="_blank" title="Midnight Monitoring - LiveView">
+  Midnight Monitoring - LiveView</a>
+- <a href="https://cardano-community.github.io/guild-operators/Scripts/gliveview/" target="_blank" title="Cardano Node Guild Operators LiveView">
+  Cardano Node Guild Operators LiveView</a>
 
-[Cardano-shield]: https://img.shields.io/badge/cardano-000000?style=for-the-badge&logo=cardano
+[Cardano-shield]: https://img.shields.io/badge/cardano-000000?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyBpZD0iTGF5ZXJfMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgMzIgMzIiPjxkZWZzPjxzdHlsZT4uY2xzLTF7ZmlsbDojZmZmZmZmO308L3N0eWxlPjwvZGVmcz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0xNS42MiwxLjI1Yy40Ni0uMTkuOTkuMDIsMS4xOC40OC4xLjIyLjEuNDgsMCwuNy0uMTkuNDYtLjcyLjY4LTEuMTguNDgtLjQ2LS4xOS0uNjgtLjcyLS40OC0xLjE4LjA5LS4yMi4yNi0uMzkuNDgtLjQ4Wk04LjExLDIuMDZjLjM3LS4xMS43Ni4xLjg3LjQ3LjExLjM3LS4xLjc2LS40Ny44Ny0uMTYuMDUtLjM0LjA0LS40OS0uMDQtLjM1LS4xOC0uNDgtLjYyLS4zLS45Ny4wOC0uMTYuMjItLjI4LjM5LS4zNFpNMjMuNDksMy4zOGMtLjM4LS4wOS0uNjEtLjQ2LS41Mi0uODQuMDUtLjIxLjItLjM5LjQtLjQ4LjUtLjI1Ljk1LjIsMS4wMS42Ny0uMDQuNDEtLjQxLjcxLS44Mi42Ni0uMDIsMC0uMDQsMC0uMDcsMFpNOS43OCw1LjI1Yy41My0uMjksMS4xOS0uMSwxLjQ4LjQzcy4xLDEuMTktLjQzLDEuNDhjLS4zOS4yMS0uODYuMTctMS4yMS0uMS0uNDctLjM5LS41My0xLjA5LS4xNC0xLjU2LjA4LS4xLjE4LS4xOC4zLS4yNVpNMjAuNjgsNS43M2MuMjgtLjU0Ljk1LS43NSwxLjQ5LS40Ny4yLjEuMzcuMjcuNDcuNDcuMjguNTQuMDcsMS4yMS0uNDcsMS40OS0uNTQuMjgtMS4yMS4wNy0xLjQ5LS40Ny0uMTctLjMyLS4xNy0uNywwLTEuMDJaTTE0Ljc2LDcuMjljMC0uNy41NS0xLjI4LDEuMjUtMS4zMi40Ny4wNC44OC4zMSwxLjExLjcyLjMyLjYzLjA4LDEuNC0uNTUsMS43Mi0uMDIsMC0uMDMuMDItLjA1LjAyLS4zMS4xLS42NC4xLS45NSwwLS40OS0uMi0uODMtLjY3LS44Ni0xLjJsLjA1LjA2Wk0zLjU0LDguMjFjLjQ0LS4yMi45Ny0uMDUsMS4yLjM4LjEuMi4xMy40My4wNy42NS0uMTMuNDctLjYyLjc1LTEuMDkuNjJzLS43NS0uNjItLjYyLTEuMDljLjA3LS4yNC4yMy0uNDQuNDUtLjU1Wk0yNy41NCw4LjIxYy40Mi0uMjYuOTYtLjEzLDEuMjIuMjhzLjEzLjk2LS4yOCwxLjIyYy0uMjYuMTYtLjU3LjE4LS44NS4wNS0uNDQtLjIxLS42NC0uNzQtLjQzLTEuMTguMDctLjE2LjE5LS4yOS4zMy0uMzhaTTE3Ljg1LDkuNDdjMS4xMy0uMzgsMi4zNi4yMywyLjc0LDEuMzYuMzgsMS4xMy0uMjMsMi4zNi0xLjM2LDIuNzQtMS4xMS4zNy0yLjMyLS4yLTIuNzItMS4zLS4zOC0xLjEzLjIxLTIuMzYsMS4zNC0yLjc2di0uMDVaTTEyLjUzLDkuNThjMS4wOC0uNTEsMi4zNy0uMDUsMi44OCwxLjA0cy4wNSwyLjM3LTEuMDQsMi44OGMtMS4wNi41LTIuMzMuMDYtMi44Ni0uOTktLjUxLTEuMDgtLjA2LTIuMzYsMS4wMS0yLjg4di0uMDVaTTcuMjEsMTEuNDFjLjExLS42My42NS0xLjEsMS4yOS0xLjEyLjY3LjA4LDEuMi42MSwxLjI4LDEuMjgtLjAzLjY5LS41NywxLjI1LTEuMjYsMS4zMS0uNy4wMy0xLjI5LS41MS0xLjMyLTEuMiwwLS4wNywwLS4xNCwwLS4yMXYtLjA1Wk0yMi45NCwxMC40MmMuNjMtLjMzLDEuNC0uMDgsMS43Mi41NC4zMy42My4wOCwxLjQtLjU0LDEuNzItLjQuMjEtLjg5LjE5LTEuMjctLjA1LS41OC0uNDItLjcyLTEuMjItLjMtMS44LjEtLjE1LjI0LS4yNy4zOS0uMzZ2LS4wNVpNMTAuMzcsMTMuODVjMS4xNi0uMzEsMi4zNC4zOCwyLjY1LDEuNTRzLS4zOCwyLjM0LTEuNTQsMi42NWMtMS4wMS4yNy0yLjA2LS4yMi0yLjUxLTEuMTYtLjQ5LTEuMDksMC0yLjM3LDEuMDktMi44Ni4xLS4wNS4yMS0uMDguMzEtLjExdi0uMDVaTTIwLjQ3LDEzLjg1Yy45My0uMjcsMS45My4xLDIuNDUuOTIuNjMuOTkuMzYsMi4zLS42MSwyLjk2LTEsLjY1LTIuMzQuMzctMy0uNjQtLjY1LTEtLjM3LTIuMzQuNjQtMywuMTYtLjEuMzQtLjE5LjUyLS4yNVpNNC4zNywxNC45M2MuNTctLjE4LDEuMTkuMTMsMS4zNy43LjE4LjU3LS4xMywxLjE5LS43LDEuMzctLjM3LjEyLS43Ny4wMy0xLjA2LS4yMi0uNDMtLjQzLS40NC0xLjEzLDAtMS41Ni4xMS0uMTEuMjUtLjIuNC0uMjZ2LS4wM1pNMjYuMTgsMTYuMWMtLjA0LS42Ny40OC0xLjI1LDEuMTUtMS4yOS41OC4wNiwxLjAzLjU0LDEuMDQsMS4xMi0uMDEuNi0uNTEsMS4wOC0xLjExLDEuMDctLjE2LDAtLjMxLS4wNC0uNDUtLjExLS4zLS4xNy0uNTItLjQ0LS42NC0uNzZ2LS4wM1pNLjQzLDE1LjM2Yy4zNi0uMTUuNzcuMDIuOTIuMzcuMTUuMzYtLjAyLjc3LS4zNy45Mi0uMjkuMTItLjYzLjA0LS44My0uMjItLjI0LS4zMS0uMTgtLjc1LjEyLS45OC4wNS0uMDQuMS0uMDcuMTYtLjA5Wk0zMC45NywxNS4zNmMuMzMtLjE5Ljc1LS4wOC45NC4yNXMuMDguNzUtLjI1Ljk0Yy0uMTEuMDYtLjIzLjA5LS4zNS4wOS0uMzguMDItLjctLjI2LS43My0uNjQtLjAyLS4yNy4xMy0uNTMuMzctLjY1bC4wMi4wMlpNMTIuOTksMTguMjZjMS4yLS4yNSwyLjM3LjUxLDIuNjIsMS43MS4wMi4xMS4wNC4yMy4wNC4zNS4xLDEuMi0uNzksMi4yNi0xLjk5LDIuMzZzLTIuMjYtLjc5LTIuMzYtMS45OWMtLjAxLS4xMi0uMDEtLjI1LDAtLjM3LjA0LS45OC43My0xLjgyLDEuNjgtMi4wNlpNMTguMDQsMTguMjZjMS4xNi0uMjksMi4zNC40MiwyLjYzLDEuNThzLS40MiwyLjM0LTEuNTgsMi42M2MtLjI5LjA3LS41OS4wOC0uODguMDQtMS4xOC0uMi0xLjk4LTEuMzEtMS43OC0yLjQ5LjE0LS44NS43Ny0xLjU0LDEuNjEtMS43NVpNOC4zMSwxOS4xMmMuNy0uMDksMS4zNC40LDEuNDQsMS4xcy0uNCwxLjM0LTEuMSwxLjQ0Yy0uNDMuMDYtLjg1LS4xLTEuMTQtLjQzLS40Ni0uNTUtLjM4LTEuMzcuMTctMS44Mi4xOC0uMTUuNC0uMjUuNjMtLjI4Wk0yMy4xMiwxOS4xMmMuNjUtLjI1LDEuMzguMDgsMS42My43My4wNi4xNi4wOS4zMi4wOC40OSwwLC43MS0uNTksMS4yNy0xLjI5LDEuMjYtLjcxLDAtMS4yNy0uNTktMS4yNi0xLjI5LDAtLjUzLjM0LTEsLjg0LTEuMTlaTTI3LjI0LDIzLjI2Yy0uMi0uNDUsMC0uOTcuNDUtMS4xNy4xNC0uMDYuMy0uMDkuNDYtLjA3LjMxLjA0LjU4LjIxLjc2LjQ3LDAsLjM0LjExLjc1LS4xOSwxLjAxLS4zMi4zNy0uODkuNC0xLjI1LjA4LS4xLS4wOS0uMTctLjE5LS4yMy0uMzFaTTMuNTQsMjIuMjRjLjQzLS4yNS45OC0uMTEsMS4yNC4zMi4yNS40My4xMS45OC0uMzIsMS4yNC0uMjguMTctLjYzLjE3LS45MiwwLS40My0uMjUtLjU3LS44MS0uMzItMS4yNC4wOC0uMTMuMTktLjI0LjMyLS4zMlpNMTUuNSwyMy41NGMuNjYtLjI1LDEuNC4wOSwxLjY1Ljc1LjI1LjY2LS4wOSwxLjQtLjc1LDEuNjUtLjM4LjE0LS44LjEtMS4xMy0uMTItLjYyLS4zNi0uODMtMS4xNS0uNDctMS43Ny4xNS0uMjcuNC0uNDcuNjktLjU3bC4wMi4wNlpNOS45NiwyNC44NGMuNTMtLjI3LDEuMTgtLjA1LDEuNDQuNDguMDguMTcuMTIuMzUuMTEuNTQsMCwuNTktLjQ3LDEuMDYtMS4wNSwxLjA3LS4wNSwwLS4xLDAtLjE1LDAtLjU5LS4wNS0xLjA0LS41Ni0uOTktMS4xNS4wMy0uNDEuMjktLjc3LjY4LS45MmgtLjA1Wk0yMS4xNywyNC44NGMuNTMtLjI5LDEuMTktLjExLDEuNDguNDIuMjkuNTMuMTEsMS4xOS0uNDIsMS40OC0uMzguMjEtLjg0LjE4LTEuMTktLjA4LS41LS4zNS0uNjEtMS4wNS0uMjYtMS41NC4xLS4xNC4yMi0uMjUuMzctLjMzbC4wMi4wNVpNMjMuMTIsMjkuNjVjLS4yLS4zOC0uMDYtLjg1LjMyLTEuMDUuMDgtLjA0LjE2LS4wNy4yNC0uMDguMzkuMDguODMuMzkuNzMuODYtLjA4LjM5LS40Ni42NC0uODUuNTUtLjE5LS4wNC0uMzYtLjE2LS40Ni0uMzJsLjAyLjA1Wk03LjY0LDI5LjI1Yy4xMi0uMzcuNDItLjczLjg2LS42NC4zOC4wNS42NS40MS41OS43OS0uMDMuMjEtLjE1LjM5LS4zMy41LS41NS4zLTEuMDktLjE3LTEuMTQtLjdsLjAyLjA1Wk0xNS4xMSwyOS42N2MuMTQtLjQ3LjY0LS43NCwxLjExLS41OS4wNy4wMi4xMy4wNS4xOS4wOC4zMS4xMi40MS40Ny40OC43NnMtLjA4LjMxLS4xMS40N2MtLjE4LjI1LS40Ni40MS0uNzYuNDQtLjQ5LjA1LS45Mi0uMzEtLjk3LS43OS0uMDEtLjE0LDAtLjI4LjA1LS40MWwuMDIuMDVaIi8+PC9zdmc+
 
-[Cardano-url]: https://developers.cardano.org/docs/integrate-cardano/user-wallet-authentication/
+[Cardano-url]: https://cardano.org/
 
 [Mithril-shield]: https://img.shields.io/badge/mithril-000000?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyBpZD0iTGF5ZXJfMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgNjguOCA2OC44MiI+PGRlZnM+PHN0eWxlPi5jbHMtMXtmaWxsOiNmZmY7fTwvc3R5bGU+PC9kZWZzPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTM0LjQxLDM5LjA4cy01LjA1LDExLjc5LTE0LjQ2LDE3LjFjMy45OCw0LjM0LDguNzQsOC42MSwxNC40NiwxMi42NCw1LjcyLTQuMDMsMTAuNDgtOC4zLDE0LjQ2LTEyLjY0LTkuNDEtNS4zMS0xNC40Ni0xNy4xLTE0LjQ2LTE3LjFaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMzQuNDEsMTIuNzljLTQuNTgsOS45LTE3LjI0LDE2Ljg1LTI5LjI5LDIwLjA0LDIuMTcsNS4zOCw1LjI2LDExLjIxLDkuNjUsMTcuMDhsMi45LTguNTFjNi42My0zLjk1LDEzLjc0LTguMzIsMTYuNzUtMTQuODQsMy4wMSw2LjUyLDEwLjEyLDEwLjg5LDE2Ljc1LDE0Ljg0bDIuODksOC41MWM0LjM4LTUuODcsNy40Ny0xMS43LDkuNjUtMTcuMDgtMTIuMDUtMy4xOS0yNC43MS0xMC4xNC0yOS4yOS0yMC4wNGgtLjAxWiIvPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTY4LjgsNy44MVM1My4zMywwLDM0LjQxLDAsLjAyLDcuODEuMDIsNy44MUMuMDIsNy44MS0uNDEsMTUuNjcsMi45MywyNi42N2w1LjYzLTguODhjMTAuMzgtMi45OSwyMC43OC03LjMzLDI1Ljg0LTE1LjE3LDUuMDYsNy44NCwxNS40NiwxMi4xOCwyNS44NCwxNS4xN2w1LjYzLDguODhjMy4zNC0xMC45OSwyLjkxLTE4Ljg2LDIuOTEtMTguODZoLjAyWiIvPjwvc3ZnPg==
 
@@ -1395,3 +1501,7 @@ Distributed under the GPL-3.0 License. See LICENSE.txt for more information.
 [Upstream-shield]: https://img.shields.io/badge/upstream-000000?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyBpZD0iTGF5ZXJfMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgNTcuMjMgNTcuMjMiPjxkZWZzPjxzdHlsZT4uY2xzLTF7ZmlsbDojZmZmO308L3N0eWxlPjwvZGVmcz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0yOC42MS4yNUMxMi45NS4yNS4yNSwxMi45NS4yNSwyOC42MXMxMi43LDI4LjM3LDI4LjM2LDI4LjM3LDI4LjM3LTEyLjcsMjguMzctMjguMzdTNDQuMjguMjUsMjguNjEuMjVaTTE1LjIzLDM5Ljc5YzAtLjc5LjA3LTEuNi4yMS0yLjM3aC0uMDFzMC0uMDcuMDItLjA5Yy4yMS0uNjUuNDgtMS4xNi43OS0xLjU1LjM0LS40LjcyLS42NiwxLjE4LS43OS43Ni0uMjEsMS42MiwwLDIuNjcuNTkuOTQuNTUsMS45NiwxLjM5LDIuNzMsMi4wNy4zMy4yOC42NS41OC45Ny44Ni4wNCwwLC4wOS4wMi4xNS4wNS4yNi4wOC41LjE1Ljc1LjIyLDEuNTUuNDEsMy4xOS4zOCw0LjczLS4wNi45Ni0uMjgsMS44NC0uNywyLjc5LTEuMTUuNS0uMjUsMS4wMy0uNDksMS41NS0uNzEsMS45Ni0uODMsMy42MS0xLjA0LDUuMDUtLjY1LDEuMzkuMzcsMi45MiwxLjY2LDMuMTUsMy4zMi4wNC4wOC4wNi4xNi4wNi4yNiwwLDEuODEtLjM1LDMuNTYtMS4wNSw1LjIxLS42OCwxLjYtMS42NCwzLjAzLTIuODcsNC4yNS0xLjIyLDEuMjItMi42NiwyLjE5LTQuMjUsMi44Ny0xLjY2LjctMy40LDEuMDUtNS4yMSwxLjA1cy0zLjU3LS4zNS01LjIyLTEuMDVjLTEuNi0uNjgtMy4wMy0xLjY0LTQuMjUtMi44N3MtMi4yLTIuNjctMi44Ny00LjI1Yy0uNy0xLjY2LTEuMDUtMy40LTEuMDUtNS4yMVpNMTguMzgsMjkuNzNjMC0uOTYuMjYtMS41Ni40NC0ydi4wMmMuMDUtLjA4LjA5LS4xNy4xMi0uMjYuMDQtLjA4LjA3LS4xNi4wOS0uMjYuMDktLjI1LjE5LS41Mi4zMS0uNzhMMjguMDcsMy4yOGMuMDgtLjIyLjMtLjM3LjU0LS4zN3MuNDUuMTUuNTQuMzdsOS42OSwyNS42OSwxLjEyLDIuOTZzLjAxLjA2LjAyLjA4Yy4xNi43OC0uMTUsMS4yNy0uNDQsMS41NS0uNTIuNTEtMS40My43Ni0yLjc3Ljc2aC0uMzljLTEuMjYtLjA1LTIuODItLjI4LTQuNjUtLjcxbC0xLjUuNDljLTEuMzMuNDMtMi42OS44Ny00LjE2Ljk1aC0uMzRjLTIuNiwwLTUuMTUtMS4yOS02LjU4LTMuMzQtLjMzLS40Ny0uNzYtMS4xNy0uNzYtMS45N1oiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0xOS41NywyOS43N2MwLC4xNS4wMi4zNi4xNy42OWgtLjAyYy4wOC4xNi4xOS4zNi4zNi42MS42Mi44OSwxLjUyLDEuNjMsMi41OCwyLjE1LDEuMDYuNTEsMi4yMy43NiwzLjM3LjcsMS4wNi0uMDUsMi4xMS0uMzMsMy4xNS0uNjUuMTYtLjA1LjM0LS4xLjUtLjE2aC4wMnMtLjA1LDAtLjA3LS4wMmMtLjg4LS4yNy0xLjcxLS41Ny0yLjUyLS45OC0xLjE4LS42MS0yLjMzLTEuNDMtMy43My0yLjY5bC0uMDYtLjA2Yy0uNDItLjM3LS44NC0uNzYtMS4yNS0xLjEyLS4zMi0uMjctLjY4LS41Ny0xLjAzLS43OC0uNDgtLjMtLjY2LS4yNy0uNjktLjI2LS4wNCwwLS4wNy4wOC0uMTEuMTgtLjAyLjA2LS4wNS4xLS4wOC4xNS0uMDEuMDUtLjAzLjA5LS4wNS4xNC0uMDMuMDgtLjA3LjE3LS4wOS4yNy0uMDQuMDktLjA4LjItLjEyLjI5LS4xNy40MS0uMzUuODMtLjM1LDEuNTZaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMjUuNjUsNDAuMTFjLjczLjU5LDEuMzUsMS4wMSwxLjk1LDEuMzQsMS4wMy41NywyLjA2LjksMy40NSwxLjA5LDMuNjkuNTUsNS45OC4yNSw3LjM4LS4zLjU4LS4yMiwxLjAxLS40OSwxLjMzLS43NS4yMy0uMTkuNDEtLjM4LjU1LS41Ny4wMi0uMDIuMDUtLjA2LjA3LS4wOC4yNi0uMzUuMzYtLjY4LjQyLS44N3YtLjIzbC4wMy4wMmMwLS4xMy0uMDMtLjI2LS4wOC0uNC0uMTItLjM4LS4zNi0uNzgtLjctMS4xMy0uNDMtLjQ0LS45OS0uNzgtMS41NS0uOTMtLjA2LS4wMS0uMTMtLjAyLS4xOS0uMDMtLjE2LS4wNC0uMzMtLjA3LS40OS0uMDgtLjI2LS4wMi0uNTItLjA0LS44Mi0uMDFoLS4zYy0uMDYsMC0uMTIuMDEtLjE3LjAyLS4wMywwLS4wOCwwLS4xMi4wMS0uMDcsMC0uMTQuMDItLjIxLjA0LS4xMi4wMi0uMjIuMDUtLjM1LjA3LS4xMy4wMy0uMjYuMDctLjQuMS0uMjcuMDgtLjU1LjE3LS44My4yOC0uMTQuMDYtLjI5LjEtLjQzLjE3LS41LjIxLTEuMDEuNDUtMS41LjctLjk0LjQ1LTEuOTIuOTItMi45NywxLjIzLTEuMzMuMzgtMi43LjQ5LTQuMDcuMzFaIi8+PC9zdmc+
 
 [Upstream-url]: https://upstream.org.uk/
+
+[DBSync-shield]: https://img.shields.io/badge/dbsync-000000?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyBpZD0iSWNvbnMiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgdmlld0JveD0iMCAwIDIyIDI4Ij48ZGVmcz48c3R5bGU+LmNscy0xe2ZpbGw6I2ZmZjt9PC9zdHlsZT48L2RlZnM+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMCwxMC40djMuNmMwLDMuNCw0LjgsNiwxMSw2czExLTIuNiwxMS02di0zLjZjLTIuMiwyLjItNi4yLDMuNi0xMSwzLjZTMi4yLDEyLjYsMCwxMC40WiIvPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTAsMTguNHYzLjZjMCwzLjQsNC44LDYsMTEsNnMxMS0yLjYsMTEtNnYtMy42Yy0yLjIsMi4yLTYuMiwzLjYtMTEsMy42cy04LjgtMS40LTExLTMuNloiLz48ZWxsaXBzZSBjbGFzcz0iY2xzLTEiIGN4PSIxMSIgY3k9IjYiIHJ4PSIxMSIgcnk9IjYiLz48L3N2Zz4=
+
+[DBSync-url]: https://github.com/IntersectMBO/cardano-db-sync/
