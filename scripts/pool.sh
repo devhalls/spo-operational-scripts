@@ -4,9 +4,9 @@
 #   generate_kes_keys |
 #   generate_vrf_keys |
 #   generate_node_op_cert (kesPeriod <INT>) |
-#   generate_pool_reg_cert (pledge <INT>) (cost <FLOAT>) (margin <FLOAT>) (metaUrl <STRING>) (--relay <STRING>) [--relay <STRING>] [--type <STRING<'DNS'|'IP'>>] |
+#   generate_pool_reg_cert (pledge <INT>) (cost <FLOAT>) (margin <FLOAT>) (metaUrl <STRING>) (metaHash <STRING>) (--relay <STRING>) [--relay <STRING>] [--type <STRING<'DNS'|'IP'>>] |
 #   generate_pool_dreg_cert (epoch <INT>) |
-#   generate_metadata_hash (url <STRING>) |
+#   generate_pool_meta_hash (url <STRING>) |
 #   rotate_kes (startPeriod <INT>) |
 #   new_kes (startPeriod <INT>) |
 #   get_pool_id [format <STRING<'hex'|'bech32'>>] |
@@ -23,7 +23,7 @@
 #   - generate_node_op_cert) Generate node operational certificate. Requires the kesPeriod parameter.
 #   - generate_pool_reg_cert) Generate pool registration certificate. Requires all params to generate the certificate.
 #   - generate_pool_dreg_cert) Generate pool registration certificate.
-#   - generate_metadata_hash) Generate pools metadata hash from the metadata.json url.
+#   - generate_pool_meta_hash) Generate pools metadata hash from the metadata.json url.
 #   - rotate_kes) Rotate the pool KES keys. Requires KES startPeriod as the first parameter.
 #   - new_kes) Generate a new pool KES counter. Only use if you need to reset the counter to resolve KES number if incorrect.
 #   - get_pool_id) Output the pool ID to $POOL_ID and display it on screen. Optionally pass in the format, defaults to hex.
@@ -111,7 +111,6 @@ pool_generate_pool_reg_cert() {
     # Format the relays
     local relayArg=''
     local relays=$(get_option --relay "$@")
-    echo $relays
     read -ra relayParts <<< "$relays"
     if [ "${#relayParts[@]}" -eq 2 ]; then
         IFS=':' read -r ip port <<< "${relays[0]}"
@@ -174,7 +173,8 @@ pool_generate_pool_meta_hash() {
 
     $CNCLI conway stake-pool metadata-hash \
         --pool-metadata-file "${outputFileJson}" >"${outputFileHash}"
-    print 'POOL' "Node metadata hash created at $NODE_HOME/metadata/metadataHash.txt" $green
+    print 'POOL' "Node metadata hash saved to $NODE_HOME/metadata/metadataHash.txt" $green
+    print 'POOL' "$(cat $NODE_HOME/metadata/metadataHash.txt)" $green
 }
 
 pool_rotate_kes() {
